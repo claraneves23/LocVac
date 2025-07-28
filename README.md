@@ -52,6 +52,4 @@ O projeto visa otimizar o gerenciamento da vacinação para todas as faixas etá
 - **CASCIARO, Mario; MAMMINO, Luciano.** *Node.js Design Patterns* (2020).  
 - **DABIT, Nader.** *React Native in Action* (2019).  
 - **DOMINGUES, Carla et al.** *46 anos do Programa Nacional de Imunizações* (2020).  
-- **YAHIAOUI, Houssem.** *Firebase Cookbook* (2017).  
-
-
+- **YAHIAOUI, Houssem.** *Firebase Cookbook* (2017).
