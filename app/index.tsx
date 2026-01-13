@@ -1,8 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, FlatList } from 'react-native';
+import { StyleSheet, Text, View, FlatList, Pressable, Modal } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { BottomBar } from '../components/BottomBar';
 import  LocCards  from '../components/LocCards';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useState } from 'react';
 
 const LOCS = [
   { id: '1', name: 'Posto Central', distance: '200 m', image: 'https://tse1.mm.bing.net/th/id/OIP.aJwjusPtJ70t1a8u_OqWbAHaFR?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3', isFavorited: false },
@@ -12,7 +14,23 @@ const LOCS = [
   { id: '5', name: 'Unidade Sul', distance: '3.3 km', image: 'https://tse3.mm.bing.net/th/id/OIP.wKS0ibSloS9QnslCjCOSeAHaE8?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3' },
 ];
 
+const ADDRESSES = [
+  { id: '1', name: 'São Paulo, SP' },
+  { id: '2', name: 'Brasília, DF' },
+  { id: '3', name: 'Rio de Janeiro, RJ' },
+  { id: '4', name: 'Salvador, BA' },
+  { id: '5', name: 'Recife, PE' },
+];
+
 export default function Index() {
+  const [selectedAddress, setSelectedAddress] = useState('São Paulo, SP');
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleSelectAddress = (address: string) => {
+    setSelectedAddress(address);
+    setShowDropdown(false);
+  };
+
   return (
     <View style={styles.container}>
       <MapView style={styles.map}
@@ -28,6 +46,43 @@ export default function Index() {
           title="Posto de Vacinação"
         />
       </MapView>
+      <Ionicons name="notifications-outline" size={32} color="#000000ff" style={{ position: 'absolute', top: '4%', right: '4%' }} />
+      
+      {/* Selecionador de Endereço com Dropdown */}
+      <View style={styles.addressContainer}>
+        <Pressable 
+          style={styles.addressSelector}
+          onPress={() => setShowDropdown(!showDropdown)}
+        >
+          <Text style={styles.addressSelectorText}>{selectedAddress}</Text>
+          <Ionicons 
+            name={showDropdown ? "chevron-up" : "chevron-down"} 
+            size={20} 
+            color="#000000ff" 
+          />
+        </Pressable>
+
+        {showDropdown && (
+          <View style={styles.dropdownMenu}>
+            {ADDRESSES.map((addr) => (
+              <Pressable 
+                key={addr.id}
+                style={styles.dropdownItem}
+                onPress={() => handleSelectAddress(addr.name)}
+              >
+                <Text 
+                  style={[
+                    styles.dropdownItemText,
+                    selectedAddress === addr.name && styles.dropdownItemSelected
+                  ]}
+                >
+                  {addr.name}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
       <View style={styles.cardContainer}>
         <Text style={{ fontSize: 12, fontWeight: 'bold', marginLeft: 4, color: '#333' }}>
           Unidades Próximas
@@ -64,5 +119,56 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingHorizontal: 8,
     marginTop: -30,
+  },
+  addressContainer: {
+    position: 'absolute',
+    width: '40%',
+    top: '4%',
+    left: '30%',
+    right: '18%',
+    zIndex: 10,
+  },
+  addressSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  addressSelectorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000000ff',
+    flex: 1,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 4,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 20,
+  },
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomColor: '#f0f0f0',
+    borderBottomWidth: 1,
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: '#000000ff',
+  },
+  dropdownItemSelected: {
+    fontWeight: 'bold',
+    color: '#2E8B8B',
   },
 });

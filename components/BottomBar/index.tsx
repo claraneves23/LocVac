@@ -80,10 +80,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#ACDAD8',
     boxShadow: '0 -2px 6px rgba(0, 0, 0, 0.1)',
-    paddingBottom: 32,
+    paddingBottom: 40,
     paddingTop: 0,
 
-    height: '10%',         
+    height: '12%',         
     width: '100%',       
 
     position: 'absolute',
