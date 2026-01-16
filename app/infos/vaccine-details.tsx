@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingTop: '10%',
   },
   headerTitle: {
     fontSize: 20,
@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 6,
   },
   notFoundText: {
     fontSize: 16,
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     gap: 12,
-    marginVertical: 16,
+    marginBottom: '11%',
   },
   recommendationText: {
     flex: 1,

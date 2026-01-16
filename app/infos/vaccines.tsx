@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingTop: '10%',
   },
   headerTitle: {
     fontSize: 20,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     gap: 12,
-    marginVertical: 20,
+    marginVertical: '10%',
   },
   infoText: {
     flex: 1,

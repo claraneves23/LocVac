@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, FlatList, Image } from 'react-native';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomBar } from '../components/BottomBar';
@@ -15,27 +15,28 @@ export default function Infos() {
   const [helpVisible, setHelpVisible] = useState(false);
   const router = useRouter();
   const [activeSlide, setActiveSlide] = useState(0);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const infoCarousel = [
     {
       id: '1',
       title: 'Vacinas Importantes',
       description: 'Saiba quais são as principais vacinas',
-      image: 'https://via.placeholder.com/300x150?text=Vacinas',
+      image: 'https://tse3.mm.bing.net/th/id/OIP.noOj5oWP8cYqCwU2p0QLAAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3',
       route: '/infos/vaccines',
     },
     {
       id: '2',
       title: 'Cronograma de Vacinação',
       description: 'Conheça o calendário de imunizações',
-      image: 'https://via.placeholder.com/300x150?text=Cronograma',
+      image: 'https://www.nsta.org/sites/default/files/hero/Calendar_hero.jpg',
       route: '/infos/schedule',
     },
     {
       id: '3',
       title: 'Efeitos Colaterais',
       description: 'Informações sobre possíveis reações',
-      image: 'https://via.placeholder.com/300x150?text=Efeitos',
+      image: 'https://i.gifer.com/2J5.gif',
       route: '/infos/effects',
     },
   ];
@@ -83,13 +84,20 @@ export default function Infos() {
           <FlatList
             data={infoCarousel}
             horizontal
-            pagingEnabled
+            pagingEnabled={false}
+            snapToInterval={292}
+            decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.id}
-            onMomentumScrollEnd={(event) => {
-              const slideSize = event.nativeEvent.layoutMeasurement.width;
-              const currentSlide = event.nativeEvent.contentOffset.x / slideSize;
-              setActiveSlide(Math.round(currentSlide));
+            onScroll={(event) => {
+              if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
+              }
+              const contentOffsetX = event.nativeEvent.contentOffset.x;
+              scrollTimeoutRef.current = setTimeout(() => {
+                const currentSlide = contentOffsetX / 292;
+                setActiveSlide(Math.round(currentSlide));
+              }, 10);
             }}
             renderItem={({ item }) => (
               <TouchableOpacity
@@ -142,7 +150,7 @@ export default function Infos() {
               <Ionicons
                 name="chevron-forward-outline"
                 size={24}
-                color="#ACDAD8"
+                color="#29442dff"
               />
             </TouchableOpacity>
           ))}
@@ -237,6 +245,8 @@ const styles = StyleSheet.create({
   },
   carouselSection: {
     marginVertical: 16,
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
   },
   carouselCard: {
     width: 280,
@@ -244,10 +254,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   carouselImage: {
     width: '100%',
@@ -284,7 +290,7 @@ const styles = StyleSheet.create({
     width: 24,
   },
   vaccinesSection: {
-    marginVertical: 16,
+    marginBottom: '10%',
   },
   vaccineItem: {
     flexDirection: 'row',
@@ -342,6 +348,8 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
     lineHeight: 20,
+    justifyContent: 'center',
+    textAlign: 'center',
   },
   modalList: {
     marginBottom: 20,
