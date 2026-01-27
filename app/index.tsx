@@ -1,10 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, FlatList, Pressable, Modal } from 'react-native';
+import { StyleSheet, Text, View, FlatList, Pressable, Modal, TextInput } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { BottomBar } from '../components/BottomBar';
 import  LocCards  from '../components/LocCards';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LOCS = [
   { id: '1', name: 'Posto Central', distance: '200 m', image: 'https://tse1.mm.bing.net/th/id/OIP.aJwjusPtJ70t1a8u_OqWbAHaFR?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3', isFavorited: false },
@@ -24,64 +26,78 @@ const ADDRESSES = [
 
 export default function Index() {
   const [selectedAddress, setSelectedAddress] = useState('São Paulo, SP');
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [favoritedIds, setFavoritedIds] = useState<string[]>([]);
+  const router = useRouter();
+
+  useFocusEffect(() => {
+    const loadFavorited = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('favoritedIds');
+        if (stored) {
+          setFavoritedIds(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Error loading favorited:', error);
+      }
+    };
+    loadFavorited();
+  });
+
+  const handleFavoriteToggle = async (id: string) => {
+    const newFavorited = favoritedIds.includes(id)
+      ? favoritedIds.filter(favId => favId !== id)
+      : [...favoritedIds, id];
+    setFavoritedIds(newFavorited);
+    try {
+      await AsyncStorage.setItem('favoritedIds', JSON.stringify(newFavorited));
+    } catch (error) {
+      console.error('Error saving favorited:', error);
+    }
+  };
 
   const handleSelectAddress = (address: string) => {
     setSelectedAddress(address);
-    setShowDropdown(false);
+    setShowSearchModal(false);
+    setSearchText('');
   };
+
+  const filteredAddresses = ADDRESSES.filter(addr =>
+    addr.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
       <MapView style={styles.map}
         initialRegion={{
-          latitude: -23.5505,
-          longitude: -46.6333,
+          latitude: -23.942355,
+          longitude: -46.326303,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
       >
         <Marker
-          coordinate={{ latitude: -23.55, longitude: -46.63 }}
+          coordinate={{ latitude: -23.942355, longitude: -46.326303 }}
           title="Posto de Vacinação"
+          pinColor='rgb(32, 50, 71)'
         />
       </MapView>
-      <Ionicons name="notifications-outline" size={32} color="#000000ff" style={{ position: 'absolute', top: '4%', right: '4%' }} />
-      
-      {/* Selecionador de Endereço com Dropdown */}
-      <View style={styles.addressContainer}>
-        <Pressable 
-          style={styles.addressSelector}
-          onPress={() => setShowDropdown(!showDropdown)}
-        >
-          <Text style={styles.addressSelectorText}>{selectedAddress}</Text>
-          <Ionicons 
-            name={showDropdown ? "chevron-up" : "chevron-down"} 
-            size={20} 
-            color="#000000ff" 
-          />
-        </Pressable>
-
-        {showDropdown && (
-          <View style={styles.dropdownMenu}>
-            {ADDRESSES.map((addr) => (
-              <Pressable 
-                key={addr.id}
-                style={styles.dropdownItem}
-                onPress={() => handleSelectAddress(addr.name)}
-              >
-                <Text 
-                  style={[
-                    styles.dropdownItemText,
-                    selectedAddress === addr.name && styles.dropdownItemSelected
-                  ]}
-                >
-                  {addr.name}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+      <View style={styles.topContainer}>
+        <View style={styles.addressContainer}>
+          <Pressable 
+            style={styles.addressSelector}
+            onPress={() => setShowSearchModal(true)}
+          >
+            <Text style={styles.addressSelectorText}>{selectedAddress}</Text>
+            <Ionicons 
+              name="locate-outline" 
+              size={20} 
+              color="#000000ff" 
+            />
+          </Pressable>
+        </View>
+        <Ionicons name="notifications-outline" size={26} color="#000000ff" style={{ position: 'absolute', right: '5%', bottom: '10%', backgroundColor: '#ACDAD8', borderRadius: 16, padding: 2  }} />
       </View>
       <View style={styles.cardContainer}>
         <Text style={{ fontSize: 12, fontWeight: 'bold', marginLeft: 4, color: '#333' }}>
@@ -91,12 +107,57 @@ export default function Index() {
           data={LOCS}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <LocCards card={item} onFavoritePress={(id) => console.log(id)} />
+            <LocCards 
+              card={{ ...item, isFavorited: favoritedIds.includes(item.id) }} 
+              onFavoritePress={handleFavoriteToggle} 
+              onPress={() => router.push({ pathname: '/location-details', params: { card: JSON.stringify({ ...item, isFavorited: favoritedIds.includes(item.id) }) } })} 
+            />
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 16 }}
         />
       </View>
+      <Modal
+        visible={showSearchModal}
+        animationType="slide"
+        onRequestClose={() => {
+          setShowSearchModal(false);
+          setSearchText('');
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.searchHeader}>
+            <Pressable onPress={() => {
+              setShowSearchModal(false);
+              setSearchText('');
+            }}>
+              <Ionicons name="close" size={24} color="#000" />
+            </Pressable>
+            <Text style={styles.searchTitle}>Buscar Localização</Text>
+          </View>
+          <View style={styles.searchInputContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar localização..."
+              value={searchText}
+              onChangeText={setSearchText}
+              autoFocus={true}
+            />
+          </View>
+          <FlatList
+            data={filteredAddresses}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.dropdownItem}
+                onPress={() => handleSelectAddress(item.name)}
+              >
+                <Text style={styles.dropdownItemText}>{item.name}</Text>
+              </Pressable>
+            )}
+          />
+        </View>
+      </Modal>
       <BottomBar />
       <StatusBar style="auto" />
     </View>
@@ -109,6 +170,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#CAE3E2',
   },
   map: {
+    marginTop: '15%',
     flex: 0.45,
   },
   cardContainer: {
@@ -119,43 +181,63 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingHorizontal: 8,
     marginTop: -30,
+    paddingBottom: 12,
+  },
+  topContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ACDAD8',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    zIndex: 10,
+    height: '8%',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   addressContainer: {
-    position: 'absolute',
-    width: '40%',
-    top: '4%',
-    left: '30%',
-    right: '18%',
-    zIndex: 10,
+    alignItems: 'center',
+    marginBottom: '3%',
   },
   addressSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 0,
-    paddingHorizontal: 0,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 0,
     borderRadius: 12,
+    backgroundColor: '#ACDAD8',
   },
   addressSelectorText: {
     fontSize: 14,
     fontWeight: '500',
     color: '#000000ff',
-    flex: 1,
   },
   dropdownMenu: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    marginTop: 4,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-    zIndex: 20,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 8,
+    elevation: 5, // for shadow on Android
+    shadowColor: '#000', // for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  searchInputContainer: {
+    marginBottom: 8,
+  },
+  searchInput: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    fontSize: 14,
   },
   dropdownItem: {
     paddingHorizontal: 12,
@@ -170,5 +252,22 @@ const styles = StyleSheet.create({
   dropdownItemSelected: {
     fontWeight: 'bold',
     color: '#2E8B8B',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: 50,
+    paddingHorizontal: 16,
+  },
+  searchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  searchTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 16,
+    color: '#000',
   },
 });

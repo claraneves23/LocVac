@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -13,18 +13,16 @@ interface LocCard {
 interface LocCardsProps {
   card: LocCard;
   onFavoritePress?: (id: string) => void;
+  onPress?: () => void;
 }
 
-const LocCards: React.FC<LocCardsProps> = ({ card, onFavoritePress }) => {
-  const [isFavorited, setIsFavorited] = useState(card.isFavorited || false);
-
+const LocCards: React.FC<LocCardsProps> = ({ card, onFavoritePress, onPress }) => {
   const handleFavoritePress = () => {
-    setIsFavorited(!isFavorited);
     onFavoritePress?.(card.id);
   };
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={onPress}>
       {/* Imagem na esquerda */}
       <Image
         source={{ uri: card.image }}
@@ -43,12 +41,12 @@ const LocCards: React.FC<LocCardsProps> = ({ card, onFavoritePress }) => {
         onPress={handleFavoritePress}
       >
         <Ionicons
-          name={isFavorited ? 'bookmark' : 'bookmark-outline'}
+          name={card.isFavorited ? 'bookmark' : 'bookmark-outline'}
           size={24}
-          color={isFavorited ? '#29442dff' : '#00000040'}
+          color={card.isFavorited ? '#29442dff' : '#00000040'}
         />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 };
 

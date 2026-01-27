@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginVertical: 6,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
   },
   tipNumber: {
