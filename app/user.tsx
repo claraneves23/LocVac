@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomBar } from '../components/BottomBar';
 
 export default function User() {
@@ -20,31 +20,31 @@ export default function User() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.option}>
             <Ionicons name="document-text" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Dados</Text>
+            <Text style={styles.optionText}>Perfil</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.option}>
             <Ionicons name="medkit" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Registro Vacinal</Text>
+            <Text style={styles.optionText}>Carteira Digital</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.option}>
             <Ionicons name="notifications" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Notificações</Text>
+            <Text style={styles.optionText}>Alertas Vacinais</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.option}>
             <Ionicons name="time" size={24} color="#333" style={styles.icon} />
             <Text style={styles.optionText}>Histórico</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.option}>
-            <Ionicons name="location" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Endereços</Text>
+            <Ionicons name="camera" size={24} color="#333" style={styles.icon} />
+            <Text style={styles.optionText}>Digitalizar Carteira</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.option}>
             <Ionicons name="calendar" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Calendário</Text>
+            <Text style={styles.optionText}>Calendário Vacinal</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.optionNoBorder}>
-            <Ionicons name="bookmark" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Favoritos</Text>
+            <Ionicons name="cloud-upload" size={24} color="#333" style={styles.icon} />
+            <Text style={styles.optionText}>Backup e Sincronização</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.secondOptionsView}>

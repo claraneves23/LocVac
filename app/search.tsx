@@ -6,16 +6,18 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 export default function Search() {
   const [searchText, setSearchText] = useState('');
-  const [searchHistory, setSearchHistory] = useState<Array<{ text: string; filter: 'todos' | 'vacina' | 'local' }>>([]);
-  const [filter, setFilter] = useState<'todos' | 'vacina' | 'local'>('todos');
+  const [searchHistory, setSearchHistory] = useState<Array<{ text: string; filter: 'todos' | 'dependente' | 'vacina' | 'calendario' }>>([]);
+  const [filter, setFilter] = useState<'todos' | 'dependente' | 'vacina' | 'calendario'>('todos');
 
-  const getFilterIcon = (filterType: 'todos' | 'vacina' | 'local') => {
+  const getFilterIcon = (filterType: 'todos' | 'dependente' | 'vacina' | 'calendario') => {
     switch (filterType) {
       case 'todos':
         return 'medical';
+      case 'dependente':
+        return 'people';
       case 'vacina':
-        return 'eyedrop';
-      case 'local':
+        return 'medkit';
+      case 'calendario':
         return 'medkit';
       default:
         return 'medical';
@@ -34,10 +36,6 @@ export default function Search() {
     setSearchHistory(newHistory);
   };
 
-  const handleClearHistory = () => {
-    setSearchHistory([]);
-  };
-
   return (
     <View style={styles.container}>
 
@@ -46,7 +44,7 @@ export default function Search() {
           <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Pesquise por vacina ou local..."
+            placeholder="Pesquise por dependente, vacina ou calendário..."
             placeholderTextColor="#999"
             value={searchText}
             onChangeText={setSearchText}
@@ -76,6 +74,23 @@ export default function Search() {
         <TouchableOpacity
           style={[
             styles.filterButton,
+            filter === 'dependente' && styles.filterButtonActive,
+          ]}
+          onPress={() => setFilter('dependente')}
+        >
+          <Text
+            style={[
+              styles.filterButtonText,
+              filter === 'dependente' && styles.filterButtonTextActive,
+            ]}
+          >
+            Dependente
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
             filter === 'vacina' && styles.filterButtonActive,
           ]}
           onPress={() => setFilter('vacina')}
@@ -93,23 +108,23 @@ export default function Search() {
         <TouchableOpacity
           style={[
             styles.filterButton,
-            filter === 'local' && styles.filterButtonActive,
+            filter === 'calendario' && styles.filterButtonActive,
           ]}
-          onPress={() => setFilter('local')}
+          onPress={() => setFilter('calendario')}
         >
           <Text
             style={[
               styles.filterButtonText,
-              filter === 'local' && styles.filterButtonTextActive,
+              filter === 'calendario' && styles.filterButtonTextActive,
             ]}
           >
-            Local
+            Calendário
           </Text>
         </TouchableOpacity>
       </View>
 
       <View>
-        <Text style={styles.restTitle}>Imunizações Restantes</Text>
+        <Text style={styles.restTitle}>Resultados rápidos</Text>
       </View>
 
       {searchHistory.length > 0 && (
@@ -185,7 +200,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 25,
     paddingVertical: 4,
-    gap: 20,
+    gap: 8,
     justifyContent: 'space-between',
   },
   filterButton: {

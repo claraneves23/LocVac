@@ -1,210 +1,172 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BottomBar } from '../components/BottomBar';
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Dependent, VaccineApplication } from './types/vaccination';
+import { useMemo, useState } from 'react';
 
-interface LocCard {
-  id: string;
-  name: string;
-  distance: string;
-  image: string;
-  isFavorited?: boolean;
-}
+type Tab = 'historico' | 'pendentes' | 'alertas';
 
-interface VaccineData {
-  ageGroup: string;
-  vaccines: Array<{ name: string; status: 'Disponível' | 'Indisponível' }>;
-}
+const DEFAULT_DEPENDENT: Dependent = {
+  id: 'dep-1',
+  userId: 'user-1',
+  name: 'João Pedro',
+  birthDate: '2019-03-12',
+  sex: 'M',
+};
+
+const APPLICATIONS: VaccineApplication[] = [
+  {
+    id: 'app-1',
+    dependentId: 'dep-1',
+    vaccineId: 'vac-dtp',
+    vaccineName: 'DTP - 1º reforço',
+    dueDate: '2026-03-02',
+    status: 'pending',
+    notes: 'Agendar em unidade de referência.',
+  },
+  {
+    id: 'app-2',
+    dependentId: 'dep-1',
+    vaccineId: 'vac-influenza',
+    vaccineName: 'Influenza anual',
+    dueDate: '2026-02-27',
+    status: 'pending',
+  },
+  {
+    id: 'app-3',
+    dependentId: 'dep-1',
+    vaccineId: 'vac-triplice-viral',
+    vaccineName: 'Tríplice viral',
+    applicationDate: '2024-03-15',
+    lot: 'A37BC9',
+    healthUnit: 'UBS Centro',
+    status: 'applied',
+  },
+  {
+    id: 'app-4',
+    dependentId: 'dep-1',
+    vaccineId: 'vac-hepatite-b',
+    vaccineName: 'Hepatite B',
+    applicationDate: '2023-09-22',
+    lot: 'HB2109',
+    healthUnit: 'Policlínica Municipal',
+    status: 'applied',
+  },
+];
+
+const ALERTS = [
+  'DTP entra em atraso em 8 dias.',
+  'Influenza anual disponível para agendamento.',
+];
 
 export default function LocationDetails() {
   const router = useRouter();
-  const { card } = useLocalSearchParams() as { card: string };
-  const parsedCard: LocCard = JSON.parse(card);
-  const [imageHeight, setImageHeight] = useState(200); // default
-  const [favoritedIds, setFavoritedIds] = useState<string[]>([]);
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [activeTab, setActiveTab] = useState<'vacinas' | 'fotos' | 'sobre'>('vacinas');
-  const [expandedAgeGroup, setExpandedAgeGroup] = useState<string>('0 a 9 anos');
+  const params = useLocalSearchParams<{ dependent?: string }>();
+  const [activeTab, setActiveTab] = useState<Tab>('historico');
 
-  const vaccineData: VaccineData[] = [
-    {
-      ageGroup: '0 a 9 anos',
-      vaccines: [
-        { name: 'BCG', status: 'Disponível' },
-        { name: 'Hepatite B', status: 'Indisponível' },
-        { name: 'Tetravacente', status: 'Disponível' },
-        { name: 'Poliomielite', status: 'Disponível' },
-        { name: 'Influenza', status: 'Indisponível' },
-      ],
-    },
-    {
-      ageGroup: '10 a 19 anos',
-      vaccines: [
-        { name: 'HPV', status: 'Disponível' },
-        { name: 'Meningococo', status: 'Indisponível' },
-      ],
-    },
-    {
-      ageGroup: '20 a 24 anos',
-      vaccines: [
-        { name: 'COVID-19', status: 'Disponível' },
-        { name: 'Hepatite A', status: 'Disponível' },
-      ],
-    },
-    {
-      ageGroup: '25 a 59 anos',
-      vaccines: [
-        { name: 'Gripe', status: 'Disponível' },
-        { name: 'Pneumococo', status: 'Indisponível' },
-      ],
-    },
-    {
-      ageGroup: 'acima de 60 anos',
-      vaccines: [
-        { name: 'Herpes Zóster', status: 'Disponível' },
-        { name: 'Pneumococo 23', status: 'Disponível' },
-      ],
-    },
-  ];
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('favoritedIds');
-        if (stored) {
-          const ids = JSON.parse(stored);
-          setFavoritedIds(ids);
-          setIsFavorited(ids.includes(parsedCard.id));
-        }
-      } catch (error) {
-        console.error('Error loading favorited:', error);
-      }
-
-      Image.getSize(parsedCard.image, (width, height) => {
-        const screenWidth = Dimensions.get('window').width;
-        const aspectRatio = width / height;
-        const calculatedHeight = screenWidth / aspectRatio;
-        setImageHeight(calculatedHeight);
-      }, (error) => {
-        console.log('Error getting image size:', error);
-      });
-    };
-    loadData();
-  }, [parsedCard.image, parsedCard.id]);
-
-  const handleFavoriteToggle = async () => {
-    const newFavorited = isFavorited
-      ? favoritedIds.filter(id => id !== parsedCard.id)
-      : [...favoritedIds, parsedCard.id];
-    setFavoritedIds(newFavorited);
-    setIsFavorited(!isFavorited);
-    try {
-      await AsyncStorage.setItem('favoritedIds', JSON.stringify(newFavorited));
-    } catch (error) {
-      console.error('Error saving favorited:', error);
+  const dependent = useMemo<Dependent>(() => {
+    if (!params.dependent || typeof params.dependent !== 'string') {
+      return DEFAULT_DEPENDENT;
     }
-  };
+
+    try {
+      return JSON.parse(params.dependent) as Dependent;
+    } catch {
+      return DEFAULT_DEPENDENT;
+    }
+  }, [params.dependent]);
+
+  const dependentApplications = APPLICATIONS.filter(
+    (item) => item.dependentId === dependent.id
+  );
+  const appliedItems = dependentApplications.filter((item) => item.status === 'applied');
+  const pendingItems = dependentApplications.filter((item) => item.status === 'pending' || item.status === 'overdue');
 
   return (
     <View style={styles.container}>
-      <View style={styles.imageContainer}>
-        <Image source={{ uri: parsedCard.image }} style={[styles.image, { height: imageHeight }]} />
-      </View>
-      
-      {/* Header - Fixed */}
-      <View style={styles.headerSection}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <Text style={styles.title}>{parsedCard.name}</Text>
-            <View style={styles.iconContainer}>
-              <TouchableOpacity style={styles.iconButton} onPress={handleFavoriteToggle}>
-                <Ionicons name={isFavorited ? "bookmark" : "bookmark-outline"} size={18} color={isFavorited ? "#29442dff" : "#000"} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} onPress={() => console.log('Compartilhar')}>
-                <Ionicons name="share-social" size={18} color="#29442dff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-                <Ionicons name="close" size={18} color="#29442dff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaText}>Centro Médico Público</Text>
-            <Text style={styles.metaDot}> · </Text>
-            <MaterialIcons name="accessible" size={14} color="#333" style={styles.metaIcon} />
-            <Text style={styles.metaDot}> · </Text>
-            <MaterialIcons name="directions-walk" size={14} color="#333" style={[styles.metaIcon, { marginLeft: 4 }]} />
-            <Text style={[styles.metaText, { marginLeft: 6 }]}>{parsedCard.distance}</Text>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.openText}>Aberto</Text>
-            <Text style={styles.metaDot}> · </Text>
-            <Text style={styles.closingText}>Fecha à 17:00</Text>
-          </View>
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{dependent.name.charAt(0)}</Text>
         </View>
 
-        {/* Tabs - Fixed */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity style={[styles.tab, activeTab === 'vacinas' && styles.tabActive]} onPress={() => setActiveTab('vacinas')}>
-            <Text style={[styles.tabText, activeTab === 'vacinas' && styles.tabTextActive]}>Vacinas</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, activeTab === 'fotos' && styles.tabActive]} onPress={() => setActiveTab('fotos')}>
-            <Text style={[styles.tabText, activeTab === 'fotos' && styles.tabTextActive]}>Fotos</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, activeTab === 'sobre' && styles.tabActive]} onPress={() => setActiveTab('sobre')}>
-            <Text style={[styles.tabText, activeTab === 'sobre' && styles.tabTextActive]}>Sobre</Text>
-          </TouchableOpacity>
+        <View style={styles.headerInfo}>
+          <Text style={styles.title}>{dependent.name}</Text>
+          <Text style={styles.subtitle}>Nascimento: {dependent.birthDate}</Text>
+          <Text style={styles.subtitle}>Resumo da carteira digital</Text>
+        </View>
+
+        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+          <Ionicons name="close" size={18} color="#29442dff" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Aplicadas</Text>
+          <Text style={styles.summaryValue}>{appliedItems.length}</Text>
+        </View>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Pendentes</Text>
+          <Text style={styles.summaryValue}>{pendingItems.length}</Text>
+        </View>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Alertas</Text>
+          <Text style={styles.summaryValue}>{ALERTS.length}</Text>
         </View>
       </View>
 
-      {/* Scrollable Content */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity style={[styles.tab, activeTab === 'historico' && styles.tabActive]} onPress={() => setActiveTab('historico')}>
+          <Text style={[styles.tabText, activeTab === 'historico' && styles.tabTextActive]}>Histórico</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, activeTab === 'pendentes' && styles.tabActive]} onPress={() => setActiveTab('pendentes')}>
+          <Text style={[styles.tabText, activeTab === 'pendentes' && styles.tabTextActive]}>Pendentes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, activeTab === 'alertas' && styles.tabActive]} onPress={() => setActiveTab('alertas')}>
+          <Text style={[styles.tabText, activeTab === 'alertas' && styles.tabTextActive]}>Alertas</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView style={styles.scrollableContent} contentContainerStyle={styles.tabContentContainer}>
-        {activeTab === 'vacinas' && (
-          <View style={styles.tabContent}>
-            {vaccineData.map((data) => (
-              <TouchableOpacity
-                key={data.ageGroup}
-                style={[styles.ageGroupBox, expandedAgeGroup === data.ageGroup && styles.ageGroupBoxExpanded]}
-                onPress={() => setExpandedAgeGroup(expandedAgeGroup === data.ageGroup ? '' : data.ageGroup)}
-              >
-                <View style={styles.ageGroupHeader}>
-                  <Text style={styles.ageGroupTitle}>{data.ageGroup}</Text>
-                  <Ionicons
-                    name={expandedAgeGroup === data.ageGroup ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color="#333"
-                  />
-                </View>
-                {expandedAgeGroup === data.ageGroup && (
-                  <View style={styles.vaccineList}>
-                    {data.vaccines.map((vaccine, idx) => (
-                      <View key={idx} style={[styles.vaccineItem, idx === data.vaccines.length - 1 && styles.vaccineItemLast]}>
-                        <Text style={styles.vaccineName}>{vaccine.name}</Text>
-                        <Text style={[styles.vaccineStatus, vaccine.status === 'Disponível' ? styles.statusAvailable : styles.statusUnavailable]}>
-                          {vaccine.status}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </TouchableOpacity>
+        {activeTab === 'historico' && (
+          <View>
+            {appliedItems.map((item) => (
+              <View key={item.id} style={styles.itemCard}>
+                <Text style={styles.itemTitle}>{item.vaccineName}</Text>
+                <Text style={styles.itemText}>Aplicada em: {item.applicationDate ?? 'sem data'}</Text>
+                <Text style={styles.itemText}>Lote: {item.lot ?? 'não informado'}</Text>
+                <Text style={styles.itemText}>Unidade: {item.healthUnit ?? 'não informado'}</Text>
+              </View>
             ))}
           </View>
         )}
 
-        {activeTab === 'fotos' && (
-          <View style={styles.tabContent}>
-            <Text style={styles.placeholderText}>Nenhuma foto disponível</Text>
+        {activeTab === 'pendentes' && (
+          <View>
+            {pendingItems.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhuma vacina pendente.</Text>
+            ) : (
+              pendingItems.map((item) => (
+                <View key={item.id} style={styles.itemCard}>
+                  <Text style={styles.itemTitle}>{item.vaccineName}</Text>
+                  <Text style={styles.itemText}>Prevista para: {item.dueDate ?? 'a definir'}</Text>
+                  <Text style={styles.itemText}>{item.notes ?? 'Sem observações.'}</Text>
+                </View>
+              ))
+            )}
           </View>
         )}
 
-        {activeTab === 'sobre' && (
-          <View style={styles.tabContent}>
-            <Text style={styles.placeholderText}>Informações sobre o local em breve</Text>
+        {activeTab === 'alertas' && (
+          <View>
+            {ALERTS.map((alertMessage, index) => (
+              <View key={`${dependent.id}-alert-${index}`} style={styles.alertItem}>
+                <Ionicons name="alert-circle-outline" size={18} color="#29442dff" />
+                <Text style={styles.alertText}>{alertMessage}</Text>
+              </View>
+            ))}
           </View>
         )}
       </ScrollView>
@@ -218,114 +180,75 @@ export default function LocationDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  imageContainer: {
-    position: 'relative',
-    zIndex: 1,
-  },
-  image: {
-    width: '100%',
-    resizeMode: 'contain',
-  },
-  headerSection: {
     backgroundColor: '#CAE3E2',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    marginTop: -20,
-    zIndex: 2,
   },
   header: {
-    flexDirection: 'column',
-    backgroundColor: '#CAE3E2',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 12,
+    marginTop: '12%',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  scrollableContent: {
+  avatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#B0D5D3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#29442dff',
+  },
+  headerInfo: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
-  },
-  tabContentContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    paddingBottom: 100,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft: {
-    flex: 1,
-    padding: 12,
-    paddingRight: 8,
-  },
-  metaRow: {
-    marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    fontSize: 12,
-    color: '#333',
-  },
-  metaIcon: {
-    marginRight: 2,
-  },
-  metaDot: {
-    color: '#333',
-    marginHorizontal: 2,
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  openText: {
-    color: '#198754',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  closingText: {
-    color: '#333',
-    fontSize: 12,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f3322',
   },
-  iconContainer: {
-    flexDirection: 'row',
-    gap: 4,
+  subtitle: {
+    fontSize: 12,
+    color: '#607367',
   },
-  iconButton: {
+  closeButton: {
     backgroundColor: '#B0D5D3',
     borderRadius: 20,
     padding: 8,
-    justifyContent: 'center',
+  },
+  summaryRow: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingVertical: 8,
     alignItems: 'center',
   },
-  scrollContainer: {
-    position: 'relative',
-    zIndex: 2,
-    marginTop: -20,
+  summaryLabel: {
+    fontSize: 11,
+    color: '#607367',
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f3322',
   },
   tabsContainer: {
+    marginTop: 12,
     flexDirection: 'row',
-    backgroundColor: '#CAE3E2',
-    boxShadow: '0px 2px 2px rgba(0, 0, 0, 0.05)',
-  },
-  distance: {
-    fontSize: 12,
-    color: '#333',
+    paddingHorizontal: 16,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -334,76 +257,56 @@ const styles = StyleSheet.create({
     borderBottomColor: '#29442dff',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
+    color: '#5f6e64',
     fontWeight: '500',
-    color: '#666',
   },
   tabTextActive: {
     color: '#29442dff',
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  tabContent: {
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: '#CAE3E2',
-  },
-  ageGroupBox: {
-    backgroundColor: '#B0D5D3',
-    borderRadius: 8,
-    marginVertical: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  ageGroupBoxExpanded: {
-    backgroundColor: '#B0D5D3',
-  },
-  ageGroupHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  ageGroupTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  vaccineList: {
-    marginTop: 8,
-    paddingTop: 0,
-  },
-  vaccineItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#9BC5C2',
-  },
-  vaccineItemLast: {
-    borderBottomWidth: 0,
-  },
-  vaccineName: {
-    fontSize: 13,
-    color: '#333',
+  scrollableContent: {
     flex: 1,
   },
-  vaccineStatus: {
-    fontSize: 12,
-    fontWeight: '500',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+  tabContentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 120,
   },
-  statusAvailable: {
-    color: '#198754',
+  itemCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
   },
-  statusUnavailable: {
-    color: '#dc3545',
-  },
-  placeholderText: {
-    textAlign: 'center',
-    color: '#666',
+  itemTitle: {
     fontSize: 14,
-    marginVertical: 20,
+    fontWeight: '700',
+    color: '#1f3322',
+    marginBottom: 5,
+  },
+  itemText: {
+    fontSize: 12,
+    color: '#5f6e64',
+    marginBottom: 2,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#607367',
+  },
+  alertItem: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  alertText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1f3322',
   },
 });

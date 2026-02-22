@@ -18,10 +18,10 @@ export const BottomBar = () => {
 
   const tabs: Tab[] = [
     {
-    name: 'Home',
+    name: 'Carteira',
     route: '/',
-    icon: 'location-outline',
-    iconActive: 'location',
+    icon: 'wallet-outline',
+    iconActive: 'wallet',
   },
   {
     name: 'Buscar',
@@ -30,7 +30,7 @@ export const BottomBar = () => {
     iconActive: 'search',
   },
   {
-    name: 'Informar',
+    name: 'Informações',
     route: '/infos',
     icon: 'book-outline',
     iconActive: 'book',
