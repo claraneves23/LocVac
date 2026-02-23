@@ -1,10 +1,29 @@
+export interface UserProfile {
+  id: string;
+  name: string;
+  birthDate: string;
+  sex: 'M' | 'F' | 'Outro';
+  email: string;
+}
+
 export interface Dependent {
   id: string;
   userId: string;
   name: string;
   birthDate: string;
   sex: 'M' | 'F' | 'Outro';
+  relationship: string;
   photoUri?: string;
+}
+
+export interface FamilyMember {
+  id: string;
+  userId: string;
+  name: string;
+  birthDate: string;
+  sex: 'M' | 'F' | 'Outro';
+  kind: 'user' | 'dependent';
+  relationship?: string;
 }
 
 export interface Vaccine {
@@ -16,7 +35,7 @@ export interface Vaccine {
 
 export interface VaccineApplication {
   id: string;
-  dependentId: string;
+  profileId: string;
   vaccineId: string;
   vaccineName: string;
   applicationDate?: string;

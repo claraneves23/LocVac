@@ -2,98 +2,46 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BottomBar } from '../components/BottomBar';
-import { Dependent, VaccineApplication } from './types/vaccination';
 import { useMemo, useState } from 'react';
+import { ALERTS_BY_PROFILE, APPLICATIONS, FAMILY_MEMBERS } from './data/family';
+import { FamilyMember } from './types/vaccination';
 
 type Tab = 'historico' | 'pendentes' | 'alertas';
 
-const DEFAULT_DEPENDENT: Dependent = {
-  id: 'dep-1',
-  userId: 'user-1',
-  name: 'João Pedro',
-  birthDate: '2019-03-12',
-  sex: 'M',
-};
-
-const APPLICATIONS: VaccineApplication[] = [
-  {
-    id: 'app-1',
-    dependentId: 'dep-1',
-    vaccineId: 'vac-dtp',
-    vaccineName: 'DTP - 1º reforço',
-    dueDate: '2026-03-02',
-    status: 'pending',
-    notes: 'Agendar em unidade de referência.',
-  },
-  {
-    id: 'app-2',
-    dependentId: 'dep-1',
-    vaccineId: 'vac-influenza',
-    vaccineName: 'Influenza anual',
-    dueDate: '2026-02-27',
-    status: 'pending',
-  },
-  {
-    id: 'app-3',
-    dependentId: 'dep-1',
-    vaccineId: 'vac-triplice-viral',
-    vaccineName: 'Tríplice viral',
-    applicationDate: '2024-03-15',
-    lot: 'A37BC9',
-    healthUnit: 'UBS Centro',
-    status: 'applied',
-  },
-  {
-    id: 'app-4',
-    dependentId: 'dep-1',
-    vaccineId: 'vac-hepatite-b',
-    vaccineName: 'Hepatite B',
-    applicationDate: '2023-09-22',
-    lot: 'HB2109',
-    healthUnit: 'Policlínica Municipal',
-    status: 'applied',
-  },
-];
-
-const ALERTS = [
-  'DTP entra em atraso em 8 dias.',
-  'Influenza anual disponível para agendamento.',
-];
-
 export default function LocationDetails() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ dependent?: string }>();
+  const params = useLocalSearchParams<{ profile?: string }>();
   const [activeTab, setActiveTab] = useState<Tab>('historico');
 
-  const dependent = useMemo<Dependent>(() => {
-    if (!params.dependent || typeof params.dependent !== 'string') {
-      return DEFAULT_DEPENDENT;
+  const profile = useMemo<FamilyMember>(() => {
+    if (!params.profile || typeof params.profile !== 'string') {
+      return FAMILY_MEMBERS[0];
     }
 
     try {
-      return JSON.parse(params.dependent) as Dependent;
+      return JSON.parse(params.profile) as FamilyMember;
     } catch {
-      return DEFAULT_DEPENDENT;
+      return FAMILY_MEMBERS[0];
     }
-  }, [params.dependent]);
+  }, [params.profile]);
 
-  const dependentApplications = APPLICATIONS.filter(
-    (item) => item.dependentId === dependent.id
+  const profileApplications = APPLICATIONS.filter(
+    (item) => item.profileId === profile.id
   );
-  const appliedItems = dependentApplications.filter((item) => item.status === 'applied');
-  const pendingItems = dependentApplications.filter((item) => item.status === 'pending' || item.status === 'overdue');
+  const appliedItems = profileApplications.filter((item) => item.status === 'applied');
+  const pendingItems = profileApplications.filter((item) => item.status === 'pending' || item.status === 'overdue');
+  const alerts = ALERTS_BY_PROFILE[profile.id] ?? [];
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{dependent.name.charAt(0)}</Text>
+          <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
         </View>
 
         <View style={styles.headerInfo}>
-          <Text style={styles.title}>{dependent.name}</Text>
-          <Text style={styles.subtitle}>Nascimento: {dependent.birthDate}</Text>
+          <Text style={styles.title}>{profile.kind === 'user' ? `${profile.name} (Titular)` : profile.name}</Text>
+          <Text style={styles.subtitle}>Nascimento: {profile.birthDate}</Text>
           <Text style={styles.subtitle}>Resumo da carteira digital</Text>
         </View>
 
@@ -113,7 +61,7 @@ export default function LocationDetails() {
         </View>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>Alertas</Text>
-          <Text style={styles.summaryValue}>{ALERTS.length}</Text>
+          <Text style={styles.summaryValue}>{alerts.length}</Text>
         </View>
       </View>
 
@@ -161,8 +109,8 @@ export default function LocationDetails() {
 
         {activeTab === 'alertas' && (
           <View>
-            {ALERTS.map((alertMessage, index) => (
-              <View key={`${dependent.id}-alert-${index}`} style={styles.alertItem}>
+            {alerts.map((alertMessage, index) => (
+              <View key={`${profile.id}-alert-${index}`} style={styles.alertItem}>
                 <Ionicons name="alert-circle-outline" size={18} color="#29442dff" />
                 <Text style={styles.alertText}>{alertMessage}</Text>
               </View>
@@ -171,7 +119,6 @@ export default function LocationDetails() {
         )}
       </ScrollView>
 
-      <BottomBar />
       <StatusBar style="auto" />
     </View>
   );

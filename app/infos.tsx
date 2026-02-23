@@ -3,7 +3,6 @@ import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, FlatList, 
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BottomBar } from '../components/BottomBar';
 
 interface Vaccine {
   id: string;
@@ -211,7 +210,6 @@ export default function Infos() {
         </View>
       </Modal>
 
-      <BottomBar />
       <StatusBar style="auto" />
     </View>
   );

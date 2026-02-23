@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { setNavigationDirection } from '../../app/navigation-direction';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -20,8 +21,8 @@ export const BottomBar = () => {
     {
     name: 'Carteira',
     route: '/',
-    icon: 'wallet-outline',
-    iconActive: 'wallet',
+    icon: 'map-outline',
+    iconActive: 'map',
   },
   {
     name: 'Buscar',
@@ -47,6 +48,10 @@ export const BottomBar = () => {
     return pathname === route || pathname.startsWith(route + '/');
   };
 
+  const getCurrentTabIndex = () => {
+    return tabs.findIndex((tab) => isActive(tab.route));
+  };
+
   return (
     <View style={styles.container}>
       {tabs.map((tab) => (
@@ -56,7 +61,22 @@ export const BottomBar = () => {
             styles.tab,
             isActive(tab.route) && styles.tabActive,
           ]}
-          onPress={() => router.push(tab.route)}
+          onPress={() => {
+            if (isActive(tab.route)) {
+              return;
+            }
+
+            const currentTabIndex = getCurrentTabIndex();
+            const targetTabIndex = tabs.findIndex((item) => item.route === tab.route);
+
+            if (currentTabIndex !== -1 && targetTabIndex < currentTabIndex) {
+              setNavigationDirection('left');
+            } else {
+              setNavigationDirection('right');
+            }
+
+            router.push(tab.route);
+          }}
         >
           <Ionicons
             name={isActive(tab.route) ? tab.iconActive : tab.icon}

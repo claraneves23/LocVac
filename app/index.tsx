@@ -1,108 +1,45 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, FlatList, Pressable, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, FlatList, Pressable, ScrollView, Image } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { BottomBar } from '../components/BottomBar';
-import { Dependent, VaccineApplication } from './types/vaccination';
-
-const DEPENDENTS: Dependent[] = [
-  {
-    id: 'dep-1',
-    userId: 'user-1',
-    name: 'João Pedro',
-    birthDate: '2019-03-12',
-    sex: 'M',
-  },
-  {
-    id: 'dep-2',
-    userId: 'user-1',
-    name: 'Ana Clara',
-    birthDate: '2022-08-01',
-    sex: 'F',
-  },
-];
-
-const APPLICATIONS: VaccineApplication[] = [
-  {
-    id: 'app-1',
-    dependentId: 'dep-1',
-    vaccineId: 'vac-dtp',
-    vaccineName: 'DTP - 1º reforço',
-    applicationDate: '2025-02-10',
-    dueDate: '2026-03-02',
-    status: 'pending',
-  },
-  {
-    id: 'app-2',
-    dependentId: 'dep-1',
-    vaccineId: 'vac-influenza',
-    vaccineName: 'Influenza anual',
-    applicationDate: '2025-05-22',
-    dueDate: '2026-02-27',
-    status: 'pending',
-  },
-  {
-    id: 'app-3',
-    dependentId: 'dep-1',
-    vaccineId: 'vac-triplice-viral',
-    vaccineName: 'Tríplice viral',
-    applicationDate: '2024-03-15',
-    status: 'applied',
-  },
-  {
-    id: 'app-4',
-    dependentId: 'dep-2',
-    vaccineId: 'vac-polio',
-    vaccineName: 'Poliomielite - reforço',
-    dueDate: '2026-04-03',
-    status: 'pending',
-  },
-  {
-    id: 'app-5',
-    dependentId: 'dep-2',
-    vaccineId: 'vac-hepatite-b',
-    vaccineName: 'Hepatite B',
-    applicationDate: '2024-11-09',
-    status: 'applied',
-  },
-];
-
-const ALERTS: Record<string, string[]> = {
-  'dep-1': [
-    'Reforço da DTP vence em 8 dias.',
-    'Influenza anual prevista para esta semana.',
-  ],
-  'dep-2': [
-    'Poliomielite entra em atraso em 12 dias.',
-  ],
-};
+import { ALERTS_BY_PROFILE, APPLICATIONS, FAMILY_MEMBERS } from './data/family';
 
 export default function Index() {
   const router = useRouter();
-  const [selectedDependentId, setSelectedDependentId] = useState<string>(DEPENDENTS[0].id);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>(FAMILY_MEMBERS[0].id);
 
-  const selectedDependent = useMemo(
-    () => DEPENDENTS.find((dependent) => dependent.id === selectedDependentId) ?? DEPENDENTS[0],
-    [selectedDependentId]
+  const selectedProfile = useMemo(
+    () => FAMILY_MEMBERS.find((profile) => profile.id === selectedProfileId) ?? FAMILY_MEMBERS[0],
+    [selectedProfileId]
   );
 
   const selectedApplications = useMemo(
-    () => APPLICATIONS.filter((item) => item.dependentId === selectedDependent.id),
-    [selectedDependent.id]
+    () => APPLICATIONS.filter((item) => item.profileId === selectedProfile.id),
+    [selectedProfile.id]
   );
 
   const pendingVaccines = selectedApplications.filter((item) => item.status === 'pending');
   const appliedVaccines = selectedApplications.filter((item) => item.status === 'applied');
   const nextVaccine = pendingVaccines.find((item) => item.dueDate);
-  const activeAlerts = ALERTS[selectedDependent.id] ?? [];
+  const activeAlerts = ALERTS_BY_PROFILE[selectedProfile.id] ?? [];
 
   return (
     <View style={styles.container}>
       <View style={styles.topContainer}>
-        <View>
-          <Text style={styles.title}>Carteira Digital</Text>
-          <Text style={styles.subtitle}>Resumo vacinal familiar</Text>
+        <View style={styles.headerLeft}>
+          <Image
+            source={require('../assets/images/locvaclogo-trim.png')}
+            style={styles.logoIcon}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.title}>
+              <Text style={styles.titleLoc}>Loc</Text>
+              <Text style={styles.titleVac}>Vac</Text>
+            </Text>
+            <Text style={styles.subtitle}>Resumo vacinal familiar</Text>
+          </View>
         </View>
         <Ionicons
           name="notifications-outline"
@@ -113,22 +50,22 @@ export default function Index() {
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.sectionTitle}>Dependentes</Text>
+        <Text style={styles.sectionTitle}>Perfis</Text>
         <FlatList
           horizontal
-          data={DEPENDENTS}
+          data={FAMILY_MEMBERS}
           keyExtractor={(item) => item.id}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dependentList}
           renderItem={({ item }) => {
-            const isSelected = selectedDependentId === item.id;
+            const isSelected = selectedProfileId === item.id;
             return (
               <Pressable
                 style={[styles.dependentChip, isSelected && styles.dependentChipActive]}
-                onPress={() => setSelectedDependentId(item.id)}
+                onPress={() => setSelectedProfileId(item.id)}
               >
                 <Text style={[styles.dependentChipText, isSelected && styles.dependentChipTextActive]}>
-                  {item.name}
+                  {item.kind === 'user' ? 'Você' : item.name}
                 </Text>
               </Pressable>
             );
@@ -157,7 +94,7 @@ export default function Index() {
         <View style={styles.sectionBlock}>
           <Text style={styles.sectionTitle}>Vacinas pendentes</Text>
           {pendingVaccines.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma vacina pendente para este dependente.</Text>
+            <Text style={styles.emptyText}>Nenhuma vacina pendente para este perfil.</Text>
           ) : (
             pendingVaccines.map((item) => (
               <Pressable
@@ -166,7 +103,7 @@ export default function Index() {
                 onPress={() =>
                   router.push({
                     pathname: '/location-details',
-                    params: { dependent: JSON.stringify(selectedDependent) },
+                    params: { profile: JSON.stringify(selectedProfile) },
                   })
                 }
               >
@@ -186,7 +123,7 @@ export default function Index() {
             <Text style={styles.emptyText}>Sem alertas no momento.</Text>
           ) : (
             activeAlerts.map((alertMessage, index) => (
-              <View key={`${selectedDependent.id}-${index}`} style={styles.alertItem}>
+              <View key={`${selectedProfile.id}-${index}`} style={styles.alertItem}>
                 <Ionicons name="alert-circle-outline" size={18} color="#29442dff" />
                 <Text style={styles.alertText}>{alertMessage}</Text>
               </View>
@@ -195,7 +132,6 @@ export default function Index() {
         </View>
       </ScrollView>
 
-      <BottomBar />
       <StatusBar style="auto" />
     </View>
   );
@@ -220,7 +156,21 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1f3322',
+  },
+  titleLoc: {
+    color: '#005570',
+  },
+  titleVac: {
+    color: '#09BEA5',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  logoIcon: {
+    width: 48,
+    height: 48,
   },
   subtitle: {
     marginTop: 2,

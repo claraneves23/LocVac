@@ -2,7 +2,6 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BottomBar } from '../../components/BottomBar';
 
 export default function VaccineDetails() {
   const { vaccineId, vaccineName } = useLocalSearchParams();
@@ -180,7 +179,6 @@ export default function VaccineDetails() {
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      <BottomBar />
       <StatusBar style="auto" />
     </View>
   );

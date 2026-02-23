@@ -2,7 +2,6 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BottomBar } from '../../components/BottomBar';
 
 export default function Schedule() {
   const router = useRouter();
@@ -94,7 +93,6 @@ export default function Schedule() {
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      <BottomBar />
       <StatusBar style="auto" />
     </View>
   );

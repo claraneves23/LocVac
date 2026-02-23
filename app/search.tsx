@@ -1,32 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
-import { BottomBar } from '../components/BottomBar';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function Search() {
   const [searchText, setSearchText] = useState('');
-  const [searchHistory, setSearchHistory] = useState<Array<{ text: string; filter: 'todos' | 'dependente' | 'vacina' | 'calendario' }>>([]);
-  const [filter, setFilter] = useState<'todos' | 'dependente' | 'vacina' | 'calendario'>('todos');
-
-  const getFilterIcon = (filterType: 'todos' | 'dependente' | 'vacina' | 'calendario') => {
-    switch (filterType) {
-      case 'todos':
-        return 'medical';
-      case 'dependente':
-        return 'people';
-      case 'vacina':
-        return 'medkit';
-      case 'calendario':
-        return 'medkit';
-      default:
-        return 'medical';
-    }
-  };
+  const [searchHistory, setSearchHistory] = useState<Array<{ text: string }>>([]);
 
   const handleSearch = () => {
     if (searchText.trim() !== '') {
-      setSearchHistory([{ text: searchText, filter }, ...searchHistory]);
+      setSearchHistory([{ text: searchText }, ...searchHistory]);
       setSearchText('');
     }
   };
@@ -44,7 +28,7 @@ export default function Search() {
           <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Pesquise por dependente, vacina ou calendário..."
+            placeholder="Pesquise por vacina..."
             placeholderTextColor="#999"
             value={searchText}
             onChangeText={setSearchText}
@@ -53,78 +37,8 @@ export default function Search() {
         </View>
       </View>
 
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'todos' && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter('todos')}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === 'todos' && styles.filterButtonTextActive,
-            ]}
-          >
-            Todos
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'dependente' && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter('dependente')}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === 'dependente' && styles.filterButtonTextActive,
-            ]}
-          >
-            Dependente
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'vacina' && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter('vacina')}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === 'vacina' && styles.filterButtonTextActive,
-            ]}
-          >
-            Vacina
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'calendario' && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter('calendario')}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === 'calendario' && styles.filterButtonTextActive,
-            ]}
-          >
-            Calendário
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <View>
-        <Text style={styles.restTitle}>Resultados rápidos</Text>
+        <Text style={styles.restTitle}>Imunizações restantes</Text>
       </View>
 
       {searchHistory.length > 0 && (
@@ -140,8 +54,8 @@ export default function Search() {
                 style={styles.historyItem}
                 onPress={() => setSearchText(item.text)}
               >
-                <Ionicons
-                  name={getFilterIcon(item.filter)}
+                <MaterialIcons
+                  name="vaccines"
                   size={18}
                   color="#666"
                   style={styles.historyIcon}
@@ -158,7 +72,6 @@ export default function Search() {
         </View>
       )}
 
-      <BottomBar />
       <StatusBar style="auto" />
     </View>
   );
@@ -173,8 +86,8 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    paddingTop: '10%',
+    paddingTop: '15%',
+    paddingBottom: 15,
     alignItems: 'center',
     gap: 10,
   },
@@ -195,36 +108,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     fontSize: 16,
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 25,
-    paddingVertical: 4,
-    gap: 8,
-    justifyContent: 'space-between',
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    backgroundColor: 'transparent',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#000000ff',
-  },
-  filterButtonActive: {
-    backgroundColor: '#3E4E3F',
-    borderColor: '#2C2C2C',
-  },
-  filterButtonText: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#1E1E1E',
-  },
-  filterButtonTextActive: {
-    color: 'white',
   },
   restTitle: {
     fontSize: 16,
