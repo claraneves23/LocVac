@@ -14,7 +14,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Permitir acesso a fotos para adicionar imagem do dependente.",
+        "NSCameraUsageDescription": "Permitir acesso a camera para adicionar imagem do dependente."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +27,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.devvale.LocVac"
+      "package": "com.devvale.LocVac",
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

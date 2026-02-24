@@ -1,11 +1,28 @@
 import { Stack } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import * as NavigationBar from 'expo-navigation-bar';
+import { useEffect } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { BottomBar } from '../components/BottomBar';
 import { getNavigationDirection } from './navigation-direction';
 
 const MAIN_TAB_ROUTES = ['index', 'search', 'infos', 'user'];
 
 export default function Layout() {
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    const configureNavigationBar = async () => {
+      try {
+        await NavigationBar.setButtonStyleAsync('dark');
+      } catch {
+      }
+    };
+
+    configureNavigationBar();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer}>

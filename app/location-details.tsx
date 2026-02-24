@@ -2,9 +2,11 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useMemo, useState } from 'react';
-import { ALERTS_BY_PROFILE, APPLICATIONS, FAMILY_MEMBERS } from './data/family';
-import { FamilyMember } from './types/vaccination';
+import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { ALERTS_BY_PROFILE, APPLICATIONS, MAIN_USER } from './data/family';
+import { Dependent, FamilyMember } from './types/vaccination';
+import { getDependents } from '../src/storage/dependents';
 
 type Tab = 'historico' | 'pendentes' | 'alertas';
 
@@ -12,36 +14,80 @@ export default function LocationDetails() {
   const router = useRouter();
   const params = useLocalSearchParams<{ profile?: string }>();
   const [activeTab, setActiveTab] = useState<Tab>('historico');
+  const [dependents, setDependents] = useState<Dependent[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getDependents().then(setDependents);
+    }, [])
+  );
+
+  const familyMembers = useMemo<FamilyMember[]>(
+    () => [
+      {
+        id: MAIN_USER.id,
+        userId: MAIN_USER.id,
+        name: MAIN_USER.name,
+        birthDate: MAIN_USER.birthDate,
+        sex: MAIN_USER.sex,
+        kind: 'user',
+      },
+      ...dependents.map((dependent) => ({
+        id: dependent.id,
+        userId: dependent.userId,
+        name: dependent.name,
+        birthDate: dependent.birthDate,
+        sex: dependent.sex,
+        kind: 'dependent' as const,
+        relationship: dependent.relationship,
+      })),
+    ],
+    [dependents]
+  );
 
   const profile = useMemo<FamilyMember>(() => {
+    const fallback: FamilyMember = {
+      id: MAIN_USER.id,
+      userId: MAIN_USER.id,
+      name: MAIN_USER.name,
+      birthDate: MAIN_USER.birthDate,
+      sex: MAIN_USER.sex,
+      kind: 'user',
+    };
+
     if (!params.profile || typeof params.profile !== 'string') {
-      return FAMILY_MEMBERS[0];
+      return fallback;
     }
 
     try {
       return JSON.parse(params.profile) as FamilyMember;
     } catch {
-      return FAMILY_MEMBERS[0];
+      return fallback;
     }
   }, [params.profile]);
 
+  const currentProfile = useMemo(() => {
+    const match = familyMembers.find((member) => member.id === profile.id);
+    return match ?? profile;
+  }, [familyMembers, profile]);
+
   const profileApplications = APPLICATIONS.filter(
-    (item) => item.profileId === profile.id
+    (item) => item.profileId === currentProfile.id
   );
   const appliedItems = profileApplications.filter((item) => item.status === 'applied');
   const pendingItems = profileApplications.filter((item) => item.status === 'pending' || item.status === 'overdue');
-  const alerts = ALERTS_BY_PROFILE[profile.id] ?? [];
+  const alerts = ALERTS_BY_PROFILE[currentProfile.id] ?? [];
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+          <Text style={styles.avatarText}>{currentProfile.name.charAt(0)}</Text>
         </View>
 
         <View style={styles.headerInfo}>
-          <Text style={styles.title}>{profile.kind === 'user' ? `${profile.name} (Titular)` : profile.name}</Text>
-          <Text style={styles.subtitle}>Nascimento: {profile.birthDate}</Text>
+          <Text style={styles.title}>{currentProfile.kind === 'user' ? `${currentProfile.name} (Titular)` : currentProfile.name}</Text>
+          <Text style={styles.subtitle}>Nascimento: {currentProfile.birthDate}</Text>
           <Text style={styles.subtitle}>Resumo da carteira digital</Text>
         </View>
 
@@ -84,7 +130,6 @@ export default function LocationDetails() {
               <View key={item.id} style={styles.itemCard}>
                 <Text style={styles.itemTitle}>{item.vaccineName}</Text>
                 <Text style={styles.itemText}>Aplicada em: {item.applicationDate ?? 'sem data'}</Text>
-                <Text style={styles.itemText}>Lote: {item.lot ?? 'não informado'}</Text>
                 <Text style={styles.itemText}>Unidade: {item.healthUnit ?? 'não informado'}</Text>
               </View>
             ))}
@@ -110,7 +155,7 @@ export default function LocationDetails() {
         {activeTab === 'alertas' && (
           <View>
             {alerts.map((alertMessage, index) => (
-              <View key={`${profile.id}-alert-${index}`} style={styles.alertItem}>
+              <View key={`${currentProfile.id}-alert-${index}`} style={styles.alertItem}>
                 <Ionicons name="alert-circle-outline" size={18} color="#29442dff" />
                 <Text style={styles.alertText}>{alertMessage}</Text>
               </View>

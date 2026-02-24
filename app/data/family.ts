@@ -8,7 +8,7 @@ export const MAIN_USER: UserProfile = {
   email: 'joao@locvac.com',
 };
 
-export const DEPENDENTS: Dependent[] = [
+export const DEFAULT_DEPENDENTS: Dependent[] = [
   {
     id: 'dep-1',
     userId: MAIN_USER.id,
@@ -26,6 +26,8 @@ export const DEPENDENTS: Dependent[] = [
     relationship: 'Filha',
   },
 ];
+
+export const DEPENDENTS: Dependent[] = DEFAULT_DEPENDENTS;
 
 export const FAMILY_MEMBERS: FamilyMember[] = [
   {

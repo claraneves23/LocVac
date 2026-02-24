@@ -1,17 +1,72 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, FlatList, Pressable, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ALERTS_BY_PROFILE, APPLICATIONS, FAMILY_MEMBERS } from './data/family';
+import { useFocusEffect } from '@react-navigation/native';
+import { ALERTS_BY_PROFILE, APPLICATIONS, MAIN_USER } from './data/family';
+import { Dependent, FamilyMember } from './types/vaccination';
+import { getDependents } from '../src/storage/dependents';
 
 export default function Index() {
   const router = useRouter();
-  const [selectedProfileId, setSelectedProfileId] = useState<string>(FAMILY_MEMBERS[0].id);
+  const [dependents, setDependents] = useState<Dependent[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>(MAIN_USER.id);
 
-  const selectedProfile = useMemo(
-    () => FAMILY_MEMBERS.find((profile) => profile.id === selectedProfileId) ?? FAMILY_MEMBERS[0],
-    [selectedProfileId]
+  const loadDependents = useCallback(async () => {
+    const stored = await getDependents();
+    setDependents(stored);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDependents();
+    }, [loadDependents])
+  );
+
+  const familyMembers = useMemo<FamilyMember[]>(
+    () => [
+      {
+        id: MAIN_USER.id,
+        userId: MAIN_USER.id,
+        name: MAIN_USER.name,
+        birthDate: MAIN_USER.birthDate,
+        sex: MAIN_USER.sex,
+        kind: 'user',
+      },
+      ...dependents.map((dependent) => ({
+        id: dependent.id,
+        userId: dependent.userId,
+        name: dependent.name,
+        birthDate: dependent.birthDate,
+        sex: dependent.sex,
+        kind: 'dependent' as const,
+        relationship: dependent.relationship,
+      })),
+    ],
+    [dependents]
+  );
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  const selectedProfile = useMemo(() => {
+    const fallback: FamilyMember = {
+      id: MAIN_USER.id,
+      userId: MAIN_USER.id,
+      name: MAIN_USER.name,
+      birthDate: MAIN_USER.birthDate,
+      sex: MAIN_USER.sex,
+      kind: 'user',
+    };
+
+    return familyMembers.find((profile) => profile.id === selectedProfileId) ?? fallback;
+  }, [familyMembers, selectedProfileId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!familyMembers.some((profile) => profile.id === selectedProfileId)) {
+        setSelectedProfileId(MAIN_USER.id);
+      }
+    }, [familyMembers, selectedProfileId])
   );
 
   const selectedApplications = useMemo(
@@ -41,37 +96,18 @@ export default function Index() {
             <Text style={styles.subtitle}>Resumo vacinal familiar</Text>
           </View>
         </View>
-        <Ionicons
-          name="notifications-outline"
-          size={24}
-          color="#000000ff"
-          style={styles.notificationsIcon}
-        />
+        <Pressable style={styles.profileSwitcher} onPress={() => setIsProfileModalOpen(true)}>
+          <View style={styles.profileBadge}>
+            <Text style={styles.profileBadgeText}>{selectedProfile.name.charAt(0)}</Text>
+          </View>
+          <Text style={styles.profileSwitcherText}>
+            {selectedProfile.kind === 'user' ? 'Você' : selectedProfile.name}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color="#29442dff" />
+        </Pressable>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.sectionTitle}>Perfis</Text>
-        <FlatList
-          horizontal
-          data={FAMILY_MEMBERS}
-          keyExtractor={(item) => item.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.dependentList}
-          renderItem={({ item }) => {
-            const isSelected = selectedProfileId === item.id;
-            return (
-              <Pressable
-                style={[styles.dependentChip, isSelected && styles.dependentChipActive]}
-                onPress={() => setSelectedProfileId(item.id)}
-              >
-                <Text style={[styles.dependentChipText, isSelected && styles.dependentChipTextActive]}>
-                  {item.kind === 'user' ? 'Você' : item.name}
-                </Text>
-              </Pressable>
-            );
-          }}
-        />
-
         <View style={styles.summaryGrid}>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Aplicadas</Text>
@@ -132,6 +168,44 @@ export default function Index() {
         </View>
       </ScrollView>
 
+      <Modal
+        visible={isProfileModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsProfileModalOpen(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setIsProfileModalOpen(false)}>
+          <Pressable style={styles.modalCard} onPress={() => null}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Selecionar perfil</Text>
+              <Pressable onPress={() => setIsProfileModalOpen(false)}>
+                <Ionicons name="close" size={18} color="#29442dff" />
+              </Pressable>
+            </View>
+            {familyMembers.map((profile) => {
+              const isSelected = profile.id === selectedProfileId;
+              return (
+                <Pressable
+                  key={profile.id}
+                  style={[styles.modalOption, isSelected && styles.modalOptionActive]}
+                  onPress={() => {
+                    setSelectedProfileId(profile.id);
+                    setIsProfileModalOpen(false);
+                  }}
+                >
+                  <View style={styles.modalOptionBadge}>
+                    <Text style={styles.modalOptionBadgeText}>{profile.name.charAt(0)}</Text>
+                  </View>
+                  <Text style={[styles.modalOptionText, isSelected && styles.modalOptionTextActive]}>
+                    {profile.kind === 'user' ? 'Você' : profile.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <StatusBar style="auto" />
     </View>
   );
@@ -145,7 +219,7 @@ const styles = StyleSheet.create({
   topContainer: {
     backgroundColor: '#ACDAD8',
     paddingHorizontal: 16,
-    paddingTop: '13%',
+    paddingTop: '10%',
     paddingBottom: 14,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
@@ -177,10 +251,91 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#35573c',
   },
-  notificationsIcon: {
+  profileSwitcher: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: '#CAE3E2',
+    borderRadius: 18,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  profileBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#29442dff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  profileSwitcherText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1f3322',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 4,
+    padding: 16,
+    gap: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f3322',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#F2F7F6',
+  },
+  modalOptionActive: {
+    backgroundColor: '#29442dff',
+  },
+  modalOptionBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#CAE3E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOptionBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1f3322',
+  },
+  modalOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f3322',
+  },
+  modalOptionTextActive: {
+    color: '#fff',
   },
   content: {
     flex: 1,
@@ -195,27 +350,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1f3322',
     marginBottom: 8,
-  },
-  dependentList: {
-    paddingBottom: 4,
-    gap: 8,
-  },
-  dependentChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    backgroundColor: '#B8DCD9',
-    borderRadius: 20,
-  },
-  dependentChipActive: {
-    backgroundColor: '#29442dff',
-  },
-  dependentChipText: {
-    fontSize: 13,
-    color: '#1f3322',
-    fontWeight: '500',
-  },
-  dependentChipTextActive: {
-    color: '#fff',
   },
   summaryGrid: {
     flexDirection: 'row',

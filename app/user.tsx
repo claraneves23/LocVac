@@ -1,9 +1,23 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { APPLICATIONS, DEPENDENTS, MAIN_USER } from './data/family';
+import { useCallback, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { APPLICATIONS, MAIN_USER } from './data/family';
+import { Dependent } from './types/vaccination';
+import { getDependents } from '../src/storage/dependents';
 
 export default function User() {
+  const router = useRouter();
+  const [dependents, setDependents] = useState<Dependent[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getDependents().then(setDependents);
+    }, [])
+  );
+
   const myVaccines = APPLICATIONS.filter((item) => item.profileId === MAIN_USER.id);
   const myApplied = myVaccines.filter((item) => item.status === 'applied').length;
   const myPending = myVaccines.filter((item) => item.status === 'pending' || item.status === 'overdue').length;
@@ -39,34 +53,20 @@ export default function User() {
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Gerenciar Dependentes</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity style={styles.addButton} onPress={() => router.push('/dependents')}>
               <Ionicons name="add" size={16} color="#fff" />
               <Text style={styles.addButtonText}>Adicionar</Text>
             </TouchableOpacity>
           </View>
-
-          {DEPENDENTS.map((dependent) => (
-            <View key={dependent.id} style={styles.dependentItem}>
-              <View style={styles.dependentIdentity}>
-                <View style={styles.dependentAvatar}>
-                  <Text style={styles.dependentInitial}>{dependent.name.charAt(0)}</Text>
-                </View>
-                <View>
-                  <Text style={styles.dependentName}>{dependent.name}</Text>
-                  <Text style={styles.dependentMeta}>{dependent.relationship} • {dependent.birthDate}</Text>
-                </View>
-              </View>
-
-              <View style={styles.dependentActions}>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.actionButtonText}>Editar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.actionButtonText}>Remover</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
+          <Text style={styles.dependentSummary}>
+            {dependents.length === 0
+              ? 'Nenhum dependente cadastrado.'
+              : `${dependents.length} dependente${dependents.length > 1 ? 's' : ''} cadastrado${dependents.length > 1 ? 's' : ''}.`}
+          </Text>
+          <TouchableOpacity style={styles.manageButton} onPress={() => router.push('/dependents')}>
+            <Text style={styles.manageButtonText}>Ver dependentes</Text>
+            <Ionicons name="chevron-forward" size={16} color="#29442dff" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.sectionCard}>
@@ -174,55 +174,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1f3322',
   },
-  dependentItem: {
-    paddingVertical: 10,
-    borderBottomWidth: 0.4,
-    borderBottomColor: '#6666662d',
+  dependentSummary: {
+    fontSize: 13,
+    color: '#607367',
   },
-  dependentIdentity: {
+  manageButton: {
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  dependentAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#B0D5D3',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dependentInitial: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#29442dff',
-  },
-  dependentName: {
+  manageButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1f3322',
-  },
-  dependentMeta: {
-    fontSize: 12,
-    color: '#607367',
-  },
-  dependentActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-    marginLeft: 44,
-  },
-  actionButton: {
-    borderWidth: 1,
-    borderColor: '#29442d55',
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  actionButtonText: {
-    fontSize: 12,
-    color: '#29442dff',
-    fontWeight: '600',
   },
   option: {
     flexDirection: 'row',
