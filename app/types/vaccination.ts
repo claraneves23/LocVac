@@ -24,6 +24,7 @@ export interface FamilyMember {
   sex: 'M' | 'F' | 'Outro';
   kind: 'user' | 'dependent';
   relationship?: string;
+  photoUri?: string;
 }
 
 export interface Vaccine {

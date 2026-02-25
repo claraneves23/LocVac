@@ -1,22 +1,57 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import * as NavigationBar from 'expo-navigation-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERTS_BY_PROFILE, APPLICATIONS, MAIN_USER } from './data/family';
 import { Dependent, FamilyMember } from './types/vaccination';
 import { getDependents } from '../src/storage/dependents';
 
+const SELECTED_PROFILE_KEY = 'selectedProfileId';
+
 export default function Index() {
   const router = useRouter();
   const [dependents, setDependents] = useState<Dependent[]>([]);
-  const [selectedProfileId, setSelectedProfileId] = useState<string>(MAIN_USER.id);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadDependents = useCallback(async () => {
     const stored = await getDependents();
     setDependents(stored);
   }, []);
+
+  // Carregar o perfil salvo ao iniciar
+  useEffect(() => {
+    const loadSavedProfile = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(SELECTED_PROFILE_KEY);
+        if (saved) {
+          setSelectedProfileId(saved);
+        } else {
+          setSelectedProfileId(MAIN_USER.id);
+        }
+      } catch (error) {
+        console.log('Erro ao carregar perfil salvo:', error);
+        setSelectedProfileId(MAIN_USER.id);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSavedProfile();
+  }, []);
+
+  // Salvar o perfil sempre que muda
+  useEffect(() => {
+    if (selectedProfileId) {
+      AsyncStorage.setItem(SELECTED_PROFILE_KEY, selectedProfileId).catch((error) => {
+        console.log('Erro ao salvar perfil:', error);
+      });
+    }
+  }, [selectedProfileId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -42,6 +77,7 @@ export default function Index() {
         sex: dependent.sex,
         kind: 'dependent' as const,
         relationship: dependent.relationship,
+        photoUri: dependent.photoUri,
       })),
     ],
     [dependents]
@@ -58,6 +94,7 @@ export default function Index() {
       kind: 'user',
     };
 
+    if (!selectedProfileId) return fallback;
     return familyMembers.find((profile) => profile.id === selectedProfileId) ?? fallback;
   }, [familyMembers, selectedProfileId]);
 
@@ -68,6 +105,29 @@ export default function Index() {
       }
     }, [familyMembers, selectedProfileId])
   );
+
+  useEffect(() => {
+    const updateSystemBars = async () => {
+      if (Platform.OS !== 'android') return;
+      
+      try {
+        if (isProfileModalOpen) {
+          // Escurece as barras do sistema quando o modal abre
+          await NavigationBar.setBackgroundColorAsync('#80000000'); // 50% preto
+          await NavigationBar.setButtonStyleAsync('light');
+          await NavigationBar.setVisibilityAsync('visible');
+        } else {
+          // Restaura as barras do sistema quando o modal fecha
+          await NavigationBar.setBackgroundColorAsync('#00FFFFFF'); // Branco transparente
+          await NavigationBar.setButtonStyleAsync('dark');
+        }
+      } catch (error) {
+        // No Expo Go, algumas APIs podem não funcionar - isso é normal
+        console.log('NavigationBar API não disponível no Expo Go');
+      }
+    };
+    updateSystemBars();
+  }, [isProfileModalOpen]);
 
   const selectedApplications = useMemo(
     () => APPLICATIONS.filter((item) => item.profileId === selectedProfile.id),
@@ -85,54 +145,56 @@ export default function Index() {
         <View style={styles.headerLeft}>
           <Image
             source={require('../assets/images/locvaclogo-trim.png')}
-            style={styles.logoIcon}
             resizeMode="contain"
+            style={styles.logoIcon}
           />
           <View>
             <Text style={styles.title}>
               <Text style={styles.titleLoc}>Loc</Text>
               <Text style={styles.titleVac}>Vac</Text>
             </Text>
-            <Text style={styles.subtitle}>Resumo vacinal familiar</Text>
+            <Text style={styles.subtitle}>Carteira Digital Familiar</Text>
           </View>
         </View>
         <Pressable style={styles.profileSwitcher} onPress={() => setIsProfileModalOpen(true)}>
           <View style={styles.profileBadge}>
-            <Text style={styles.profileBadgeText}>{selectedProfile.name.charAt(0)}</Text>
+            {selectedProfile.photoUri ? (
+              <Image source={{ uri: selectedProfile.photoUri }} style={styles.profileBadgeImage} />
+            ) : (
+              <Text style={styles.profileBadgeText}>{selectedProfile.name.charAt(0)}</Text>
+            )}
           </View>
-          <Text style={styles.profileSwitcherText}>
-            {selectedProfile.kind === 'user' ? 'Você' : selectedProfile.name}
-          </Text>
           <Ionicons name="chevron-down" size={16} color="#29442dff" />
         </Pressable>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.summaryGrid}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Aplicadas</Text>
-            <Text style={styles.summaryValue}>{appliedVaccines.length}</Text>
+      {!isLoading ? (
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Aplicadas</Text>
+              <Text style={styles.summaryValue}>{appliedVaccines.length}</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Pendentes</Text>
+              <Text style={styles.summaryValue}>{pendingVaccines.length}</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Próxima dose</Text>
+              <Text style={styles.summaryText}>{nextVaccine?.vaccineName ?? 'Sem pendências'}</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Alertas</Text>
+              <Text style={styles.summaryValue}>{activeAlerts.length}</Text>
+            </View>
           </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Pendentes</Text>
-            <Text style={styles.summaryValue}>{pendingVaccines.length}</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Próxima dose</Text>
-            <Text style={styles.summaryText}>{nextVaccine?.vaccineName ?? 'Sem pendências'}</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Alertas</Text>
-            <Text style={styles.summaryValue}>{activeAlerts.length}</Text>
-          </View>
-        </View>
 
-        <View style={styles.sectionBlock}>
-          <Text style={styles.sectionTitle}>Vacinas pendentes</Text>
-          {pendingVaccines.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma vacina pendente para este perfil.</Text>
-          ) : (
-            pendingVaccines.map((item) => (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>Vacinas pendentes</Text>
+            {pendingVaccines.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhuma vacina pendente para este perfil.</Text>
+            ) : (
+              pendingVaccines.map((item) => (
               <Pressable
                 key={item.id}
                 style={styles.listItem}
@@ -167,15 +229,24 @@ export default function Index() {
           )}
         </View>
       </ScrollView>
+      ) : (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Carregando...</Text>
+        </View>
+      )}
 
       <Modal
         visible={isProfileModalOpen}
         transparent
         animationType="fade"
+        statusBarTranslucent
+        hardwareAccelerated
         onRequestClose={() => setIsProfileModalOpen(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setIsProfileModalOpen(false)}>
-          <Pressable style={styles.modalCard} onPress={() => null}>
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsProfileModalOpen(false)} />
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Selecionar perfil</Text>
               <Pressable onPress={() => setIsProfileModalOpen(false)}>
@@ -194,7 +265,11 @@ export default function Index() {
                   }}
                 >
                   <View style={styles.modalOptionBadge}>
-                    <Text style={styles.modalOptionBadgeText}>{profile.name.charAt(0)}</Text>
+                    {profile.photoUri ? (
+                      <Image source={{ uri: profile.photoUri }} style={styles.modalOptionBadgeImage} />
+                    ) : (
+                      <Text style={styles.modalOptionBadgeText}>{profile.name.charAt(0)}</Text>
+                    )}
                   </View>
                   <Text style={[styles.modalOptionText, isSelected && styles.modalOptionTextActive]}>
                     {profile.kind === 'user' ? 'Você' : profile.name}
@@ -203,10 +278,10 @@ export default function Index() {
               );
             })}
           </Pressable>
-        </Pressable>
+        </View>
       </Modal>
 
-      <StatusBar style="auto" />
+      <StatusBar style={isProfileModalOpen ? 'light' : 'dark'} />
     </View>
   );
 }
@@ -218,7 +293,8 @@ const styles = StyleSheet.create({
   },
   topContainer: {
     backgroundColor: '#ACDAD8',
-    paddingHorizontal: 16,
+    paddingRight: 12,
+    paddingLeft: 8,
     paddingTop: '10%',
     paddingBottom: 14,
     borderBottomLeftRadius: 16,
@@ -240,7 +316,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 2,
   },
   logoIcon: {
     width: 48,
@@ -273,6 +349,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
+  profileBadgeImage: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
   profileSwitcherText: {
     fontSize: 12,
     fontWeight: '600',
@@ -280,7 +361,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -328,6 +409,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#1f3322',
+  },
+  modalOptionBadgeImage: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
   },
   modalOptionText: {
     fontSize: 14,
@@ -420,4 +506,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#66776b',
   },
-});
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#CAE3E2',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#1f3322',
+    fontWeight: '600',
+  },});

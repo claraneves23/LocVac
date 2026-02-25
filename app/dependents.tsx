@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,12 +13,16 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
+import * as NavigationBar from 'expo-navigation-bar';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import { MAIN_USER } from './data/family';
 import { Dependent } from './types/vaccination';
 import { addDependent, getDependents, removeDependent, updateDependent } from '../src/storage/dependents';
 
 const SEX_OPTIONS: Dependent['sex'][] = ['M', 'F', 'Outro'];
+const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
 
 type DraftDependent = Omit<Dependent, 'id' | 'userId'> & { id?: string };
 
@@ -25,6 +30,8 @@ export default function Dependents() {
   const navigation = useNavigation();
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
   const [draft, setDraft] = useState<DraftDependent>({
     name: '',
     birthDate: '',
@@ -32,6 +39,19 @@ export default function Dependents() {
     sex: 'M',
     photoUri: undefined,
   });
+
+  // Funções para conversão de formato de data
+  const formatDateToBR = (isoDate: string): string => {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const parseDateFromBR = (brDate: string): string => {
+    if (!brDate) return '';
+    const [day, month, year] = brDate.split('/');
+    return `${year}-${month}-${day}`;
+  };
 
   const loadDependents = useCallback(async () => {
     const stored = await getDependents();
@@ -44,6 +64,29 @@ export default function Dependents() {
     }, [loadDependents])
   );
 
+  useEffect(() => {
+    const updateSystemBars = async () => {
+      if (Platform.OS !== 'android') return;
+      
+      try {
+        if (isModalOpen) {
+          // Escurece as barras do sistema quando o modal abre
+          await NavigationBar.setBackgroundColorAsync('#80000000'); // 50% preto
+          await NavigationBar.setButtonStyleAsync('light');
+          await NavigationBar.setVisibilityAsync('visible');
+        } else {
+          // Restaura as barras do sistema quando o modal fecha
+          await NavigationBar.setBackgroundColorAsync('#00FFFFFF'); // Branco transparente
+          await NavigationBar.setButtonStyleAsync('dark');
+        }
+      } catch (error) {
+        // No Expo Go, algumas APIs podem não funcionar - isso é normal
+        console.log('NavigationBar API não disponível no Expo Go');
+      }
+    };
+    updateSystemBars();
+  }, [isModalOpen]);
+
   const resetDraft = () => {
     setDraft({
       name: '',
@@ -52,6 +95,8 @@ export default function Dependents() {
       sex: 'M',
       photoUri: undefined,
     });
+    setShowDatePicker(false);
+    setShowRelationshipPicker(false);
   };
 
   const openCreate = () => {
@@ -182,10 +227,10 @@ export default function Dependents() {
                 )}
                 <View style={styles.cardInfo}>
                   <Text style={styles.cardName}>{dependent.name}</Text>
-                  <Text style={styles.cardMeta}>
-                    {dependent.relationship} • {dependent.birthDate} • {dependent.sex}
-                  </Text>
-                </View>
+          <Text style={styles.cardMeta}>
+            {dependent.relationship} • {formatDateToBR(dependent.birthDate)} • {dependent.sex}
+          </Text>
+        </View>
               </View>
               <View style={styles.cardActions}>
                 <Pressable style={styles.actionButton} onPress={() => openEdit(dependent)}>
@@ -200,9 +245,22 @@ export default function Dependents() {
         )}
       </ScrollView>
 
-      <Modal transparent visible={isModalOpen} animationType="fade" onRequestClose={() => setIsModalOpen(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setIsModalOpen(false)}>
-          <Pressable style={styles.modalCard} onPress={() => null}>
+      <StatusBar 
+        style={isModalOpen ? 'light' : 'dark'} 
+      />
+
+      <Modal
+        visible={isModalOpen}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        hardwareAccelerated
+        onRequestClose={() => setIsModalOpen(false)}
+      >
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsModalOpen(false)} />
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>
               {draft.id ? 'Editar dependente' : 'Novo dependente'}
             </Text>
@@ -245,22 +303,74 @@ export default function Dependents() {
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Nascimento</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.birthDate}
-                onChangeText={(value) => setDraft((current) => ({ ...current, birthDate: value }))}
-                placeholder="AAAA-MM-DD"
-              />
+              <Pressable
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={draft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                  {draft.birthDate ? formatDateToBR(draft.birthDate) : 'Selecionar data'}
+                </Text>
+                <Ionicons name="calendar-outline" size={18} color="#29442dff" />
+              </Pressable>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={draft.birthDate ? new Date(draft.birthDate) : new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(_event: any, selectedDate?: Date) => {
+                    setShowDatePicker(Platform.OS === 'ios');
+                    if (selectedDate) {
+                      const dateStr = selectedDate.toISOString().split('T')[0];
+                      setDraft((current) => ({ ...current, birthDate: dateStr }));
+                    }
+                  }}
+                  maximumDate={new Date()}
+                />
+              )}
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Parentesco</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.relationship}
-                onChangeText={(value) => setDraft((current) => ({ ...current, relationship: value }))}
-                placeholder="Filho, Filha, Neto..."
-              />
+              <Pressable
+                style={styles.dateButton}
+                onPress={() => setShowRelationshipPicker(!showRelationshipPicker)}
+              >
+                <Text style={draft.relationship ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                  {draft.relationship || 'Selecionar parentesco'}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#29442dff" />
+              </Pressable>
+              {showRelationshipPicker && (
+                <View style={styles.pickerDropdown}>
+                  <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+                    {RELATIONSHIP_OPTIONS.map((option) => (
+                      <Pressable
+                        key={option}
+                        style={[
+                          styles.pickerOption,
+                          draft.relationship === option && styles.pickerOptionActive,
+                        ]}
+                        onPress={() => {
+                          setDraft((current) => ({ ...current, relationship: option }));
+                          setShowRelationshipPicker(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.pickerOptionText,
+                            draft.relationship === option && styles.pickerOptionTextActive,
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                        {draft.relationship === option && (
+                          <Ionicons name="checkmark" size={18} color="#29442dff" />
+                        )}
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -292,7 +402,7 @@ export default function Dependents() {
               </Pressable>
             </View>
           </Pressable>
-        </Pressable>
+        </View>
       </Modal>
     </View>
   );
@@ -407,7 +517,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -499,6 +609,77 @@ const styles = StyleSheet.create({
     color: '#1f3322',
   },
   sexChipTextActive: {
+    color: '#fff',
+  },
+  dateButton: {
+    backgroundColor: '#F2F7F6',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateButtonText: {
+    fontSize: 13,
+    color: '#999',
+  },
+  dateButtonTextFilled: {
+    fontSize: 13,
+    color: '#1f3322',
+  },
+  pickerDropdown: {
+    marginTop: 6,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    maxHeight: 200,
+    overflow: 'hidden',
+  },
+  pickerScroll: {
+    maxHeight: 200,
+  },
+  pickerOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F7F6',
+  },
+  pickerOptionActive: {
+    backgroundColor: '#E6F2F1',
+  },
+  pickerOptionText: {
+    fontSize: 13,
+    color: '#1f3322',
+  },
+  pickerOptionTextActive: {
+    fontWeight: '600',
+    color: '#29442dff',
+  },
+  relationshipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  relationshipChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#F2F7F6',
+  },
+  relationshipChipActive: {
+    backgroundColor: '#29442dff',
+  },
+  relationshipChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1f3322',
+  },
+  relationshipChipTextActive: {
     color: '#fff',
   },
   modalActions: {

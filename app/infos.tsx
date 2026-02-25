@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, FlatList, Image } from 'react-native';
-import { useState, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, FlatList, Image, Platform } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as NavigationBar from 'expo-navigation-bar';
 
 interface Vaccine {
   id: string;
@@ -15,6 +16,29 @@ export default function Infos() {
   const router = useRouter();
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const updateSystemBars = async () => {
+      if (Platform.OS !== 'android') return;
+      
+      try {
+        if (helpVisible) {
+          // Escurece as barras do sistema quando o modal abre
+          await NavigationBar.setBackgroundColorAsync('#80000000'); // 50% preto
+          await NavigationBar.setButtonStyleAsync('light');
+          await NavigationBar.setVisibilityAsync('visible');
+        } else {
+          // Restaura as barras do sistema quando o modal fecha
+          await NavigationBar.setBackgroundColorAsync('#00FFFFFF'); // Branco transparente
+          await NavigationBar.setButtonStyleAsync('dark');
+        }
+      } catch (error) {
+        // No Expo Go, algumas APIs podem não funcionar - isso é normal
+        console.log('NavigationBar API não disponível no Expo Go');
+      }
+    };
+    updateSystemBars();
+  }, [helpVisible]);
 
   const infoCarousel = [
     {
@@ -163,8 +187,13 @@ export default function Infos() {
         visible={helpVisible}
         transparent
         animationType="fade"
+        statusBarTranslucent
+        hardwareAccelerated
+        onRequestClose={() => setHelpVisible(false)}
       >
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
         <View style={styles.modalOverlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setHelpVisible(false)} activeOpacity={1} />
           <View style={styles.modalContent}>
             <TouchableOpacity
               style={styles.closeButton}
@@ -210,7 +239,7 @@ export default function Infos() {
         </View>
       </Modal>
 
-      <StatusBar style="auto" />
+      <StatusBar style={helpVisible ? 'light' : 'dark'} />
     </View>
   );
 }
