@@ -33,6 +33,10 @@
         "READ_MEDIA_IMAGES"
       ]
     },
+    "androidNavigationBar": {
+      "backgroundColor": "#00000000",
+      "barStyle": "dark-content"
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     },

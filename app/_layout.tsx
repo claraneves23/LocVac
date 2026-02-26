@@ -15,6 +15,8 @@ export default function Layout() {
 
     const configureNavigationBar = async () => {
       try {
+        await NavigationBar.setPositionAsync('absolute');
+        await NavigationBar.setBackgroundColorAsync('#00000000');
         await NavigationBar.setButtonStyleAsync('dark');
       } catch {
       }
