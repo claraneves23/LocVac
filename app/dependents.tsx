@@ -35,9 +35,16 @@ export default function Dependents() {
   const [draft, setDraft] = useState<DraftDependent>({
     name: '',
     birthDate: '',
+    birthPlace: '',
     relationship: '',
+    guardianName: '',
     sex: 'M',
     photoUri: undefined,
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    phone: '',
   });
 
   // Funções para conversão de formato de data
@@ -91,9 +98,16 @@ export default function Dependents() {
     setDraft({
       name: '',
       birthDate: '',
+      birthPlace: '',
       relationship: '',
+      guardianName: '',
       sex: 'M',
       photoUri: undefined,
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      phone: '',
     });
     setShowDatePicker(false);
     setShowRelationshipPicker(false);
@@ -109,9 +123,16 @@ export default function Dependents() {
       id: dependent.id,
       name: dependent.name,
       birthDate: dependent.birthDate,
+      birthPlace: dependent.birthPlace || '',
       relationship: dependent.relationship,
+      guardianName: dependent.guardianName || '',
       sex: dependent.sex,
       photoUri: dependent.photoUri,
+      address: dependent.address || '',
+      city: dependent.city || '',
+      state: dependent.state || '',
+      zipCode: dependent.zipCode || '',
+      phone: dependent.phone || '',
     });
     setIsModalOpen(true);
   };
@@ -161,9 +182,16 @@ export default function Dependents() {
         userId: MAIN_USER.id,
         name: draft.name.trim(),
         birthDate: draft.birthDate.trim(),
+        birthPlace: draft.birthPlace?.trim() || undefined,
         relationship: draft.relationship.trim(),
+        guardianName: draft.guardianName?.trim() || undefined,
         sex: draft.sex,
         photoUri: draft.photoUri,
+        address: draft.address?.trim() || undefined,
+        city: draft.city?.trim() || undefined,
+        state: draft.state?.trim() || undefined,
+        zipCode: draft.zipCode?.trim() || undefined,
+        phone: draft.phone?.trim() || undefined,
       });
       setDependents(updated);
     } else {
@@ -172,9 +200,16 @@ export default function Dependents() {
         userId: MAIN_USER.id,
         name: draft.name.trim(),
         birthDate: draft.birthDate.trim(),
+        birthPlace: draft.birthPlace?.trim() || undefined,
         relationship: draft.relationship.trim(),
+        guardianName: draft.guardianName?.trim() || undefined,
         sex: draft.sex,
         photoUri: draft.photoUri,
+        address: draft.address?.trim() || undefined,
+        city: draft.city?.trim() || undefined,
+        state: draft.state?.trim() || undefined,
+        zipCode: draft.zipCode?.trim() || undefined,
+        phone: draft.phone?.trim() || undefined,
       };
       const updated = await addDependent(newDependent);
       setDependents(updated);
@@ -260,138 +295,213 @@ export default function Dependents() {
         <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
         <View style={styles.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsModalOpen(false)} />
-          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+          <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
               {draft.id ? 'Editar dependente' : 'Novo dependente'}
             </Text>
 
-            <View style={styles.photoRow}>
-              {draft.photoUri ? (
-                <Image source={{ uri: draft.photoUri }} style={styles.photoPreview} />
-              ) : (
-                <View style={styles.photoPlaceholder}>
-                  <Ionicons name="person" size={22} color="#29442dff" />
-                </View>
-              )}
-              <View style={styles.photoActions}>
-                <Pressable style={styles.photoButton} onPress={() => handlePickImage(false)}>
-                  <Text style={styles.photoButtonText}>Galeria</Text>
-                </Pressable>
-                <Pressable style={styles.photoButton} onPress={() => handlePickImage(true)}>
-                  <Text style={styles.photoButtonText}>Camera</Text>
-                </Pressable>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.photoRow}>
                 {draft.photoUri ? (
-                  <Pressable
-                    style={[styles.photoButton, styles.photoButtonGhost]}
-                    onPress={() => setDraft((current) => ({ ...current, photoUri: undefined }))}
-                  >
-                    <Text style={styles.photoButtonText}>Remover</Text>
+                  <Image source={{ uri: draft.photoUri }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Ionicons name="person" size={22} color="#29442dff" />
+                  </View>
+                )}
+                <View style={styles.photoActions}>
+                  <Pressable style={styles.photoButton} onPress={() => handlePickImage(false)}>
+                    <Text style={styles.photoButtonText}>Galeria</Text>
                   </Pressable>
-                ) : null}
+                  <Pressable style={styles.photoButton} onPress={() => handlePickImage(true)}>
+                    <Text style={styles.photoButtonText}>Camera</Text>
+                  </Pressable>
+                  {draft.photoUri ? (
+                    <Pressable
+                      style={[styles.photoButton, styles.photoButtonGhost]}
+                      onPress={() => setDraft((current) => ({ ...current, photoUri: undefined }))}
+                    >
+                      <Text style={styles.photoButtonText}>Remover</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
-            </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Nome</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.name}
-                onChangeText={(value) => setDraft((current) => ({ ...current, name: value }))}
-                placeholder="Nome completo"
-              />
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Nascimento</Text>
-              <Pressable
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={draft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
-                  {draft.birthDate ? formatDateToBR(draft.birthDate) : 'Selecionar data'}
-                </Text>
-                <Ionicons name="calendar-outline" size={18} color="#29442dff" />
-              </Pressable>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={draft.birthDate ? new Date(draft.birthDate) : new Date()}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(_event: any, selectedDate?: Date) => {
-                    setShowDatePicker(Platform.OS === 'ios');
-                    if (selectedDate) {
-                      const dateStr = selectedDate.toISOString().split('T')[0];
-                      setDraft((current) => ({ ...current, birthDate: dateStr }));
-                    }
-                  }}
-                  maximumDate={new Date()}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Nome</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.name}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, name: value }))}
+                  placeholder="Nome completo"
                 />
-              )}
-            </View>
+              </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Parentesco</Text>
-              <Pressable
-                style={styles.dateButton}
-                onPress={() => setShowRelationshipPicker(!showRelationshipPicker)}
-              >
-                <Text style={draft.relationship ? styles.dateButtonTextFilled : styles.dateButtonText}>
-                  {draft.relationship || 'Selecionar parentesco'}
-                </Text>
-                <Ionicons name="chevron-down" size={18} color="#29442dff" />
-              </Pressable>
-              {showRelationshipPicker && (
-                <View style={styles.pickerDropdown}>
-                  <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
-                    {RELATIONSHIP_OPTIONS.map((option) => (
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Nascimento</Text>
+                <Pressable
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={draft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                    {draft.birthDate ? formatDateToBR(draft.birthDate) : 'Selecionar data'}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={18} color="#29442dff" />
+                </Pressable>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={draft.birthDate ? new Date(draft.birthDate) : new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(_event: any, selectedDate?: Date) => {
+                      setShowDatePicker(Platform.OS === 'ios');
+                      if (selectedDate) {
+                        const dateStr = selectedDate.toISOString().split('T')[0];
+                        setDraft((current) => ({ ...current, birthDate: dateStr }));
+                      }
+                    }}
+                    maximumDate={new Date()}
+                  />
+                )}
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Parentesco</Text>
+                <Pressable
+                  style={styles.dateButton}
+                  onPress={() => setShowRelationshipPicker(!showRelationshipPicker)}
+                >
+                  <Text style={draft.relationship ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                    {draft.relationship || 'Selecionar parentesco'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#29442dff" />
+                </Pressable>
+                {showRelationshipPicker && (
+                  <View style={styles.pickerDropdown}>
+                    <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+                      {RELATIONSHIP_OPTIONS.map((option) => (
+                        <Pressable
+                          key={option}
+                          style={[
+                            styles.pickerOption,
+                            draft.relationship === option && styles.pickerOptionActive,
+                          ]}
+                          onPress={() => {
+                            setDraft((current) => ({ ...current, relationship: option }));
+                            setShowRelationshipPicker(false);
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.pickerOptionText,
+                              draft.relationship === option && styles.pickerOptionTextActive,
+                            ]}
+                          >
+                            {option}
+                          </Text>
+                          {draft.relationship === option && (
+                            <Ionicons name="checkmark" size={18} color="#29442dff" />
+                          )}
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Sexo</Text>
+                <View style={styles.sexRow}>
+                  {SEX_OPTIONS.map((option) => {
+                    const isActive = draft.sex === option;
+                    return (
                       <Pressable
                         key={option}
-                        style={[
-                          styles.pickerOption,
-                          draft.relationship === option && styles.pickerOptionActive,
-                        ]}
-                        onPress={() => {
-                          setDraft((current) => ({ ...current, relationship: option }));
-                          setShowRelationshipPicker(false);
-                        }}
+                        style={[styles.sexChip, isActive && styles.sexChipActive]}
+                        onPress={() => setDraft((current) => ({ ...current, sex: option }))}
                       >
-                        <Text
-                          style={[
-                            styles.pickerOptionText,
-                            draft.relationship === option && styles.pickerOptionTextActive,
-                          ]}
-                        >
+                        <Text style={[styles.sexChipText, isActive && styles.sexChipTextActive]}>
                           {option}
                         </Text>
-                        {draft.relationship === option && (
-                          <Ionicons name="checkmark" size={18} color="#29442dff" />
-                        )}
                       </Pressable>
-                    ))}
-                  </ScrollView>
+                    );
+                  })}
                 </View>
-              )}
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Sexo</Text>
-              <View style={styles.sexRow}>
-                {SEX_OPTIONS.map((option) => {
-                  const isActive = draft.sex === option;
-                  return (
-                    <Pressable
-                      key={option}
-                      style={[styles.sexChip, isActive && styles.sexChipActive]}
-                      onPress={() => setDraft((current) => ({ ...current, sex: option }))}
-                    >
-                      <Text style={[styles.sexChipText, isActive && styles.sexChipTextActive]}>
-                        {option}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
               </View>
-            </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Local de Nascimento</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.birthPlace}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, birthPlace: value }))}
+                  placeholder="Ex: São Paulo - SP"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Nome da Mãe ou Responsável</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.guardianName}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, guardianName: value }))}
+                  placeholder="Nome do responsável"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Endereço</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.address}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, address: value }))}
+                  placeholder="Rua, número, complemento"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Município</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.city}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, city: value }))}
+                  placeholder="Nome da cidade"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Estado</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.state}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, state: value }))}
+                  placeholder="Ex: SP"
+                  maxLength={2}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>CEP</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.zipCode}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, zipCode: value }))}
+                  placeholder="00000-000"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Telefone</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.phone}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, phone: value }))}
+                  placeholder="(00) 00000-0000"
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </ScrollView>
 
             <View style={styles.modalActions}>
               <Pressable style={styles.cancelButton} onPress={() => setIsModalOpen(false)}>
@@ -401,7 +511,7 @@ export default function Dependents() {
                 <Text style={styles.saveButtonText}>Salvar</Text>
               </Pressable>
             </View>
-          </Pressable>
+          </View>
         </View>
       </Modal>
     </View>
@@ -520,20 +630,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 16,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 280,
+    maxHeight: '80%',
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    gap: 12,
+    padding: 12,
+    flexDirection: 'column',
+  },
+  modalScroll: {
+    maxHeight: '100%',
+    marginVertical: 8,
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1f3322',
+    marginBottom: 4,
   },
   photoRow: {
     flexDirection: 'row',
@@ -574,7 +690,8 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   fieldGroup: {
-    gap: 6,
+    gap: 4,
+    marginBottom: 10,
   },
   label: {
     fontSize: 12,

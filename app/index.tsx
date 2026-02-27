@@ -8,9 +8,13 @@ import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ALERTS_BY_PROFILE, MAIN_USER } from './data/family';
-import { Dependent, FamilyMember, VaccineApplication } from './types/vaccination';
+import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, Campaign } from './types/vaccination';
 import { getDependents } from '../src/storage/dependents';
 import { getVaccines, addVaccine, updateVaccine, deleteVaccine } from '../src/storage/vaccines';
+import { MANDATORY_FIRST_YEAR_VACCINES } from './data/mandatory-vaccines';
+import { getMandatoryVaccineRecordsByProfile, updateMandatoryVaccineRecord } from '../src/storage/mandatory-vaccines';
+import { getOtherVaccinesByProfile, addOtherVaccine, updateOtherVaccine, deleteOtherVaccine } from '../src/storage/other-vaccines';
+import { getCampaignsByProfile, addCampaign, updateCampaign, deleteCampaign } from '../src/storage/campaigns';
 
 // Funções auxiliares para formatação de data
 const formatDateToBR = (isoDate: string | undefined): string => {
@@ -47,13 +51,50 @@ export default function Index() {
   const [editingVaccine, setEditingVaccine] = useState<VaccineApplication | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [mandatoryVaccineRecords, setMandatoryVaccineRecords] = useState<MandatoryVaccineRecord[]>([]);
+  const [isMandatoryVaccineModalOpen, setIsMandatoryVaccineModalOpen] = useState(false);
+  const [editingMandatoryVaccine, setEditingMandatoryVaccine] = useState<{ vaccineId: string; record?: MandatoryVaccineRecord } | null>(null);
+  const [showMandatoryDatePicker, setShowMandatoryDatePicker] = useState(false);
+  const [mandatoryVaccineDate, setMandatoryVaccineDate] = useState(new Date());
+
+  // Estados para o formulário de vacina obrigatória
+  const [mandatoryIsApplied, setMandatoryIsApplied] = useState(false);
+  const [mandatoryDate, setMandatoryDate] = useState('');
+  const [mandatoryLot, setMandatoryLot] = useState('');
+  const [mandatoryCode, setMandatoryCode] = useState('');
+  const [mandatoryProfName, setMandatoryProfName] = useState('');
+  const [mandatoryProfId, setMandatoryProfId] = useState('');
+
   // Estados para o formulário de adicionar vacina
   const [newVaccineName, setNewVaccineName] = useState('');
   const [newVaccineDate, setNewVaccineDate] = useState('');
   const [newVaccineLot, setNewVaccineLot] = useState('');
   const [newVaccineHealthUnit, setNewVaccineHealthUnit] = useState('');
   const [newVaccineNotes, setNewVaccineNotes] = useState('');
+
+  // Estados para outras vacinas
+  const [otherVaccines, setOtherVaccines] = useState<OtherVaccine[]>([]);
+  const [isOtherVaccineModalOpen, setIsOtherVaccineModalOpen] = useState(false);
+  const [editingOtherVaccine, setEditingOtherVaccine] = useState<OtherVaccine | null>(null);
+  const [showOtherVaccineDatePicker, setShowOtherVaccineDatePicker] = useState(false);
+  const [otherVaccineDate, setOtherVaccineDate] = useState(new Date());
+  const [otherVaccineName, setOtherVaccineName] = useState('');
+  const [otherVaccineAppDate, setOtherVaccineAppDate] = useState('');
+  const [otherVaccineLot, setOtherVaccineLot] = useState('');
+  const [otherVaccineCode, setOtherVaccineCode] = useState('');
+  const [otherVaccineProfName, setOtherVaccineProfName] = useState('');
+  const [otherVaccineProfId, setOtherVaccineProfId] = useState('');
+
+  // Estados para campanhas
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [showCampaignDatePicker, setShowCampaignDatePicker] = useState(false);
+  const [campaignDate, setCampaignDate] = useState(new Date());
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
 
   const loadDependents = useCallback(async () => {
     const stored = await getDependents();
@@ -64,6 +105,27 @@ export default function Index() {
     const stored = await getVaccines();
     setVaccines(stored);
   }, []);
+
+  const loadMandatoryVaccineRecords = useCallback(async () => {
+    if (selectedProfileId) {
+      const records = await getMandatoryVaccineRecordsByProfile(selectedProfileId);
+      setMandatoryVaccineRecords(records);
+    }
+  }, [selectedProfileId]);
+
+  const loadOtherVaccines = useCallback(async () => {
+    if (selectedProfileId) {
+      const vaccines = await getOtherVaccinesByProfile(selectedProfileId);
+      setOtherVaccines(vaccines);
+    }
+  }, [selectedProfileId]);
+
+  const loadCampaigns = useCallback(async () => {
+    if (selectedProfileId) {
+      const campaignsData = await getCampaignsByProfile(selectedProfileId);
+      setCampaigns(campaignsData);
+    }
+  }, [selectedProfileId]);
 
   // Carregar o perfil salvo ao iniciar
   useEffect(() => {
@@ -99,7 +161,10 @@ export default function Index() {
     useCallback(() => {
       loadDependents();
       loadVaccines();
-    }, [loadDependents, loadVaccines])
+      loadMandatoryVaccineRecords();
+      loadOtherVaccines();
+      loadCampaigns();
+    }, [loadDependents, loadVaccines, loadMandatoryVaccineRecords, loadOtherVaccines, loadCampaigns])
   );
 
   const familyMembers = useMemo<FamilyMember[]>(
@@ -109,18 +174,31 @@ export default function Index() {
         userId: MAIN_USER.id,
         name: MAIN_USER.name,
         birthDate: MAIN_USER.birthDate,
+        birthPlace: MAIN_USER.birthPlace,
         sex: MAIN_USER.sex,
         kind: 'user',
+        address: MAIN_USER.address,
+        city: MAIN_USER.city,
+        state: MAIN_USER.state,
+        zipCode: MAIN_USER.zipCode,
+        phone: MAIN_USER.phone,
       },
       ...dependents.map((dependent) => ({
         id: dependent.id,
         userId: dependent.userId,
         name: dependent.name,
         birthDate: dependent.birthDate,
+        birthPlace: dependent.birthPlace,
         sex: dependent.sex,
         kind: 'dependent' as const,
         relationship: dependent.relationship,
+        guardianName: dependent.guardianName,
         photoUri: dependent.photoUri,
+        address: dependent.address,
+        city: dependent.city,
+        state: dependent.state,
+        zipCode: dependent.zipCode,
+        phone: dependent.phone,
       })),
     ],
     [dependents]
@@ -132,8 +210,14 @@ export default function Index() {
       userId: MAIN_USER.id,
       name: MAIN_USER.name,
       birthDate: MAIN_USER.birthDate,
+      birthPlace: MAIN_USER.birthPlace,
       sex: MAIN_USER.sex,
       kind: 'user',
+      address: MAIN_USER.address,
+      city: MAIN_USER.city,
+      state: MAIN_USER.state,
+      zipCode: MAIN_USER.zipCode,
+      phone: MAIN_USER.phone,
     };
 
     if (!selectedProfileId) return fallback;
@@ -254,6 +338,205 @@ export default function Index() {
     setIsAddVaccineModalOpen(false);
   };
 
+  const openImagePreview = (uri?: string) => {
+    if (!uri) return;
+    setImagePreviewUri(uri);
+    setIsImageModalOpen(true);
+  };
+
+  const openMandatoryVaccineModal = (vaccineId: string) => {
+    const existingRecord = mandatoryVaccineRecords.find((r) => r.vaccineId === vaccineId);
+    setEditingMandatoryVaccine({ vaccineId, record: existingRecord });
+  
+    if (existingRecord) {
+      setMandatoryIsApplied(existingRecord.isApplied);
+      setMandatoryDate(existingRecord.applicationDate || '');
+      setMandatoryLot(existingRecord.lot || '');
+      setMandatoryCode(existingRecord.code || '');
+      setMandatoryProfName(existingRecord.professionalName || '');
+      setMandatoryProfId(existingRecord.professionalId || '');
+      if (existingRecord.applicationDate) {
+        setMandatoryVaccineDate(parseDate(existingRecord.applicationDate));
+      }
+    } else {
+      setMandatoryIsApplied(false);
+      setMandatoryDate('');
+      setMandatoryLot('');
+      setMandatoryCode('');
+      setMandatoryProfName('');
+      setMandatoryProfId('');
+      setMandatoryVaccineDate(new Date());
+    }
+  
+    setIsMandatoryVaccineModalOpen(true);
+  };
+
+  const handleMandatoryDateChange = (event: any, date?: Date) => {
+    setShowMandatoryDatePicker(Platform.OS === 'ios');
+    if (date) {
+      setMandatoryVaccineDate(date);
+      const isoDate = date.toISOString().split('T')[0];
+      setMandatoryDate(isoDate);
+    }
+  };
+
+  const handleSaveMandatoryVaccine = async () => {
+    if (!editingMandatoryVaccine) return;
+
+    const record: MandatoryVaccineRecord = {
+      id: editingMandatoryVaccine.record?.id || `mvr-${Date.now()}`,
+      profileId: selectedProfile.id,
+      vaccineId: editingMandatoryVaccine.vaccineId,
+      isApplied: mandatoryIsApplied,
+      applicationDate: mandatoryDate || undefined,
+      lot: mandatoryLot.trim() || undefined,
+      code: mandatoryCode.trim() || undefined,
+      professionalName: mandatoryProfName.trim() || undefined,
+      professionalId: mandatoryProfId.trim() || undefined,
+    };
+
+    await updateMandatoryVaccineRecord(record);
+    await loadMandatoryVaccineRecords();
+
+    // Limpar formulário
+    setMandatoryIsApplied(false);
+    setMandatoryDate('');
+    setMandatoryLot('');
+    setMandatoryCode('');
+    setMandatoryProfName('');
+    setMandatoryProfId('');
+    setEditingMandatoryVaccine(null);
+    setIsMandatoryVaccineModalOpen(false);
+  };
+
+  // Outras Vacinas handlers
+  const openOtherVaccineModal = (vaccine?: OtherVaccine) => {
+    if (vaccine) {
+      setEditingOtherVaccine(vaccine);
+      setOtherVaccineName(vaccine.vaccineName);
+      setOtherVaccineAppDate(vaccine.applicationDate || '');
+      setOtherVaccineLot(vaccine.lot || '');
+      setOtherVaccineCode(vaccine.code || '');
+      setOtherVaccineProfName(vaccine.professionalName || '');
+      setOtherVaccineProfId(vaccine.professionalId || '');
+      if (vaccine.applicationDate) {
+        setOtherVaccineDate(parseDate(vaccine.applicationDate));
+      }
+    } else {
+      setEditingOtherVaccine(null);
+      setOtherVaccineName('');
+      setOtherVaccineAppDate('');
+      setOtherVaccineLot('');
+      setOtherVaccineCode('');
+      setOtherVaccineProfName('');
+      setOtherVaccineProfId('');
+      setOtherVaccineDate(new Date());
+    }
+    setIsOtherVaccineModalOpen(true);
+  };
+
+  const handleOtherVaccineDateChange = (event: any, date?: Date) => {
+    setShowOtherVaccineDatePicker(Platform.OS === 'ios');
+    if (date) {
+      setOtherVaccineDate(date);
+      const isoDate = date.toISOString().split('T')[0];
+      setOtherVaccineAppDate(isoDate);
+    }
+  };
+
+  const handleSaveOtherVaccine = async () => {
+    if (!otherVaccineName.trim()) return;
+
+    const vaccine: OtherVaccine = {
+      id: editingOtherVaccine?.id || `ov-${Date.now()}`,
+      profileId: selectedProfile.id,
+      vaccineName: otherVaccineName.trim(),
+      applicationDate: otherVaccineAppDate || undefined,
+      lot: otherVaccineLot.trim() || undefined,
+      code: otherVaccineCode.trim() || undefined,
+      professionalName: otherVaccineProfName.trim() || undefined,
+      professionalId: otherVaccineProfId.trim() || undefined,
+    };
+
+    if (editingOtherVaccine) {
+      await updateOtherVaccine(vaccine);
+    } else {
+      await addOtherVaccine(vaccine);
+    }
+
+    await loadOtherVaccines();
+
+    // Limpar formulário
+    setOtherVaccineName('');
+    setOtherVaccineAppDate('');
+    setOtherVaccineLot('');
+    setOtherVaccineCode('');
+    setOtherVaccineProfName('');
+    setOtherVaccineProfId('');
+    setEditingOtherVaccine(null);
+    setIsOtherVaccineModalOpen(false);
+  };
+
+  const handleDeleteOtherVaccine = async (vaccineId: string) => {
+    await deleteOtherVaccine(vaccineId);
+    await loadOtherVaccines();
+  };
+
+  // Campanhas handlers
+  const openCampaignModal = (campaign?: Campaign) => {
+    if (campaign) {
+      setEditingCampaign(campaign);
+      setCampaignName(campaign.campaignName);
+      setCampaignParticipationDate(campaign.participationDate);
+      setCampaignDate(parseDate(campaign.participationDate));
+    } else {
+      setEditingCampaign(null);
+      setCampaignName('');
+      setCampaignParticipationDate('');
+      setCampaignDate(new Date());
+    }
+    setIsCampaignModalOpen(true);
+  };
+
+  const handleCampaignDateChange = (event: any, date?: Date) => {
+    setShowCampaignDatePicker(Platform.OS === 'ios');
+    if (date) {
+      setCampaignDate(date);
+      const isoDate = date.toISOString().split('T')[0];
+      setCampaignParticipationDate(isoDate);
+    }
+  };
+
+  const handleSaveCampaign = async () => {
+    if (!campaignName.trim() || !campaignParticipationDate) return;
+
+    const campaign: Campaign = {
+      id: editingCampaign?.id || `cmp-${Date.now()}`,
+      profileId: selectedProfile.id,
+      campaignName: campaignName.trim(),
+      participationDate: campaignParticipationDate,
+    };
+
+    if (editingCampaign) {
+      await updateCampaign(campaign);
+    } else {
+      await addCampaign(campaign);
+    }
+
+    await loadCampaigns();
+
+    // Limpar formulário
+    setCampaignName('');
+    setCampaignParticipationDate('');
+    setEditingCampaign(null);
+    setIsCampaignModalOpen(false);
+  };
+
+  const handleDeleteCampaign = async (campaignId: string) => {
+    await deleteCampaign(campaignId);
+    await loadCampaigns();
+  };
+
   const selectedApplications = useMemo(
     () => vaccines.filter((item) => item.profileId === selectedProfile.id),
     [vaccines, selectedProfile.id]
@@ -281,16 +564,26 @@ export default function Index() {
             <Text style={styles.subtitle}>Carteira Digital Familiar</Text>
           </View>
         </View>
-        <Pressable style={styles.profileSwitcher} onPress={() => setIsProfileModalOpen(true)}>
-          <View style={styles.profileBadge}>
-            {selectedProfile.photoUri ? (
+        <View style={styles.profileSwitcher}>
+          {selectedProfile.photoUri ? (
+            <Pressable
+              style={styles.profileBadge}
+              onPress={() => openImagePreview(selectedProfile.photoUri)}
+            >
               <Image source={{ uri: selectedProfile.photoUri }} style={styles.profileBadgeImage} />
-            ) : (
+            </Pressable>
+          ) : (
+            <Pressable
+              style={styles.profileBadge}
+              onPress={() => setIsProfileModalOpen(true)}
+            >
               <Text style={styles.profileBadgeText}>{selectedProfile.name.charAt(0)}</Text>
-            )}
-          </View>
-          <Ionicons name="chevron-down" size={16} color="#29442dff" />
-        </Pressable>
+            </Pressable>
+          )}
+          <Pressable onPress={() => setIsProfileModalOpen(true)}>
+            <Ionicons name="chevron-down" size={16} color="#29442dff" />
+          </Pressable>
+        </View>
       </View>
 
       {!isLoading ? (
@@ -305,66 +598,89 @@ export default function Index() {
                   <Text style={styles.cardSubtitle}>Digital</Text>
                 </View>
               </View>
-              <View style={styles.cardProfileBadge}>
-                {selectedProfile.photoUri ? (
+              {selectedProfile.photoUri ? (
+                <Pressable
+                  style={styles.cardProfileBadge}
+                  onPress={() => openImagePreview(selectedProfile.photoUri)}
+                >
                   <Image source={{ uri: selectedProfile.photoUri }} style={styles.cardProfileImage} />
-                ) : (
+                </Pressable>
+              ) : (
+                <View style={styles.cardProfileBadge}>
                   <Text style={styles.cardProfileText}>{selectedProfile.name.charAt(0)}</Text>
-                )}
-              </View>
+                </View>
+              )}
             </View>
 
             <View style={styles.cardDivider} />
 
             <View style={styles.cardBody}>
+              {/* Nome conforme tipo de perfil */}
               <View style={styles.cardInfoRow}>
-                <Text style={styles.cardInfoLabel}>Nome</Text>
+                <Text style={styles.cardInfoLabel}>
+                  {selectedProfile.kind === 'dependent' ? 'Nome da Criança' : 'Nome'}
+                </Text>
                 <Text style={styles.cardInfoValue}>{selectedProfile.name}</Text>
               </View>
+
+              {/* Nome do responsável apenas para dependentes */}
+              {selectedProfile.kind === 'dependent' && selectedProfile.guardianName && (
+                <View style={styles.cardInfoRow}>
+                  <Text style={styles.cardInfoLabel}>Nome da Mãe ou Responsável</Text>
+                  <Text style={styles.cardInfoValue}>{selectedProfile.guardianName}</Text>
+                </View>
+              )}
+
+              {/* Local de nascimento */}
+              {selectedProfile.birthPlace && (
+                <View style={styles.cardInfoRow}>
+                  <Text style={styles.cardInfoLabel}>Local de Nascimento</Text>
+                  <Text style={styles.cardInfoValue}>{selectedProfile.birthPlace}</Text>
+                </View>
+              )}
+
+              {/* Data de nascimento */}
               <View style={styles.cardInfoRow}>
                 <Text style={styles.cardInfoLabel}>Data de Nascimento</Text>
                 <Text style={styles.cardInfoValue}>{formatDateToBR(selectedProfile.birthDate)}</Text>
               </View>
-              <View style={styles.cardInfoRow}>
-                <Text style={styles.cardInfoLabel}>Sexo</Text>
-                <Text style={styles.cardInfoValue}>
-                  {selectedProfile.sex === 'M' ? 'Masculino' : 'Feminino'}
-                </Text>
-              </View>
-            </View>
 
-            <View style={styles.cardDivider} />
-
-            <View style={styles.cardFooter}>
-              <View style={styles.cardStat}>
-                <Text style={styles.cardStatValue}>{appliedVaccines.length}</Text>
-                <Text style={styles.cardStatLabel}>Aplicadas</Text>
-              </View>
-              <View style={styles.cardStatDivider} />
-              <View style={styles.cardStat}>
-                <Text style={styles.cardStatValue}>{pendingVaccines.length}</Text>
-                <Text style={styles.cardStatLabel}>Pendentes</Text>
-              </View>
-              <View style={styles.cardStatDivider} />
-              <View style={styles.cardStat}>
-                <Text style={styles.cardStatValue}>{activeAlerts.length}</Text>
-                <Text style={styles.cardStatLabel}>Alertas</Text>
-              </View>
-            </View>
-
-            {nextVaccine && (
-              <>
-                <View style={styles.cardDivider} />
-                <View style={styles.cardNextVaccine}>
-                  <Ionicons name="time-outline" size={18} color="#09BEA5" />
-                  <View style={styles.cardNextVaccineInfo}>
-                    <Text style={styles.cardNextVaccineLabel}>Próxima dose</Text>
-                    <Text style={styles.cardNextVaccineValue}>{nextVaccine.vaccineName}</Text>
-                    <Text style={styles.cardNextVaccineDate}>Prevista: {formatDateToBR(nextVaccine.dueDate)}</Text>
-                  </View>
+              {/* Endereço */}
+              {selectedProfile.address && (
+                <View style={styles.cardInfoRow}>
+                  <Text style={styles.cardInfoLabel}>Endereço</Text>
+                  <Text style={styles.cardInfoValue}>{selectedProfile.address}</Text>
                 </View>
-              </>
-            )}
+              )}
+
+              {/* Município/Estado */}
+              {(selectedProfile.city || selectedProfile.state) && (
+                <View style={styles.cardInfoRow}>
+                  <Text style={styles.cardInfoLabel}>Município/Estado</Text>
+                  <Text style={styles.cardInfoValue}>
+                    {selectedProfile.city && selectedProfile.state
+                      ? `${selectedProfile.city} - ${selectedProfile.state}`
+                      : selectedProfile.city || selectedProfile.state}
+                  </Text>
+                </View>
+              )}
+
+              {/* CEP */}
+              {selectedProfile.zipCode && (
+                <View style={styles.cardInfoRow}>
+                  <Text style={styles.cardInfoLabel}>CEP</Text>
+                  <Text style={styles.cardInfoValue}>{selectedProfile.zipCode}</Text>
+                </View>
+              )}
+
+              {/* Telefone */}
+              {selectedProfile.phone && (
+                <View style={styles.cardInfoRow}>
+                  <Text style={styles.cardInfoLabel}>Telefone</Text>
+                  <Text style={styles.cardInfoValue}>{selectedProfile.phone}</Text>
+                </View>
+              )}
+            </View>
 
             <View style={styles.cardDivider} />
             
@@ -372,6 +688,173 @@ export default function Index() {
               <Ionicons name="add-circle" size={20} color="#fff" />
               <Text style={styles.addVaccineButtonText}>Registrar Vacina</Text>
             </Pressable>
+          </View>
+
+          {/* Seção de Vacinas Obrigatórias do 1º Ano */}
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>VACINAS OBRIGATÓRIAS NO 1° ANO DE VIDA</Text>
+            <View style={styles.mandatoryVaccinesContainer}>
+              {MANDATORY_FIRST_YEAR_VACCINES.map((vaccine) => {
+                const record = mandatoryVaccineRecords.find((r) => r.vaccineId === vaccine.id);
+                return (
+                  <Pressable
+                    key={vaccine.id}
+                    style={styles.mandatoryVaccineItem}
+                    onPress={() => openMandatoryVaccineModal(vaccine.id)}
+                  >
+                    <View style={styles.mandatoryVaccineHeader}>
+                      <View style={styles.mandatoryVaccineInfo}>
+                        <Text style={styles.mandatoryVaccineOrder}>{vaccine.order}.</Text>
+                        <View style={styles.mandatoryVaccineTexts}>
+                          <Text style={styles.mandatoryVaccineName}>{vaccine.name}</Text>
+                          <Text style={styles.mandatoryVaccineDesc}>{vaccine.description}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.mandatoryVaccineStatus}>
+                        {record?.isApplied ? (
+                          <Ionicons name="checkmark-circle" size={24} color="#09BEA5" />
+                        ) : (
+                          <Ionicons name="ellipse-outline" size={24} color="#9CA3AF" />
+                        )}
+                      </View>
+                    </View>
+                    {record?.isApplied && (
+                      <View style={styles.mandatoryVaccineDetails}>
+                        {record.applicationDate && (
+                          <Text style={styles.mandatoryVaccineDetail}>
+                            <Text style={styles.mandatoryVaccineDetailLabel}>Data: </Text>
+                            {formatDateToBR(record.applicationDate)}
+                          </Text>
+                        )}
+                        {record.lot && (
+                          <Text style={styles.mandatoryVaccineDetail}>
+                            <Text style={styles.mandatoryVaccineDetailLabel}>Lote: </Text>
+                            {record.lot}
+                          </Text>
+                        )}
+                        {record.professionalName && (
+                          <Text style={styles.mandatoryVaccineDetail}>
+                            <Text style={styles.mandatoryVaccineDetailLabel}>Profissional: </Text>
+                            {record.professionalName}
+                          </Text>
+                        )}
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Seção de Outras Vacinas */}
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>OUTRAS VACINAS</Text>
+              <Pressable
+                style={styles.addButton}
+                onPress={() => openOtherVaccineModal()}
+              >
+                <Ionicons name="add-circle" size={24} color="#09BEA5" />
+              </Pressable>
+            </View>
+            {otherVaccines.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhuma vacina adicional registrada.</Text>
+            ) : (
+              <View style={styles.mandatoryVaccinesContainer}>
+                {otherVaccines.map((vaccine) => (
+                  <Pressable
+                    key={vaccine.id}
+                    style={styles.mandatoryVaccineItem}
+                    onPress={() => openOtherVaccineModal(vaccine)}
+                  >
+                    <View style={styles.mandatoryVaccineHeader}>
+                      <View style={styles.mandatoryVaccineInfo}>
+                        <View style={styles.mandatoryVaccineTexts}>
+                          <Text style={styles.mandatoryVaccineName}>{vaccine.vaccineName}</Text>
+                          {vaccine.applicationDate && (
+                            <Text style={styles.mandatoryVaccineDesc}>
+                              Aplicada em {formatDateToBR(vaccine.applicationDate)}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <Pressable
+                        onPress={() => handleDeleteOtherVaccine(vaccine.id)}
+                        style={styles.deleteButton}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                      </Pressable>
+                    </View>
+                    {vaccine.applicationDate && (
+                      <View style={styles.mandatoryVaccineDetails}>
+                        {vaccine.lot && (
+                          <Text style={styles.mandatoryVaccineDetail}>
+                            <Text style={styles.mandatoryVaccineDetailLabel}>Lote: </Text>
+                            {vaccine.lot}
+                          </Text>
+                        )}
+                        {vaccine.code && (
+                          <Text style={styles.mandatoryVaccineDetail}>
+                            <Text style={styles.mandatoryVaccineDetailLabel}>Código: </Text>
+                            {vaccine.code}
+                          </Text>
+                        )}
+                        {vaccine.professionalName && (
+                          <Text style={styles.mandatoryVaccineDetail}>
+                            <Text style={styles.mandatoryVaccineDetailLabel}>Profissional: </Text>
+                            {vaccine.professionalName}
+                            {vaccine.professionalId && ` (${vaccine.professionalId})`}
+                          </Text>
+                        )}
+                      </View>
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Seção de Campanhas */}
+          <View style={styles.sectionBlock}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>CAMPANHAS</Text>
+              <Pressable
+                style={styles.addButton}
+                onPress={() => openCampaignModal()}
+              >
+                <Ionicons name="add-circle" size={24} color="#09BEA5" />
+              </Pressable>
+            </View>
+            {campaigns.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhuma campanha registrada.</Text>
+            ) : (
+              <View style={styles.mandatoryVaccinesContainer}>
+                {campaigns.map((campaign) => (
+                  <Pressable
+                    key={campaign.id}
+                    style={styles.mandatoryVaccineItem}
+                    onPress={() => openCampaignModal(campaign)}
+                  >
+                    <View style={styles.mandatoryVaccineHeader}>
+                      <View style={styles.mandatoryVaccineInfo}>
+                        <View style={styles.mandatoryVaccineTexts}>
+                          <Text style={styles.mandatoryVaccineName}>{campaign.campaignName}</Text>
+                          <Text style={styles.mandatoryVaccineDesc}>
+                            Participação em {formatDateToBR(campaign.participationDate)}
+                          </Text>
+                        </View>
+                      </View>
+                      <Pressable
+                        onPress={() => handleDeleteCampaign(campaign.id)}
+                        style={styles.deleteButton}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                      </Pressable>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
 
           <View style={styles.sectionBlock}>
@@ -536,6 +1019,321 @@ export default function Index() {
       </Modal>
 
       <Modal
+        visible={isMandatoryVaccineModalOpen}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        hardwareAccelerated
+        onRequestClose={() => setIsMandatoryVaccineModalOpen(false)}
+      >
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsMandatoryVaccineModalOpen(false)} />
+          <View style={styles.addVaccineModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingMandatoryVaccine && 
+                  MANDATORY_FIRST_YEAR_VACCINES.find((v) => v.id === editingMandatoryVaccine.vaccineId)?.name
+                }
+              </Text>
+              <Pressable onPress={() => setIsMandatoryVaccineModalOpen(false)}>
+                <Ionicons name="close" size={18} color="#29442dff" />
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.formField}>
+                <View style={styles.checkboxField}>
+                  <Pressable
+                    style={styles.checkbox}
+                    onPress={() => setMandatoryIsApplied(!mandatoryIsApplied)}
+                  >
+                    {mandatoryIsApplied && (
+                      <Ionicons name="checkmark" size={16} color="#09BEA5" />
+                    )}
+                  </Pressable>
+                  <Text style={styles.checkboxLabel}>Vacina aplicada</Text>
+                </View>
+              </View>
+
+              {mandatoryIsApplied && (
+                <>
+                  <View style={styles.formField}>
+                    <Text style={styles.formLabel}>Data de Aplicação</Text>
+                    <Pressable
+                      style={styles.datePickerButton}
+                      onPress={() => setShowMandatoryDatePicker(true)}
+                    >
+                      <Ionicons name="calendar-outline" size={18} color="#1f3322" />
+                      <Text style={styles.datePickerText}>
+                        {mandatoryDate ? formatDateToBR(mandatoryDate) : 'Selecione a data'}
+                      </Text>
+                    </Pressable>
+                    {showMandatoryDatePicker && (
+                      <DateTimePicker
+                        value={mandatoryVaccineDate}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={handleMandatoryDateChange}
+                        maximumDate={new Date()}
+                        locale="pt-BR"
+                      />
+                    )}
+                  </View>
+
+                  <View style={styles.formField}>
+                    <Text style={styles.formLabel}>Lote</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Número do lote"
+                      placeholderTextColor="#9CA3AF"
+                      value={mandatoryLot}
+                      onChangeText={setMandatoryLot}
+                    />
+                  </View>
+
+                  <View style={styles.formField}>
+                    <Text style={styles.formLabel}>Código</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Código"
+                      placeholderTextColor="#9CA3AF"
+                      value={mandatoryCode}
+                      onChangeText={setMandatoryCode}
+                    />
+                  </View>
+
+                  <View style={styles.formField}>
+                    <Text style={styles.formLabel}>Nome do Profissional</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Nome completo"
+                      placeholderTextColor="#9CA3AF"
+                      value={mandatoryProfName}
+                      onChangeText={setMandatoryProfName}
+                    />
+                  </View>
+
+                  <View style={styles.formField}>
+                    <Text style={styles.formLabel}>RG do Profissional</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="RG"
+                      placeholderTextColor="#9CA3AF"
+                      value={mandatoryProfId}
+                      onChangeText={setMandatoryProfId}
+                    />
+                  </View>
+                </>
+              )}
+            </ScrollView>
+
+            <View style={styles.formActions}>
+              <Pressable
+                style={styles.cancelButton}
+                onPress={() => setIsMandatoryVaccineModalOpen(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </Pressable>
+              <Pressable style={styles.saveButton} onPress={handleSaveMandatoryVaccine}>
+                <Text style={styles.saveButtonText}>Salvar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Outras Vacinas */}
+      <Modal
+        visible={isOtherVaccineModalOpen}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        hardwareAccelerated
+        onRequestClose={() => setIsOtherVaccineModalOpen(false)}
+      >
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsOtherVaccineModalOpen(false)} />
+          <View style={styles.addVaccineModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingOtherVaccine ? 'Editar Vacina' : 'Adicionar Vacina'}
+              </Text>
+              <Pressable onPress={() => setIsOtherVaccineModalOpen(false)}>
+                <Ionicons name="close" size={18} color="#29442dff" />
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Nome da Vacina *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Ex: Vacina da Gripe"
+                  placeholderTextColor="#9CA3AF"
+                  value={otherVaccineName}
+                  onChangeText={setOtherVaccineName}
+                />
+              </View>
+
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Data de Aplicação</Text>
+                <Pressable
+                  style={styles.datePickerButton}
+                  onPress={() => setShowOtherVaccineDatePicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={18} color="#1f3322" />
+                  <Text style={styles.datePickerText}>
+                    {otherVaccineAppDate ? formatDateToBR(otherVaccineAppDate) : 'Selecione a data'}
+                  </Text>
+                </Pressable>
+                {showOtherVaccineDatePicker && (
+                  <DateTimePicker
+                    value={otherVaccineDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleOtherVaccineDateChange}
+                    maximumDate={new Date()}
+                    locale="pt-BR"
+                  />
+                )}
+              </View>
+
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Lote</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Número do lote"
+                  placeholderTextColor="#9CA3AF"
+                  value={otherVaccineLot}
+                  onChangeText={setOtherVaccineLot}
+                />
+              </View>
+
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Código</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Código"
+                  placeholderTextColor="#9CA3AF"
+                  value={otherVaccineCode}
+                  onChangeText={setOtherVaccineCode}
+                />
+              </View>
+
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Nome do Profissional</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Nome completo"
+                  placeholderTextColor="#9CA3AF"
+                  value={otherVaccineProfName}
+                  onChangeText={setOtherVaccineProfName}
+                />
+              </View>
+
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>RG do Profissional</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="RG"
+                  placeholderTextColor="#9CA3AF"
+                  value={otherVaccineProfId}
+                  onChangeText={setOtherVaccineProfId}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.formActions}>
+              <Pressable
+                style={styles.cancelButton}
+                onPress={() => setIsOtherVaccineModalOpen(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </Pressable>
+              <Pressable style={styles.saveButton} onPress={handleSaveOtherVaccine}>
+                <Text style={styles.saveButtonText}>Salvar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Campanhas */}
+      <Modal
+        visible={isCampaignModalOpen}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        hardwareAccelerated
+        onRequestClose={() => setIsCampaignModalOpen(false)}
+      >
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsCampaignModalOpen(false)} />
+          <View style={styles.addVaccineModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingCampaign ? 'Editar Campanha' : 'Adicionar Campanha'}
+              </Text>
+              <Pressable onPress={() => setIsCampaignModalOpen(false)}>
+                <Ionicons name="close" size={18} color="#29442dff" />
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Nome da Campanha *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Ex: Campanha de Vacinação contra COVID-19"
+                  placeholderTextColor="#9CA3AF"
+                  value={campaignName}
+                  onChangeText={setCampaignName}
+                />
+              </View>
+
+              <View style={styles.formField}>
+                <Text style={styles.formLabel}>Data de Participação *</Text>
+                <Pressable
+                  style={styles.datePickerButton}
+                  onPress={() => setShowCampaignDatePicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={18} color="#1f3322" />
+                  <Text style={styles.datePickerText}>
+                    {campaignParticipationDate ? formatDateToBR(campaignParticipationDate) : 'Selecione a data'}
+                  </Text>
+                </Pressable>
+                {showCampaignDatePicker && (
+                  <DateTimePicker
+                    value={campaignDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleCampaignDateChange}
+                    maximumDate={new Date()}
+                    locale="pt-BR"
+                  />
+                )}
+              </View>
+            </ScrollView>
+
+            <View style={styles.formActions}>
+              <Pressable
+                style={styles.cancelButton}
+                onPress={() => setIsCampaignModalOpen(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </Pressable>
+              <Pressable style={styles.saveButton} onPress={handleSaveCampaign}>
+                <Text style={styles.saveButtonText}>Salvar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={isAddVaccineModalOpen}
         transparent
         animationType="slide"
@@ -546,7 +1344,7 @@ export default function Index() {
         <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
         <View style={styles.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsAddVaccineModalOpen(false)} />
-          <Pressable style={styles.addVaccineModal} onPress={(e) => e.stopPropagation()}>
+          <View style={styles.addVaccineModal}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {editingVaccine ? 'Editar Vacina' : 'Registrar Vacina'}
@@ -626,24 +1424,53 @@ export default function Index() {
                   textAlignVertical="top"
                 />
               </View>
-
-              <View style={styles.formActions}>
-                <Pressable
-                  style={styles.cancelButton}
-                  onPress={() => setIsAddVaccineModalOpen(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancelar</Text>
-                </Pressable>
-                <Pressable style={styles.saveButton} onPress={handleAddVaccine}>
-                  <Text style={styles.saveButtonText}>Salvar</Text>
-                </Pressable>
-              </View>
             </ScrollView>
-          </Pressable>
+
+            <View style={styles.formActions}>
+              <Pressable
+                style={styles.cancelButton}
+                onPress={() => setIsAddVaccineModalOpen(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </Pressable>
+              <Pressable style={styles.saveButton} onPress={handleAddVaccine}>
+                <Text style={styles.saveButtonText}>Salvar</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       </Modal>
 
-      <StatusBar style={isProfileModalOpen || isAddVaccineModalOpen ? 'light' : 'dark'} />
+      <Modal
+        visible={isImageModalOpen}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        hardwareAccelerated
+        onRequestClose={() => setIsImageModalOpen(false)}
+      >
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.75)" translucent />
+        <View style={styles.imageModalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsImageModalOpen(false)} />
+          <View style={styles.imageModalCard}>
+            <Pressable
+              style={styles.imageCloseButton}
+              onPress={() => setIsImageModalOpen(false)}
+            >
+              <Ionicons name="close" size={20} color="#fff" />
+            </Pressable>
+            {imagePreviewUri && (
+              <Image
+                source={{ uri: imagePreviewUri }}
+                style={styles.imagePreview}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      <StatusBar style={isProfileModalOpen || isAddVaccineModalOpen || isImageModalOpen || isMandatoryVaccineModalOpen || isOtherVaccineModalOpen || isCampaignModalOpen ? 'light' : 'dark'} />
     </View>
   );
 }
@@ -726,15 +1553,42 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 16,
+  },
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 280,
+    maxHeight: '80%',
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     gap: 8,
+    flexDirection: 'column',
+  },
+  imageModalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 360,
+    borderRadius: 12,
+    backgroundColor: '#111',
+  },
+  imageCloseButton: {
+    alignSelf: 'flex-end',
+    padding: 6,
+    marginBottom: 6,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -798,6 +1652,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1f3322',
     marginBottom: 8,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  addButton: {
+    padding: 4,
+  },
+  deleteButton: {
+    padding: 8,
   },
   vaccinationCard: {
     backgroundColor: '#fff',
@@ -947,23 +1813,25 @@ const styles = StyleSheet.create({
   },
   addVaccineModal: {
     width: '100%',
-    maxWidth: 400,
-    maxHeight: '80%',
+    maxWidth: 320,
+    maxHeight: '70%',
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 20,
+    padding: 12,
+    flexDirection: 'column',
   },
   formScroll: {
-    marginTop: 8,
+    maxHeight: '100%',
+    marginVertical: 8,
   },
   formField: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   formLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#1f3322',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   formInput: {
     backgroundColor: '#F2F7F6',
@@ -1115,4 +1983,83 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1f3322',
     fontWeight: '600',
-  },});
+  },
+  mandatoryVaccinesContainer: {
+    gap: 6,
+  },
+  mandatoryVaccineItem: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 4,
+  },
+  mandatoryVaccineHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mandatoryVaccineInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    flex: 1,
+  },
+  mandatoryVaccineOrder: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#66776b',
+    minWidth: 24,
+  },
+  mandatoryVaccineTexts: {
+    flex: 1,
+  },
+  mandatoryVaccineName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1f3322',
+    marginBottom: 2,
+  },
+  mandatoryVaccineDesc: {
+    fontSize: 12,
+    color: '#66776b',
+  },
+  mandatoryVaccineStatus: {
+    marginLeft: 8,
+  },
+  mandatoryVaccineDetails: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E8EEE8',
+    gap: 4,
+    paddingLeft: 34,
+  },
+  mandatoryVaccineDetail: {
+    fontSize: 12,
+    color: '#66776b',
+  },
+  mandatoryVaccineDetailLabel: {
+    fontWeight: '600',
+    color: '#1f3322',
+  },
+  checkboxField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#09BEA5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F2F7F6',
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f3322',
+  },
+});
