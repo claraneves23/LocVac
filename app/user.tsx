@@ -19,7 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as NavigationBar from 'expo-navigation-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { APPLICATIONS, MAIN_USER } from './data/family';
+import { MAIN_USER } from './data/family';
 import { Dependent } from './types/vaccination';
 import { getDependents, addDependent, updateDependent, removeDependent } from '../src/storage/dependents';
 
@@ -225,10 +225,6 @@ export default function User() {
     ]);
   };
 
-  const myVaccines = APPLICATIONS.filter((item) => item.profileId === MAIN_USER.id);
-  const myApplied = myVaccines.filter((item) => item.status === 'applied').length;
-  const myPending = myVaccines.filter((item) => item.status === 'pending' || item.status === 'overdue').length;
-
   return (
     <View style={styles.container}>
       <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
@@ -240,19 +236,6 @@ export default function User() {
             <Text style={styles.name}>{MAIN_USER.name}</Text>
             <Text style={styles.subtitle}>Titular da conta</Text>
             <Text style={styles.subtitle}>{MAIN_USER.email}</Text>
-          </View>
-        </View>
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Minhas Vacinas</Text>
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Aplicadas</Text>
-              <Text style={styles.summaryValue}>{myApplied}</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Pendentes</Text>
-              <Text style={styles.summaryValue}>{myPending}</Text>
-            </View>
           </View>
         </View>
 
@@ -619,26 +602,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  summaryItem: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  summaryLabel: {
-    fontSize: 11,
-    color: '#607367',
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f3322',
-  },
+
   dependentSummary: {
     fontSize: 13,
     color: '#607367',

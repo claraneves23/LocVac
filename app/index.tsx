@@ -692,7 +692,7 @@ export default function Index() {
 
           {/* Seção de Vacinas Obrigatórias do 1º Ano */}
           <View style={styles.sectionBlock}>
-            <Text style={styles.sectionTitle}>VACINAS OBRIGATÓRIAS NO 1° ANO DE VIDA</Text>
+            <Text style={styles.sectionTitle}>VACINAS DO 1° ANO DE VIDA</Text>
             <View style={styles.mandatoryVaccinesContainer}>
               {MANDATORY_FIRST_YEAR_VACCINES.map((vaccine) => {
                 const record = mandatoryVaccineRecords.find((r) => r.vaccineId === vaccine.id);
@@ -704,7 +704,6 @@ export default function Index() {
                   >
                     <View style={styles.mandatoryVaccineHeader}>
                       <View style={styles.mandatoryVaccineInfo}>
-                        <Text style={styles.mandatoryVaccineOrder}>{vaccine.order}.</Text>
                         <View style={styles.mandatoryVaccineTexts}>
                           <Text style={styles.mandatoryVaccineName}>{vaccine.name}</Text>
                           <Text style={styles.mandatoryVaccineDesc}>{vaccine.description}</Text>
@@ -1649,7 +1648,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    paddingTop: 12,
+    paddingLeft: 4,
+    fontWeight: '900',
     color: '#1f3322',
     marginBottom: 8,
   },
@@ -1992,6 +1993,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     marginBottom: 4,
+    minHeight: 64,
+    justifyContent: 'center',
   },
   mandatoryVaccineHeader: {
     flexDirection: 'row',
@@ -2004,12 +2007,7 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
   },
-  mandatoryVaccineOrder: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#66776b',
-    minWidth: 24,
-  },
+
   mandatoryVaccineTexts: {
     flex: 1,
   },
@@ -2032,7 +2030,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E8EEE8',
     gap: 4,
-    paddingLeft: 34,
+    paddingLeft: 0,
   },
   mandatoryVaccineDetail: {
     fontSize: 12,
