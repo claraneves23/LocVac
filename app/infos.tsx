@@ -66,13 +66,13 @@ export default function Infos() {
 
   const vaccines: Vaccine[] = [
     { id: '1', name: 'BCG', icon: 'shield-checkmark-outline' },
-    { id: '2', name: 'Hepatite B', icon: 'shield-checkmark-outline' },
-    { id: '3', name: 'Poliomielite', icon: 'shield-checkmark-outline' },
-    { id: '4', name: 'Tríplice (DPT)', icon: 'shield-checkmark-outline' },
     { id: '5', name: 'Febre Amarela', icon: 'shield-checkmark-outline' },
+    { id: '2', name: 'Hepatite B', icon: 'shield-checkmark-outline' },
     { id: '6', name: 'Meningocócica', icon: 'shield-checkmark-outline' },
     { id: '7', name: 'Pneumocócica', icon: 'shield-checkmark-outline' },
+    { id: '3', name: 'Poliomielite', icon: 'shield-checkmark-outline' },
     { id: '8', name: 'Rotavírus', icon: 'shield-checkmark-outline' },
+    { id: '4', name: 'Tríplice (DPT)', icon: 'shield-checkmark-outline' },
   ];
 
   const handleVaccinePress = (vaccine: Vaccine) => {

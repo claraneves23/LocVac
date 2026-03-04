@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
   optionsContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 20
   },
   sectionCard: {
     backgroundColor: '#ffffffcc',
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 8,
     borderBottomEndRadius: 0.2,
     borderBottomWidth: 0.4,
     borderBottomColor: '#6666662d',
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   optionNoBorder: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 8,
   },
   icon: {
     marginRight: 15,

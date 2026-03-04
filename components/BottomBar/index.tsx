@@ -25,10 +25,10 @@ export const BottomBar = () => {
     iconActive: 'map',
   },
   {
-    name: 'Buscar',
+    name: 'Histórico',
     route: '/search',
-    icon: 'search-outline',
-    iconActive: 'search',
+    icon: 'time-outline',
+    iconActive: 'time',
   },
   {
     name: 'Informações',
