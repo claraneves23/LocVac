@@ -22,4 +22,40 @@ public class VacinaSecaoInformativa {
 
         @Column(name = "ordem_exibicao")
         private Integer ordemExibicao;
+
+        public void setInformativo(VacinaInformativo informativo) {
+                this.informativo = informativo;
+        }
+
+        public void setTituloSecao(String tituloSecao) {
+                this.tituloSecao = tituloSecao;
+        }
+
+        public void setConteudo(String conteudo) {
+                this.conteudo = conteudo;
+        }
+
+        public void setOrdemExibicao(Integer ordemExibicao) {
+                this.ordemExibicao = ordemExibicao;
+        }
+
+        public String getId() {
+                return id;
+        }
+
+        public VacinaInformativo getInformativo() {
+                return informativo;
+        }
+
+        public String getTituloSecao() {
+                return tituloSecao;
+        }
+
+        public String getConteudo() {
+                return conteudo;
+        }
+
+        public Integer getOrdemExibicao() {
+                return ordemExibicao;
+        }
 }

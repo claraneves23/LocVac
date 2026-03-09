@@ -23,10 +23,10 @@ public class VacinaInformativo {
         @Column(name = "data_publicacao", nullable = false)
         private LocalDate dataPublicacao;
 
-        @Column(name = "orgao_emissor")
+        @Column(name = "orgao_emissor", nullable = false)
         private String orgaoEmissor;
 
-        @Column(name = "fonte_referencia")
+        @Column(name = "fonte_referencia", nullable = false)
         private String fonteReferencia;
 
         @Column(name = "ativa", nullable = false)
@@ -35,4 +35,63 @@ public class VacinaInformativo {
         @OneToMany(mappedBy = "informativo", fetch = FetchType.LAZY)
         private List<VacinaSecaoInformativa> secoes;
 
+        public void setVacina(Vacina vacina) {
+                this.vacina = vacina;
+        }
+
+        public void setVersao(Integer versao) {
+                this.versao = versao;
+        }
+
+        public void setDataPublicacao(LocalDate dataPublicacao) {
+                this.dataPublicacao = dataPublicacao;
+        }
+
+        public void setOrgaoEmissor(String orgaoEmissor) {
+                this.orgaoEmissor = orgaoEmissor;
+        }
+
+        public void setFonteReferencia(String fonteReferencia) {
+                this.fonteReferencia = fonteReferencia;
+        }
+
+        public void setAtiva(boolean ativa) {
+                this.ativa = ativa;
+        }
+
+        public void setSecoes(List<VacinaSecaoInformativa> secoes) {
+                this.secoes = secoes;
+        }
+
+        public String getId() {
+                return id;
+        }
+
+        public Vacina getVacina() {
+                return vacina;
+        }
+
+        public Integer getVersao() {
+                return versao;
+        }
+
+        public LocalDate getDataPublicacao() {
+                return dataPublicacao;
+        }
+
+        public String getOrgaoEmissor() {
+                return orgaoEmissor;
+        }
+
+        public String getFonteReferencia() {
+                return fonteReferencia;
+        }
+
+        public boolean isAtiva() {
+                return ativa;
+        }
+
+        public List<VacinaSecaoInformativa> getSecoes() {
+                return secoes;
+        }
 }
