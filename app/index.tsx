@@ -684,64 +684,81 @@ export default function Index() {
 
             <View style={styles.cardDivider} />
             
-            <Pressable style={styles.addVaccineButton} onPress={openAddVaccineModal}>
-              <Ionicons name="add-circle" size={20} color="#fff" />
-              <Text style={styles.addVaccineButtonText}>Registrar Vacina</Text>
-            </Pressable>
+            {/* Botão removido */}
           </View>
 
           {/* Seção de Vacinas Obrigatórias do 1º Ano */}
           <View style={styles.sectionBlock}>
             <Text style={styles.sectionTitle}>VACINAS DO 1° ANO DE VIDA</Text>
             <View style={styles.mandatoryVaccinesContainer}>
-              {MANDATORY_FIRST_YEAR_VACCINES.map((vaccine) => {
-                const record = mandatoryVaccineRecords.find((r) => r.vaccineId === vaccine.id);
-                return (
-                  <Pressable
-                    key={vaccine.id}
-                    style={styles.mandatoryVaccineItem}
-                    onPress={() => openMandatoryVaccineModal(vaccine.id)}
-                  >
-                    <View style={styles.mandatoryVaccineHeader}>
-                      <View style={styles.mandatoryVaccineInfo}>
-                        <View style={styles.mandatoryVaccineTexts}>
-                          <Text style={styles.mandatoryVaccineName}>{vaccine.name}</Text>
-                          <Text style={styles.mandatoryVaccineDesc}>{vaccine.description}</Text>
+              {(() => {
+                let canShow = true;
+                let lastAvailableIdx = -1;
+                // Descobre o último item não aplicado
+                for (let i = 0; i < MANDATORY_FIRST_YEAR_VACCINES.length; i++) {
+                  const v = MANDATORY_FIRST_YEAR_VACCINES[i];
+                  const rec = mandatoryVaccineRecords.find((r) => r.vaccineId === v.id);
+                  if (!rec?.isApplied && lastAvailableIdx === -1) {
+                    lastAvailableIdx = i;
+                    break;
+                  }
+                }
+                return MANDATORY_FIRST_YEAR_VACCINES.map((vaccine, idx) => {
+                  const record = mandatoryVaccineRecords.find((r) => r.vaccineId === vaccine.id);
+                  // Só mostra se pode ou se já foi aplicada
+                  if (!canShow && !record?.isApplied) return null;
+                  const isLastAvailable = idx === lastAvailableIdx;
+                  const element = (
+                    <Pressable
+                      key={vaccine.id}
+                      style={styles.mandatoryVaccineItem}
+                      onPress={() => isLastAvailable ? openMandatoryVaccineModal(vaccine.id) : undefined}
+                      disabled={!isLastAvailable}
+                    >
+                      <View style={styles.mandatoryVaccineHeader}>
+                        <View style={styles.mandatoryVaccineInfo}>
+                          <View style={styles.mandatoryVaccineTexts}>
+                            <Text style={styles.mandatoryVaccineName}>{vaccine.name}</Text>
+                            <Text style={styles.mandatoryVaccineDesc}>{vaccine.description}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.mandatoryVaccineStatus}>
+                          {record?.isApplied ? (
+                            <Ionicons name="checkmark-circle" size={24} color="#09BEA5" />
+                          ) : (
+                            <Ionicons name="ellipse-outline" size={24} color="#9CA3AF" />
+                          )}
                         </View>
                       </View>
-                      <View style={styles.mandatoryVaccineStatus}>
-                        {record?.isApplied ? (
-                          <Ionicons name="checkmark-circle" size={24} color="#09BEA5" />
-                        ) : (
-                          <Ionicons name="ellipse-outline" size={24} color="#9CA3AF" />
-                        )}
-                      </View>
-                    </View>
-                    {record?.isApplied && (
-                      <View style={styles.mandatoryVaccineDetails}>
-                        {record.applicationDate && (
-                          <Text style={styles.mandatoryVaccineDetail}>
-                            <Text style={styles.mandatoryVaccineDetailLabel}>Data: </Text>
-                            {formatDateToBR(record.applicationDate)}
-                          </Text>
-                        )}
-                        {record.lot && (
-                          <Text style={styles.mandatoryVaccineDetail}>
-                            <Text style={styles.mandatoryVaccineDetailLabel}>Lote: </Text>
-                            {record.lot}
-                          </Text>
-                        )}
-                        {record.professionalName && (
-                          <Text style={styles.mandatoryVaccineDetail}>
-                            <Text style={styles.mandatoryVaccineDetailLabel}>Profissional: </Text>
-                            {record.professionalName}
-                          </Text>
-                        )}
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
+                      {record?.isApplied && (
+                        <View style={styles.mandatoryVaccineDetails}>
+                          {record.applicationDate && (
+                            <Text style={styles.mandatoryVaccineDetail}>
+                              <Text style={styles.mandatoryVaccineDetailLabel}>Data: </Text>
+                              {formatDateToBR(record.applicationDate)}
+                            </Text>
+                          )}
+                          {record.lot && (
+                            <Text style={styles.mandatoryVaccineDetail}>
+                              <Text style={styles.mandatoryVaccineDetailLabel}>Lote: </Text>
+                              {record.lot}
+                            </Text>
+                          )}
+                          {record.professionalName && (
+                            <Text style={styles.mandatoryVaccineDetail}>
+                              <Text style={styles.mandatoryVaccineDetailLabel}>Profissional: </Text>
+                              {record.professionalName}
+                            </Text>
+                          )}
+                        </View>
+                      )}
+                    </Pressable>
+                  );
+                  // Se não foi aplicada, bloqueia as próximas
+                  if (!record?.isApplied) canShow = false;
+                  return element;
+                });
+              })()}
             </View>
           </View>
 
