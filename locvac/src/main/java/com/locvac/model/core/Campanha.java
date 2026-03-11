@@ -15,18 +15,82 @@ public class Campanha {
     @Column(nullable = false)
     private String nome;
 
-    @Column(name = "doenca_alvo")
+    @Column(name = "doenca_alvo", nullable = false)
     private String doencaAlvo;
 
     @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
 
-    @Column(name = "data_fim")
+    @Column(name = "data_fim", nullable = false)
     private LocalDate dataFim;
 
-    @Column(name = "publico_alvo")
+    @Column(name = "publico_alvo", nullable = false)
     private String publicoAlvo;
 
     @Column(nullable = false)
+    //trocar para Boolean dps
     private boolean ativa;
+
+    public Campanha() {}
+
+    public Campanha(String nome, String doencaAlvo, LocalDate dataInicio, LocalDate dataFim, String publicoAlvo, boolean ativa) {
+        this.nome = nome;
+        this.doencaAlvo = doencaAlvo;
+        this.dataInicio = dataInicio;
+        this.dataFim = dataFim;
+        this.publicoAlvo = publicoAlvo;
+        this.ativa = ativa;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public void setDoencaAlvo(String doencaAlvo) {
+        this.doencaAlvo = doencaAlvo;
+    }
+
+    public void setDataInicio(LocalDate dataInicio) {
+        this.dataInicio = dataInicio;
+    }
+
+    public void setDataFim(LocalDate dataFim) {
+        this.dataFim = dataFim;
+    }
+
+    public void setPublicoAlvo(String publicoAlvo) {
+        this.publicoAlvo = publicoAlvo;
+    }
+
+    public void setAtiva(boolean ativa) {
+        this.ativa = ativa;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public String getDoencaAlvo() {
+        return doencaAlvo;
+    }
+
+    public LocalDate getDataInicio() {
+        return dataInicio;
+    }
+
+    public LocalDate getDataFim() {
+        return dataFim;
+    }
+
+    public String getPublicoAlvo() {
+        return publicoAlvo;
+    }
+
+    public boolean isAtiva() {
+        return ativa;
+    }
 }
