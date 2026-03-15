@@ -33,3 +33,6 @@ build/
 
 .resources/
 Application.properties
+
+### Environment Variables ###
+.env

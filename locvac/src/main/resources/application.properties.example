@@ -1,0 +1,5 @@
+jwt.secret=
+jwt.expiration.access=900000
+jwt.expiration.refresh=2592000000
+jwt.expiration.mfa=300000
+mfa.issuer=LocVac
