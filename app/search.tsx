@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ALERTS_BY_PROFILE, MAIN_USER } from './data/family';
 import { MANDATORY_FIRST_YEAR_VACCINES } from './data/mandatory-vaccines';
-import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, Campaign } from './types/vaccination';
+import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
 import { getDependents } from '../src/storage/dependents';
 import { getVaccines } from '../src/storage/vaccines';
 import { getMandatoryVaccineRecords } from '../src/storage/mandatory-vaccines';
@@ -50,7 +50,7 @@ export default function Search() {
   const [vaccines, setVaccines] = useState<VaccineApplication[]>([]);
   const [mandatoryRecords, setMandatoryRecords] = useState<MandatoryVaccineRecord[]>([]);
   const [otherVaccines, setOtherVaccines] = useState<OtherVaccine[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [filterProfile, setFilterProfile] = useState<string | null>(null);
 

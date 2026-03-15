@@ -1,6 +1,5 @@
 package com.locvac.controller;
 
-import com.locvac.dto.CampanhaPatchDTO;
 import com.locvac.dto.CampanhaRequestDTO;
 import com.locvac.dto.CampanhaResponseDTO;
 import com.locvac.mapper.CampanhaMapper;
@@ -49,9 +48,4 @@ public class CampanhaController {
         return ResponseEntity.ok(campanhaMapper.toResponse(campanha));
     }
 
-    @PatchMapping("/atualizaCampanha/{id}")
-    public ResponseEntity<Void> atualizaCampanha(@PathVariable Long id, @RequestBody @Valid CampanhaPatchDTO dto) {
-        campanhaService.atualizarCampanha(id,dto);
-        return ResponseEntity.noContent().build();
-    }
 }

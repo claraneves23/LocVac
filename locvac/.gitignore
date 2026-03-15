@@ -30,3 +30,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+.resources/
+Application.properties
+
+### Environment Variables ###
+.env

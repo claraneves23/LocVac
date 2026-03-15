@@ -1,6 +1,5 @@
 package com.locvac.service;
 
-import com.locvac.dto.CampanhaPatchDTO;
 import com.locvac.dto.CampanhaRequestDTO;
 import com.locvac.dto.CampanhaResponseDTO;
 import com.locvac.model.core.Campanha;
@@ -17,5 +16,4 @@ public interface CampanhaService {
 
     void removerCampanha(Long id);
 
-    void atualizarCampanha(Long id, CampanhaPatchDTO dto);
 }

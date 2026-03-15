@@ -8,7 +8,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ALERTS_BY_PROFILE, MAIN_USER } from './data/family';
-import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, Campaign } from './types/vaccination';
+import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
 import { getDependents } from '../src/storage/dependents';
 import { getVaccines, addVaccine, updateVaccine, deleteVaccine } from '../src/storage/vaccines';
 import { MANDATORY_FIRST_YEAR_VACCINES } from './data/mandatory-vaccines';
@@ -88,9 +88,9 @@ export default function Index() {
   const [otherVaccineProfId, setOtherVaccineProfId] = useState('');
 
   // Estados para campanhas
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<ParticipatingCampaign | null>(null);
   const [showCampaignDatePicker, setShowCampaignDatePicker] = useState(false);
   const [campaignDate, setCampaignDate] = useState(new Date());
   const [campaignName, setCampaignName] = useState('');
@@ -483,7 +483,7 @@ export default function Index() {
   };
 
   // Campanhas handlers
-  const openCampaignModal = (campaign?: Campaign) => {
+  const openCampaignModal = (campaign?: ParticipatingCampaign) => {
     if (campaign) {
       setEditingCampaign(campaign);
       setCampaignName(campaign.campaignName);
@@ -510,7 +510,7 @@ export default function Index() {
   const handleSaveCampaign = async () => {
     if (!campaignName.trim() || !campaignParticipationDate) return;
 
-    const campaign: Campaign = {
+    const campaign: ParticipatingCampaign = {
       id: editingCampaign?.id || `cmp-${Date.now()}`,
       profileId: selectedProfile.id,
       campaignName: campaignName.trim(),

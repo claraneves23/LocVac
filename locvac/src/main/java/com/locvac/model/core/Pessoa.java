@@ -50,6 +50,12 @@ public class Pessoa {
     @OneToMany(mappedBy = "pessoa", fetch = FetchType.LAZY)
     private List<UsuarioPessoa> usuarioPessoas;
 
+    public Pessoa(Long id) {
+        this.id = id;
+    }
+
+    public Pessoa(){}
+
     public void setNome(String nome) {
         this.nome = nome;
     }

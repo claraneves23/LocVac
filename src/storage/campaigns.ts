@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Campaign } from '../../app/types/vaccination';
+import { ParticipatingCampaign } from '../../app/types/vaccination';
 
 const CAMPAIGNS_KEY = 'campaigns';
 
-export const getCampaigns = async (): Promise<Campaign[]> => {
+export const getCampaigns = async (): Promise<ParticipatingCampaign[]> => {
   try {
     const data = await AsyncStorage.getItem(CAMPAIGNS_KEY);
     return data ? JSON.parse(data) : [];
@@ -13,7 +13,7 @@ export const getCampaigns = async (): Promise<Campaign[]> => {
   }
 };
 
-export const saveCampaigns = async (campaigns: Campaign[]): Promise<void> => {
+export const saveCampaigns = async (campaigns: ParticipatingCampaign[]): Promise<void> => {
   try {
     await AsyncStorage.setItem(CAMPAIGNS_KEY, JSON.stringify(campaigns));
   } catch (error) {
@@ -21,13 +21,13 @@ export const saveCampaigns = async (campaigns: Campaign[]): Promise<void> => {
   }
 };
 
-export const addCampaign = async (campaign: Campaign): Promise<void> => {
+export const addCampaign = async (campaign: ParticipatingCampaign): Promise<void> => {
   const campaigns = await getCampaigns();
   campaigns.push(campaign);
   await saveCampaigns(campaigns);
 };
 
-export const updateCampaign = async (campaign: Campaign): Promise<void> => {
+export const updateCampaign = async (campaign: ParticipatingCampaign): Promise<void> => {
   const campaigns = await getCampaigns();
   const index = campaigns.findIndex((c) => c.id === campaign.id);
   
@@ -43,7 +43,7 @@ export const deleteCampaign = async (campaignId: string): Promise<void> => {
   await saveCampaigns(filtered);
 };
 
-export const getCampaignsByProfile = async (profileId: string): Promise<Campaign[]> => {
+export const getCampaignsByProfile = async (profileId: string): Promise<ParticipatingCampaign[]> => {
   const campaigns = await getCampaigns();
   return campaigns.filter((c) => c.profileId === profileId);
 };
