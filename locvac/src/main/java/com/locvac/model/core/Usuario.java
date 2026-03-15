@@ -3,6 +3,8 @@ package com.locvac.model.core;
 import com.locvac.model.associacao.UsuarioPessoa;
 import jakarta.persistence.*;
 
+import java.util.UUID;
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,9 +13,9 @@ import java.util.List;
 public class Usuario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id_usuario")
-    private Long id;
+    private UUID id;
 
     @Column(nullable = false)
     private String nome;
@@ -32,7 +34,20 @@ public class Usuario {
     @Column(name = "data_criacao", nullable = false)
     private LocalDate dataCriacao;
 
-    private LocalDate ultimoLogin;
+    @Column(name = "ultimo_login")
+    private LocalDateTime ultimoLogin;
+
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled = false;
+
+    @Column(name = "mfa_secret")
+    private String mfaSecret;
+
+    @Column(name = "tentativas_falhas", nullable = false)
+    private int tentativasFalhas = 0;
+
+    @Column(name = "bloqueado_ate")
+    private LocalDateTime bloqueadoAte;
 
     @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
     private List<UsuarioPessoa> usuarioPessoas;
@@ -61,7 +76,7 @@ public class Usuario {
         this.dataCriacao = dataCriacao;
     }
 
-    public void setUltimoLogin(LocalDate ultimoLogin) {
+    public void setUltimoLogin(LocalDateTime ultimoLogin) {
         this.ultimoLogin = ultimoLogin;
     }
 
@@ -69,7 +84,7 @@ public class Usuario {
         this.usuarioPessoas = usuarioPessoas;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -97,11 +112,29 @@ public class Usuario {
         return dataCriacao;
     }
 
-    public LocalDate getUltimoLogin() {
+    public LocalDateTime getUltimoLogin() {
         return ultimoLogin;
     }
 
     public List<UsuarioPessoa> getUsuarioPessoas() {
         return usuarioPessoas;
+    }
+
+    public boolean isMfaEnabled() { return mfaEnabled; }
+    public void setMfaEnabled(boolean mfaEnabled) { this.mfaEnabled = mfaEnabled; }
+
+    public String getMfaSecret() { return mfaSecret; }
+    public void setMfaSecret(String mfaSecret) { this.mfaSecret = mfaSecret; }
+
+    public int getTentativasFalhas() { return tentativasFalhas; }
+    public void setTentativasFalhas(int tentativasFalhas) { this.tentativasFalhas = tentativasFalhas; }
+
+    public LocalDateTime getBloqueadoAte() { return bloqueadoAte; }
+    public void setBloqueadoAte(LocalDateTime bloqueadoAte) { this.bloqueadoAte = bloqueadoAte; }
+
+    @PrePersist
+    protected void onCreate() {
+        this.dataCriacao = LocalDate.now();
+        this.ativo = true;
     }
 }
