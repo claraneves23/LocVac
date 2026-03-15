@@ -1,13 +1,11 @@
 package com.locvac.service.impl;
 
-import com.locvac.dto.CampanhaPatchDTO;
 import com.locvac.dto.CampanhaRequestDTO;
 import com.locvac.dto.CampanhaResponseDTO;
 import com.locvac.mapper.CampanhaMapper;
 import com.locvac.model.core.Campanha;
 import com.locvac.repository.CampanhaRepository;
 import com.locvac.service.CampanhaService;
-import com.locvac.utils.ValidacaoPeriodoUtils;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -56,40 +54,6 @@ public class CampanhaServiceImpl implements CampanhaService {
         campanhaRepository.delete(campanha);
     }
 
-    @Override
-    public void atualizarCampanha(Long id, CampanhaPatchDTO dto) {
-        Campanha campanha =  campanhaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
-
-        if (dto.nome() != null) {
-            campanha.setNome(dto.nome());
-        }
-
-        if (dto.doencaAlvo() != null) {
-            campanha.setDoencaAlvo(dto.doencaAlvo());
-        }
-
-        if(dto.dataInicio() != null) {
-            campanha.setDataInicio(dto.dataInicio());
-        }
-
-        if(dto.dataFim() != null) {
-            campanha.setDataFim(dto.dataFim());
-        }
-
-        if (dto.publicoAlvo() != null) {
-            campanha.setPublicoAlvo(dto.publicoAlvo());
-        }
-
-        campanha.setAtiva(dto.ativa());
-
-        ValidacaoPeriodoUtils.validarDataFinalPosterior(campanha.getDataInicio(), campanha.getDataFim());
-
-        validarCampanhaDuplicada(campanha.getDoencaAlvo(), campanha.getDataInicio(), campanha.getDataFim());
-
-        campanhaRepository.save(campanha);
-
-    }
 
     private void validarCampanhaDuplicada(String doencaAlvo, LocalDate dataInicio, LocalDate dataFim) {
         boolean existe = campanhaRepository.existsByDoencaAlvoAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(doencaAlvo, dataInicio, dataFim);

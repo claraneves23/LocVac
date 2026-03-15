@@ -97,9 +97,17 @@ export interface OtherVaccine {
   professionalId?: string;
 }
 
-export interface Campaign {
+export interface ParticipatingCampaign {
   id: string;
   profileId: string;
   campaignName: string;
   participationDate: string;
 }
+
+export interface Campaing{
+  id: string;
+  nome: string;
+}
+
+
+
