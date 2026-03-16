@@ -37,7 +37,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/auth/login",
                     "/auth/refresh",
-                    "/auth/mfa/verify"
+                    "/auth/mfa/verify",
+                    "/usuarios/cadastro"
                 ).permitAll()
 
                 // Todas as outras rotas exigem autenticação
