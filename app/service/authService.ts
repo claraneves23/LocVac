@@ -1,0 +1,90 @@
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_BASE = 'http://192.168.0.148:8080';
+
+const AUTH_TOKEN_KEY = 'locvac:auth:token';
+const REFRESH_TOKEN_KEY = 'locvac:auth:refresh';
+
+interface AuthResponse {
+	accessToken: string;
+	refreshToken: string;
+}
+
+interface LoginRequest {
+	email: string;
+	senha: string;
+}
+
+interface CadastroRequest {
+	nome: string;
+	email: string;
+	senha: string;
+	telefone: string;
+}
+
+export async function login(data: LoginRequest): Promise<AuthResponse> {
+	const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, data);
+	await saveTokens(response.data);
+	return response.data;
+}
+
+export async function cadastrar(data: CadastroRequest): Promise<void> {
+	await axios.post(`${API_BASE}/usuarios/cadastro`, data);
+}
+
+export async function refreshToken(): Promise<AuthResponse> {
+	const refresh = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+	const response = await axios.post<AuthResponse>(`${API_BASE}/auth/refresh`, {
+		refreshToken: refresh,
+	});
+	await saveTokens(response.data);
+	return response.data;
+}
+
+export async function logout(): Promise<void> {
+	const refresh = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+	try {
+		await axios.post(`${API_BASE}/auth/logout`, { refreshToken: refresh });
+	} finally {
+		await clearTokens();
+	}
+}
+
+export async function getAccessToken(): Promise<string | null> {
+	return AsyncStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export async function isAuthenticated(): Promise<boolean> {
+	const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+	return !!token;
+}
+
+async function saveTokens(auth: AuthResponse): Promise<void> {
+	await AsyncStorage.setItem(AUTH_TOKEN_KEY, auth.accessToken);
+	await AsyncStorage.setItem(REFRESH_TOKEN_KEY, auth.refreshToken);
+}
+
+async function clearTokens(): Promise<void> {
+	await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY]);
+}
+
+// Interceptor para adicionar o token JWT em todas as requisições
+axios.interceptors.request.use(async (config) => {
+	// Não adiciona o token para login/cadastro
+	if (
+		config.url?.includes('/auth/login') ||
+		config.url?.includes('/usuarios/cadastro')
+	) {
+		return config;
+	}
+	const token = await AsyncStorage.getItem('locvac:auth:token');
+	if (token && config.headers && typeof config.headers.set === 'function') {
+		config.headers.set('Authorization', `Bearer ${token}`);
+	} else if (token) {
+		// fallback para objetos simples
+        // Garante que config.headers seja do tipo AxiosRequestHeaders
+        (config.headers as any)["Authorization"] = `Bearer ${token}`;
+	}
+	return config;
+});

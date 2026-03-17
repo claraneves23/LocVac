@@ -22,6 +22,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { MAIN_USER } from './data/family';
 import { Dependent } from './types/vaccination';
 import { getDependents, addDependent, updateDependent, removeDependent } from '../src/storage/dependents';
+import { logout } from './service/authService';
 
 const SEX_OPTIONS: Dependent['sex'][] = ['M', 'F', 'Outro'];
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
@@ -291,6 +292,20 @@ export default function User() {
           <TouchableOpacity style={styles.optionNoBorder}>
             <Ionicons name="help-circle" size={24} color="#333" style={styles.icon} />
             <Text style={styles.optionText}>Ajuda</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Botão de logout */}
+        <View style={styles.sectionCard}>
+          <TouchableOpacity
+            style={[styles.option, { justifyContent: 'center', backgroundColor: '#ef4444', borderRadius: 8, marginTop: 12 }]}
+            onPress={async () => {
+              await logout();
+              router.replace('/login');
+            }}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
+            <Text style={[styles.optionText, { color: '#fff' }]}>Sair</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

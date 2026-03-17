@@ -43,7 +43,13 @@ const parseDate = (dateStr: string): Date => {
 
 const SELECTED_PROFILE_KEY = 'selectedProfileId';
 
+import Login from './login';
+
 export default function Index() {
+  // Exibe tela de autenticação (login/cadastro) se não autenticado
+  // O componente Login já gerencia o fluxo de autenticação/cadastro
+  // e redireciona para a tela principal após login
+  // return <Login />; // Removido para evitar código inalcançável
   const router = useRouter();
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [vaccines, setVaccines] = useState<VaccineApplication[]>([]);
@@ -392,12 +398,16 @@ export default function Index() {
   };
 
   const handleSaveMandatoryVaccine = async () => {
-    if (!editingMandatoryVaccine) return;
+    if (!editingMandatoryVaccine) {
+      // Nunca deve acontecer, mas para o TS garantir, retorna cedo
+      return;
+    }
 
-    const record: MandatoryVaccineRecord = {
-      id: editingMandatoryVaccine.record?.id || `mvr-${Date.now()}`,
+    const { vaccineId, record } = editingMandatoryVaccine;
+    const newRecord: MandatoryVaccineRecord = {
+      id: record?.id || `mvr-${Date.now()}`,
       profileId: selectedProfile.id,
-      vaccineId: editingMandatoryVaccine.vaccineId,
+      vaccineId,
       isApplied: mandatoryIsApplied,
       applicationDate: mandatoryDate || undefined,
       lot: mandatoryLot.trim() || undefined,
@@ -406,7 +416,7 @@ export default function Index() {
       professionalId: mandatoryProfId.trim() || undefined,
     };
 
-    await updateMandatoryVaccineRecord(record);
+    await updateMandatoryVaccineRecord(newRecord);
     await loadMandatoryVaccineRecords();
 
     // Limpar formulário
@@ -951,9 +961,8 @@ export default function Index() {
           <View style={styles.addVaccineModal}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editingMandatoryVaccine && 
-                  MANDATORY_FIRST_YEAR_VACCINES.find((v) => v.id === editingMandatoryVaccine.vaccineId)?.name
-                }
+                {editingMandatoryVaccine &&
+                  MANDATORY_FIRST_YEAR_VACCINES.find((v) => v.id === editingMandatoryVaccine.vaccineId)?.name}
               </Text>
               <Pressable onPress={() => setIsMandatoryVaccineModalOpen(false)}>
                 <Ionicons name="close" size={18} color="#29442dff" />
@@ -1054,7 +1063,13 @@ export default function Index() {
               >
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </Pressable>
-              <Pressable style={styles.saveButton} onPress={handleSaveMandatoryVaccine}>
+              <Pressable
+                style={styles.saveButton}
+                onPress={() => {
+                  if (editingMandatoryVaccine) handleSaveMandatoryVaccine();
+                }}
+                disabled={!editingMandatoryVaccine}
+              >
                 <Text style={styles.saveButtonText}>Salvar</Text>
               </Pressable>
             </View>
@@ -1403,13 +1418,13 @@ export default function Index() {
             >
               <Ionicons name="close" size={20} color="#fff" />
             </Pressable>
-            {imagePreviewUri && (
+            {imagePreviewUri ? (
               <Image
-                source={{ uri: imagePreviewUri }}
+                source={{ uri: imagePreviewUri as string }}
                 style={styles.imagePreview}
                 resizeMode="contain"
               />
-            )}
+            ) : null}
           </View>
         </View>
       </Modal>
