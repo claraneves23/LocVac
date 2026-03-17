@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal, Platform, TextInput, Alert } from 'react-native';
+// Removido Picker, usaremos Pressable + Modal
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -15,6 +16,8 @@ import { MANDATORY_FIRST_YEAR_VACCINES } from './data/mandatory-vaccines';
 import { getMandatoryVaccineRecordsByProfile, updateMandatoryVaccineRecord } from '../src/storage/mandatory-vaccines';
 import { getOtherVaccinesByProfile, addOtherVaccine, updateOtherVaccine, deleteOtherVaccine } from '../src/storage/other-vaccines';
 import { getCampaignsByProfile, addCampaign, updateCampaign, deleteCampaign } from '../src/storage/campaigns';
+import { fetchCampaigns } from './service/campaignService';
+import { Campanha } from './types/vaccination';
 
 // Funções auxiliares para formatação de data
 const formatDateToBR = (isoDate: string | undefined): string => {
@@ -89,6 +92,14 @@ export default function Index() {
 
   // Estados para campanhas
   const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
+  const [availableCampaigns, setAvailableCampaigns] = useState<Campanha[]>([]);
+  const [showCampaignPicker, setShowCampaignPicker] = useState(false);
+    // Carregar campanhas disponíveis do backend para o select
+    useEffect(() => {
+      fetchCampaigns()
+        .then(setAvailableCampaigns)
+        .catch(() => setAvailableCampaigns([]));
+    }, []);
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<ParticipatingCampaign | null>(null);
   const [showCampaignDatePicker, setShowCampaignDatePicker] = useState(false);
@@ -484,6 +495,7 @@ export default function Index() {
 
   // Campanhas handlers
   const openCampaignModal = (campaign?: ParticipatingCampaign) => {
+    setShowCampaignPicker(false); // sempre fecha o select ao abrir
     if (campaign) {
       setEditingCampaign(campaign);
       setCampaignName(campaign.campaignName);
@@ -1192,13 +1204,38 @@ export default function Index() {
             <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.formField}>
                 <Text style={styles.formLabel}>Nome da Campanha *</Text>
-                <TextInput
-                  style={styles.formInput}
-                  placeholder="Ex: Campanha de Vacinação contra COVID-19"
-                  placeholderTextColor="#9CA3AF"
-                  value={campaignName}
-                  onChangeText={setCampaignName}
-                />
+                <Pressable
+                  style={styles.datePickerButton}
+                  onPress={() => setShowCampaignPicker((prev) => !prev)}
+                >
+                  <Text style={campaignName ? styles.datePickerText : [styles.datePickerText, { color: '#9CA3AF' }] }>
+                    {campaignName || 'Selecione uma campanha'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#1f3322" />
+                </Pressable>
+                {showCampaignPicker && (
+                  <View style={styles.pickerDropdown}>
+                    <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+                      {availableCampaigns.map((c) => (
+                        <Pressable
+                          key={c.id}
+                          style={[styles.pickerOption, campaignName === c.nome && styles.pickerOptionActive]}
+                          onPress={() => {
+                            setCampaignName(c.nome);
+                            setShowCampaignPicker(false);
+                          }}
+                        >
+                          <Text style={[styles.pickerOptionText, campaignName === c.nome && styles.pickerOptionTextActive]}>
+                            {c.nome} {c.ativa ? '' : '(Inativa)'}
+                          </Text>
+                          {campaignName === c.nome && (
+                            <Ionicons name="checkmark" size={18} color="#29442dff" />
+                          )}
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
               <View style={styles.formField}>
@@ -1967,5 +2004,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1f3322',
+  },
+  pickerDropdown: {
+    marginTop: 6,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    maxHeight: 200,
+    overflow: 'hidden',
+  },
+  pickerScroll: {
+    maxHeight: 200,
+  },
+  pickerOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F7F6',
+  },
+  pickerOptionActive: {
+    backgroundColor: '#E6F2F1',
+  },
+  pickerOptionText: {
+    fontSize: 13,
+    color: '#1f3322',
+  },
+  pickerOptionTextActive: {
+    fontWeight: '600',
+    color: '#29442dff',
   },
 });

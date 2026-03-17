@@ -104,9 +104,13 @@ export interface ParticipatingCampaign {
   participationDate: string;
 }
 
-export interface Campaing{
-  id: string;
+export interface Campanha {
+  id: number;
   nome: string;
+  dataInicio: string;
+  dataFim: string;
+  publicoAlvo: string;
+  ativa: boolean;
 }
 
 
