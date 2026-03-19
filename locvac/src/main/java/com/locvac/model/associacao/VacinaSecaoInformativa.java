@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 public class VacinaSecaoInformativa {
 
         @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_secao")
         private String id;
 

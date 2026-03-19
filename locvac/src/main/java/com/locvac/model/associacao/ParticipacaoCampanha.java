@@ -11,8 +11,9 @@ import java.time.LocalDate;
 public class ParticipacaoCampanha {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_participacao")
-    private String id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_pessoa", nullable = false)
@@ -37,7 +38,7 @@ public class ParticipacaoCampanha {
         this.dataParticipacao = dataParticipacao;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 

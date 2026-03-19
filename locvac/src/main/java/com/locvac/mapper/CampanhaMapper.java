@@ -1,7 +1,7 @@
 package com.locvac.mapper;
 
-import com.locvac.dto.CampanhaRequestDTO;
-import com.locvac.dto.CampanhaResponseDTO;
+import com.locvac.dto.campanha.CampanhaRequestDTO;
+import com.locvac.dto.campanha.CampanhaResponseDTO;
 import com.locvac.model.core.Campanha;
 import org.springframework.stereotype.Component;
 

@@ -1,7 +1,7 @@
 package com.locvac.controller;
 
-import com.locvac.dto.CampanhaRequestDTO;
-import com.locvac.dto.CampanhaResponseDTO;
+import com.locvac.dto.campanha.CampanhaRequestDTO;
+import com.locvac.dto.campanha.CampanhaResponseDTO;
 import com.locvac.mapper.CampanhaMapper;
 import com.locvac.model.core.Campanha;
 import com.locvac.service.CampanhaService;

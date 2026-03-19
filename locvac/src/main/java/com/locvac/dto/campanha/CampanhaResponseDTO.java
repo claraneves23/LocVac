@@ -1,4 +1,4 @@
-package com.locvac.dto;
+package com.locvac.dto.campanha;
 
 import java.time.LocalDate;
 

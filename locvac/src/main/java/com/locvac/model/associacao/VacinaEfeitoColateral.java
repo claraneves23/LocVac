@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 public class VacinaEfeitoColateral {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_efeito_colateral")
     private String id;
 

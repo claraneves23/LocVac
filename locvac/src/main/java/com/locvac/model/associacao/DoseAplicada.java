@@ -13,6 +13,7 @@ import java.time.LocalDate;
 public class DoseAplicada {
 
         @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_dose")
         private String id;
 

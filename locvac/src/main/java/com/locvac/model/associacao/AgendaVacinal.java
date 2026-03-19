@@ -13,6 +13,7 @@ import java.time.LocalDate;
 public class AgendaVacinal {
 
         @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_agenda")
         private String id;
 

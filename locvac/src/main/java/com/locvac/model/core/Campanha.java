@@ -28,7 +28,7 @@ public class Campanha {
     private String publicoAlvo;
 
     @Column(nullable = false)
-    //trocar para Boolean dps
+
     private boolean ativa;
 
     public Campanha() {}
@@ -40,6 +40,10 @@ public class Campanha {
         this.dataFim = dataFim;
         this.publicoAlvo = publicoAlvo;
         this.ativa = ativa;
+    }
+
+    public Campanha(Long id) {
+        this.id = id;
     }
 
     public void setNome(String nome) {

@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 public class CalendarioVacinal {
 
         @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_calendario")
         private String id;
 
