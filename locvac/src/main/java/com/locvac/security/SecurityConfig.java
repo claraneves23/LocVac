@@ -39,9 +39,7 @@ public class SecurityConfig {
                     "/auth/refresh",
                     "/auth/mfa/verify",
                     "/usuarios/cadastro",
-                    "/campanhas",
-                        "/error"
-
+                    "/error"
                 ).permitAll()
 
                 // Todas as outras rotas exigem autenticação

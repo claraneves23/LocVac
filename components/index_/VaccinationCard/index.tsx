@@ -1,5 +1,5 @@
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
-import { FamilyMember } from '../../app/types/vaccination';
+import { FamilyMember } from '../../../app/types/vaccination';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const formatDateToBR = (isoDate: string | undefined): string => {

@@ -56,7 +56,7 @@ export default function OtherVaccineModal({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       statusBarTranslucent
       hardwareAccelerated
       onRequestClose={onClose}

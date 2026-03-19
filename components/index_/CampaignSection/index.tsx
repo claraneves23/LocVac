@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { ParticipatingCampaign } from '../../app/types/vaccination';
+import { ParticipatingCampaign } from '../../../app/types/vaccination';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';

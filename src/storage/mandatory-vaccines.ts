@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MandatoryVaccineRecord } from '../app/types/vaccination';
+import { MandatoryVaccineRecord } from '../../app/types/vaccination';
 
 const MANDATORY_VACCINES_KEY = 'mandatoryVaccines';
 

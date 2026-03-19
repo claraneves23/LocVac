@@ -1,6 +1,6 @@
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FamilyMember } from '../../app/types/vaccination';
+import { FamilyMember } from '../../../app/types/vaccination';
 
 // tipo de props para o controle de perfil do componente Header
 type HeaderProps = {

@@ -47,7 +47,7 @@ export default function CampaignModal({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       statusBarTranslucent
       hardwareAccelerated
       onRequestClose={onClose}

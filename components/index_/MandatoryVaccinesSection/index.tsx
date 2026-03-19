@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { MandatoryVaccineRecord } from '../../app/types/vaccination';
-import { MANDATORY_FIRST_YEAR_VACCINES } from '../../app/data/mandatory-vaccines';
+import { MandatoryVaccineRecord } from '../../../app/types/vaccination';
+import { MANDATORY_FIRST_YEAR_VACCINES } from '../../../app/data/mandatory-vaccines';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
