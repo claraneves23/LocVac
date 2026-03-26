@@ -8,7 +8,7 @@ public class CategoriaVacina {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_categoria")
-        private String id;
+        private Long id;
 
         @Column(name = "descricao", nullable = false)
         private String descricao;

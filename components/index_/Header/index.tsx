@@ -14,7 +14,7 @@ export default function Header({ selectedProfile, onOpenProfileModal, onOpenImag
     <View style={styles.topContainer}>
       <View style={styles.headerLeft}>
         <Image
-          source={require('../../assets/images/locvaclogo-trim.png')}
+          source={require('../../../assets/images/locvaclogo-trim.png')}
           resizeMode="contain"
           style={styles.logoIcon}
         />
@@ -37,7 +37,7 @@ export default function Header({ selectedProfile, onOpenProfileModal, onOpenImag
           </Pressable>
         ) : (
           <Pressable style={styles.profileBadge} onPress={onOpenProfileModal}>
-            <Text style={styles.profileBadgeText}>{selectedProfile.name.charAt(0)}</Text>
+            <Text style={styles.profileBadgeText}>{selectedProfile.name ? selectedProfile.name.charAt(0) : '?'}</Text>
           </Pressable>
         )}
         <Pressable onPress={onOpenProfileModal}>

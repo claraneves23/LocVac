@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal, Platform, TextInput, Alert } from 'react-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { router, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,8 +12,9 @@ import { getVaccines, addVaccine, updateVaccine, deleteVaccine } from '../src/st
 import { getMandatoryVaccineRecordsByProfile, updateMandatoryVaccineRecord } from '../src/storage/mandatory-vaccines';
 import { getOtherVaccinesByProfile, addOtherVaccine, updateOtherVaccine, deleteOtherVaccine } from '../src/storage/other-vaccines';
 import { getCampaignsByProfile, addCampaign, updateCampaign, deleteCampaign } from '../src/storage/campaigns';
-import { fetchCampaigns } from './service/campaignService';
+import { fetchCampaigns, addParticipacaoCampanha, fetchParticipacoesByPessoa } from './service/campaignService';
 import { Campanha } from './types/vaccination';
+import { getPessoaId, fetchPerfil } from './service/authService';
 
 // Componentes
 import Header from '../components/index_/Header';
@@ -49,6 +50,7 @@ const parseDate = (dateStr: string): Date => {
   return new Date(dateStr);
 };
 
+
 const SELECTED_PROFILE_KEY = 'selectedProfileId';
 
 export default function Index() {
@@ -72,6 +74,7 @@ export default function Index() {
   const [editingMandatoryVaccine, setEditingMandatoryVaccine] = useState<{ vaccineId: string; record?: MandatoryVaccineRecord } | null>(null);
   const [showMandatoryDatePicker, setShowMandatoryDatePicker] = useState(false);
   const [mandatoryVaccineDate, setMandatoryVaccineDate] = useState(new Date());
+  const [mainUser, setMainUser] = useState<FamilyMember | null>(null);
 
   // Estados para o formulário de vacina obrigatória
   const [mandatoryIsApplied, setMandatoryIsApplied] = useState(false);
@@ -111,6 +114,42 @@ export default function Index() {
         .then(setAvailableCampaigns)
         .catch(() => setAvailableCampaigns([]));
     }, []);
+
+    useEffect(() => {
+      const loadProfile = async () => {
+    try {
+      const idPessoa = await getPessoaId();
+      console.log('DEBUG idPessoa:', idPessoa);
+      if (!idPessoa) {
+        setIsLoading(false);
+        return;
+      }
+
+      const perfil = await fetchPerfil(idPessoa);
+      console.log('DEBUG perfil:', perfil);
+
+      setMainUser({
+        id: String(perfil.id),
+        userId: String(perfil.id),
+        name: perfil.nome,
+        birthDate: perfil.dataNascimento,
+        sex: perfil.sexoBiologico,
+        kind: 'user',
+        zipCode: perfil.cep,
+        phone: perfil.telefone,
+        // preencha os demais campos conforme PessoaResponseDTO
+      });
+      setSelectedProfileId(String(perfil.id));
+      setIsLoading(false);
+      } catch (error) {
+        console.error('DEBUG Erro ao carregar perfil:', error);
+        setIsLoading(false);
+      }
+    };
+
+  loadProfile();
+  }, []);
+
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<ParticipatingCampaign | null>(null);
   const [showCampaignDatePicker, setShowCampaignDatePicker] = useState(false);
@@ -142,33 +181,29 @@ export default function Index() {
     }
   }, [selectedProfileId]);
 
+
+  // Carrega participações de campanha do backend
   const loadCampaigns = useCallback(async () => {
     if (selectedProfileId) {
-      const campaignsData = await getCampaignsByProfile(selectedProfileId);
-      setCampaigns(campaignsData);
+      try {
+        console.log('DEBUG loadCampaigns selectedProfileId:', selectedProfileId);
+        const participacoes = await fetchParticipacoesByPessoa(Number(selectedProfileId));
+        console.log('DEBUG loadCampaigns participacoes:', participacoes);
+        // Mapeia para o formato ParticipatingCampaign esperado pelo frontend
+        const mapped = participacoes.map((p: any) => ({
+          id: String(p.id),
+          profileId: String(p.idPessoa),
+          campaignName: p.nomeCampanha,
+          participationDate: p.dataParticipacao,
+        }));
+        console.log('DEBUG loadCampaigns mapped:', mapped);
+        setCampaigns(mapped);
+      } catch (e) {
+        console.log('DEBUG loadCampaigns erro:', e);
+        setCampaigns([]);
+      }
     }
   }, [selectedProfileId]);
-
-  // Carregar o perfil salvo ao iniciar
-  useEffect(() => {
-    const loadSavedProfile = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(SELECTED_PROFILE_KEY);
-        if (saved) {
-          setSelectedProfileId(saved);
-        } else {
-          setSelectedProfileId(MAIN_USER.id);
-        }
-      } catch (error) {
-        console.log('Erro ao carregar perfil salvo:', error);
-        setSelectedProfileId(MAIN_USER.id);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSavedProfile();
-  }, []);
 
   // Salvar o perfil sempre que muda
   useEffect(() => {
@@ -189,69 +224,28 @@ export default function Index() {
     }, [loadDependents, loadVaccines, loadMandatoryVaccineRecords, loadOtherVaccines, loadCampaigns])
   );
 
-  const familyMembers = useMemo<FamilyMember[]>(
-    () => [
-      {
-        id: MAIN_USER.id,
-        userId: MAIN_USER.id,
-        name: MAIN_USER.name,
-        birthDate: MAIN_USER.birthDate,
-        birthPlace: MAIN_USER.birthPlace,
-        sex: MAIN_USER.sex,
-        kind: 'user',
-        address: MAIN_USER.address,
-        city: MAIN_USER.city,
-        state: MAIN_USER.state,
-        zipCode: MAIN_USER.zipCode,
-        phone: MAIN_USER.phone,
-      },
-      ...dependents.map((dependent) => ({
-        id: dependent.id,
-        userId: dependent.userId,
-        name: dependent.name,
-        birthDate: dependent.birthDate,
-        birthPlace: dependent.birthPlace,
-        sex: dependent.sex,
-        kind: 'dependent' as const,
-        relationship: dependent.relationship,
-        guardianName: dependent.guardianName,
-        photoUri: dependent.photoUri,
-        address: dependent.address,
-        city: dependent.city,
-        state: dependent.state,
-        zipCode: dependent.zipCode,
-        phone: dependent.phone,
-      })),
-    ],
-    [dependents]
-  );
+  const familyMembers = useMemo<FamilyMember[]>(() => {
+  if (!mainUser) return [];
+  return [
+    mainUser,
+    ...dependents.map((d) => ({ ...d, kind: 'dependent' as const })),
+  ];
+  }, [mainUser, dependents]);
 
-  const selectedProfile = useMemo(() => {
-    const fallback: FamilyMember = {
-      id: MAIN_USER.id,
-      userId: MAIN_USER.id,
-      name: MAIN_USER.name,
-      birthDate: MAIN_USER.birthDate,
-      birthPlace: MAIN_USER.birthPlace,
-      sex: MAIN_USER.sex,
-      kind: 'user',
-      address: MAIN_USER.address,
-      city: MAIN_USER.city,
-      state: MAIN_USER.state,
-      zipCode: MAIN_USER.zipCode,
-      phone: MAIN_USER.phone,
-    };
-
-    if (!selectedProfileId) return fallback;
-    return familyMembers.find((profile) => profile.id === selectedProfileId) ?? fallback;
-  }, [familyMembers, selectedProfileId]);
+  const selectedProfile = useMemo((): FamilyMember => {
+    if (!mainUser) {
+      // Fallback: always return a FamilyMember with a valid name
+      return { id: 'unknown', userId: 'unknown', name: 'Usuário', birthDate: '', sex: 'Outro', kind: 'user' } as FamilyMember;
+    }
+    return familyMembers.find((p) => p.id === selectedProfileId) ?? mainUser;
+  }, [familyMembers, selectedProfileId, mainUser]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!familyMembers.some((profile) => profile.id === selectedProfileId)) {
-        setSelectedProfileId(MAIN_USER.id);
+      if (mainUser && !familyMembers.some((p) => p.id === selectedProfileId)) {
+        setSelectedProfileId(mainUser.id);
       }
-    }, [familyMembers, selectedProfileId])
+    }, [familyMembers, selectedProfileId, mainUser])
   );
 
   useEffect(() => {
@@ -547,7 +541,22 @@ export default function Index() {
     if (editingCampaign) {
       await updateCampaign(campaign);
     } else {
-      await addCampaign(campaign);
+      // Integração com backend: ParticipacaoCampanha
+      const campanhaSelecionada = availableCampaigns.find(c => c.nome === campaignName);
+      if (!campanhaSelecionada) {
+        Alert.alert('Erro', 'Selecione uma campanha válida.');
+        return;
+      }
+      try {
+        await addParticipacaoCampanha({
+          idPessoa: Number(selectedProfile.id),
+          idCampanha: campanhaSelecionada.id,
+          dataParticipacao: campaignParticipationDate,
+        });
+      } catch (e) {
+        Alert.alert('Erro', 'Não foi possível registrar a participação na campanha.');
+        return;
+      }
     }
 
     await loadCampaigns();
@@ -574,8 +583,22 @@ export default function Index() {
   const nextVaccine = pendingVaccines.find((item) => item.dueDate);
   const activeAlerts = ALERTS_BY_PROFILE[selectedProfile.id] ?? [];
 
+console.log('DEBUG mainUser:', mainUser, 'isLoading:', isLoading);
+
+  // Guard antes do return principal — enquanto carrega, mostra só o loading
+  if (isLoading || !mainUser) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Carregando...</Text>
+      </View>
+    );
+  }
+
+  // Daqui pra baixo, selectedProfile sempre tem dados
   return (
+    
     <View style={styles.container}>
+      
       {/* Componente de construção do 
       Header com seleção de perfil e preview de imagem */}
       <Header
@@ -584,7 +607,6 @@ export default function Index() {
         onOpenImagePreview={openImagePreview}
       />
 
-      {!isLoading ? (
         <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
           {/* Componente da Carteira de Vacinação */}
           <VaccinationCard
@@ -613,12 +635,7 @@ export default function Index() {
             onOpenModal={openCampaignModal}
             onDelete={handleDeleteCampaign}
           />
-      </ScrollView>
-      ) : (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Carregando...</Text>
-        </View>
-      )}
+      </ScrollView> 
 
       {/* Componente doModal de seleção de perfil */}
       <ProfileModal

@@ -13,7 +13,7 @@ public class UsuarioPessoa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_usuario_pessoa")
-    private String id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario", nullable = false)
@@ -59,7 +59,7 @@ public class UsuarioPessoa {
         this.dataVinculo = dataVinculo;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 

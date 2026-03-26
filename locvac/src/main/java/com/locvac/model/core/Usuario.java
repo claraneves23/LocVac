@@ -52,6 +52,12 @@ public class Usuario {
     @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
     private List<UsuarioPessoa> usuarioPessoas;
 
+    public Usuario(UUID id) {
+        this.id = id;
+    }
+
+    public Usuario() {}
+
     public void setNome(String nome) {
         this.nome = nome;
     }

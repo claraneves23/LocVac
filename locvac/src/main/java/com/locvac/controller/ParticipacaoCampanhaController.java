@@ -25,6 +25,11 @@ public class ParticipacaoCampanhaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrar(dto));
     }
 
+    @GetMapping("/por-pessoa/{idPessoa}")
+    public ResponseEntity<List<ParticipacaoCampanhaResponseDTO>> listarPorPessoa(@PathVariable Long idPessoa) {
+        return ResponseEntity.ok(service.listarPorPessoa(idPessoa));
+    }
+
     @GetMapping
     public ResponseEntity<List<ParticipacaoCampanhaResponseDTO>> listarTodos() {
         return ResponseEntity.ok(service.listarTodos());

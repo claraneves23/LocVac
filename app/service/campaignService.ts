@@ -1,3 +1,8 @@
+// Busca participações de campanha por pessoa
+export async function fetchParticipacoesByPessoa(idPessoa: number) {
+  const response = await axios.get(`http://192.168.0.148:8080/participacaoCampanha/por-pessoa/${idPessoa}`);
+  return response.data;
+}
 import axios from 'axios';
 import { Campanha } from '../types/vaccination';
 

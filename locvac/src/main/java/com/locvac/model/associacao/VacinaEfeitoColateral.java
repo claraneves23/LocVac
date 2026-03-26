@@ -11,7 +11,7 @@ public class VacinaEfeitoColateral {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_efeito_colateral")
-    private String id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_vacina", nullable = false)
@@ -43,7 +43,7 @@ public class VacinaEfeitoColateral {
         this.vacina = vacina;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 

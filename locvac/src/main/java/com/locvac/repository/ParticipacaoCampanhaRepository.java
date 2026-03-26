@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface ParticipacaoCampanhaRepository extends JpaRepository<ParticipacaoCampanha, Long> {
 
+	List<ParticipacaoCampanha> findByPessoaId(Long idPessoa);
+
 }

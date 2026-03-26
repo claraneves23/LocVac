@@ -10,7 +10,7 @@ public class CalendarioVacinal {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_calendario")
-        private String id;
+        private Long id;
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id_vacina", nullable = false)

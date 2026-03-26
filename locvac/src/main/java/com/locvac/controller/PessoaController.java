@@ -29,4 +29,9 @@ public class PessoaController {
     public ResponseEntity<List<PessoaResponseDTO>> listarTodos() {
         return ResponseEntity.ok(service.listarTodos());
     }
+
+    @GetMapping("/perfil")
+    public ResponseEntity<PessoaResponseDTO> getPerfil(@RequestParam Long idPessoa) {
+        return ResponseEntity.ok(service.getPerfil(idPessoa));
+    }
 }

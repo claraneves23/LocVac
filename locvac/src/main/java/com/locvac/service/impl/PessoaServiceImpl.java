@@ -35,4 +35,11 @@ public class PessoaServiceImpl implements PessoaService {
                 .map(mapper::toResponse)
                 .toList();
     }
+
+    @Override
+    public PessoaResponseDTO getPerfil(Long idPessoa) {
+        Pessoa pessoa = repository.findById(idPessoa)
+                .orElseThrow(() -> new RuntimeException("Pessoa não encontrada"));
+        return mapper.toResponse(pessoa);
+    }
 }

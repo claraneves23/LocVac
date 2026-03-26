@@ -9,5 +9,7 @@ public interface PessoaService {
 
     PessoaResponseDTO cadastrar(PessoaRequestDTO dto);
 
+    PessoaResponseDTO getPerfil(Long idPessoa);
+
     List<PessoaResponseDTO> listarTodos();
 }

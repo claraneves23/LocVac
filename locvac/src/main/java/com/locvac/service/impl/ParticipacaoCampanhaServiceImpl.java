@@ -45,6 +45,14 @@ public class ParticipacaoCampanhaServiceImpl implements ParticipacaoCampanhaServ
                 .toList();
     }
 
+    @Override
+    public List<ParticipacaoCampanhaResponseDTO> listarPorPessoa(Long idPessoa) {
+        return repository.findByPessoaId(idPessoa)
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
     private void validarPessoaExiste(Long idPessoa) {
         if (!pessoaRepository.existsById(idPessoa)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,

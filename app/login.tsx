@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { login, cadastrar } from './service/authService';
 
@@ -31,6 +32,11 @@ export default function Login() {
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [dataNascimento, setDataNascimento] = useState<Date | undefined>(undefined);
+  const [cpf, setCpf] = useState('');
+  const [sexoBiologico, setSexoBiologico] = useState<'MASCULINO' | 'FEMININO' | ''>('');
+  const [cep, setCep] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const resetFields = () => {
     setEmail('');
@@ -78,7 +84,8 @@ export default function Login() {
   };
 
   const handleCadastro = async () => {
-    if (!nome.trim() || !email.trim() || !senha.trim() || !telefone.trim()) {
+
+    if (!nome.trim() || !email.trim() || !senha.trim() || !telefone.trim() || !dataNascimento || !cpf.trim() || !sexoBiologico || !cep.trim()) {
       Alert.alert('Campos obrigatórios', 'Preencha todos os campos.');
       return;
     }
@@ -93,14 +100,20 @@ export default function Login() {
       return;
     }
 
+    const payload = {
+      nome: nome.trim(),
+      email: email.trim(),
+      senha,
+      telefone: telefone.replace(/\D/g, ''),
+      dataNascimento: dataNascimento?.toISOString().split('T')[0],
+      cpf: cpf.replace(/\D/g, ''),
+      sexoBiologico,
+      cep: cep.replace(/\D/g, ''),
+    };
+    console.log('Payload enviado para cadastro:', payload);
     setLoading(true);
     try {
-      await cadastrar({
-        nome: nome.trim(),
-        email: email.trim(),
-        senha,
-        telefone: telefone.replace(/\D/g, ''),
-      });
+      await cadastrar(payload);
       Alert.alert('Conta criada!', 'Faça login para continuar.', [
         { text: 'OK', onPress: () => switchMode('login') },
       ]);
@@ -156,17 +169,80 @@ export default function Login() {
             </View>
 
             {mode === 'cadastro' && (
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Nome completo</Text>
-                <TextInput
-                  style={styles.input}
-                  value={nome}
-                  onChangeText={setNome}
-                  placeholder="Digite seu nome"
-                  placeholderTextColor="#999"
-                  autoCapitalize="words"
-                />
-              </View>
+              <>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Nome completo</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={nome}
+                    onChangeText={setNome}
+                    placeholder="Digite seu nome"
+                    placeholderTextColor="#999"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Data de nascimento</Text>
+                  <Pressable onPress={() => setShowDatePicker(true)} style={styles.input}>
+                    <Text style={{ color: dataNascimento ? '#1f3322' : '#999' }}>
+                      {dataNascimento ? dataNascimento.toLocaleDateString() : 'Selecione a data'}
+                    </Text>
+                  </Pressable>
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={dataNascimento || new Date(2000, 0, 1)}
+                      mode="date"
+                      display="default"
+                      onChange={(_, date) => {
+                        setShowDatePicker(false);
+                        if (date) setDataNascimento(date);
+                      }}
+                      maximumDate={new Date()}
+                    />
+                  )}
+                </View>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>CPF</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={cpf}
+                    onChangeText={setCpf}
+                    placeholder="Digite seu CPF"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    maxLength={14}
+                  />
+                </View>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Sexo biológico</Text>
+                  <View style={{ flexDirection: 'row', gap: 16 }}>
+                    <Pressable
+                      style={[styles.input, { flex: 1, backgroundColor: sexoBiologico === 'MASCULINO' ? '#CAE3E2' : '#F2F7F6' }]}
+                      onPress={() => setSexoBiologico('MASCULINO')}
+                    >
+                      <Text style={{ color: '#1f3322', textAlign: 'center' }}>Masculino</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.input, { flex: 1, backgroundColor: sexoBiologico === 'FEMININO' ? '#CAE3E2' : '#F2F7F6' }]}
+                      onPress={() => setSexoBiologico('FEMININO')}
+                    >
+                      <Text style={{ color: '#1f3322', textAlign: 'center' }}>Feminino</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>CEP</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={cep}
+                    onChangeText={setCep}
+                    placeholder="Digite seu CEP"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    maxLength={9}
+                  />
+                </View>
+              </>
             )}
 
             <View style={styles.fieldGroup}>

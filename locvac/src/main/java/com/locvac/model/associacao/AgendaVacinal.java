@@ -15,7 +15,7 @@ public class AgendaVacinal {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_agenda")
-        private String id;
+        private Long id;
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id_pessoa", nullable = false)
@@ -64,7 +64,7 @@ public class AgendaVacinal {
                 this.status = status;
         }
 
-        public String getId() {
+        public Long getId() {
                 return id;
         }
 

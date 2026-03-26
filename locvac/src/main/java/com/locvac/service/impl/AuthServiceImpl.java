@@ -3,6 +3,7 @@ package com.locvac.service.impl;
 import com.locvac.dto.auth.*;
 import com.locvac.model.core.Usuario;
 import com.locvac.repository.UsuarioRepository;
+import com.locvac.repository.UsuarioPessoaRepository;
 import com.locvac.service.AuthService;
 import com.locvac.service.JwtService;
 import com.locvac.service.RefreshTokenService;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioPessoaRepository usuarioPessoaRepository;
     private final RefreshTokenService refreshTokenService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
@@ -26,12 +28,14 @@ public class AuthServiceImpl implements AuthService {
 
     public AuthServiceImpl(
             UsuarioRepository usuarioRepository,
+            UsuarioPessoaRepository usuarioPessoaRepository,
             RefreshTokenService refreshTokenService,
             JwtService jwtService,
             PasswordEncoder passwordEncoder,
             CodeVerifier codeVerifier
     ) {
         this.usuarioRepository = usuarioRepository;
+        this.usuarioPessoaRepository = usuarioPessoaRepository;
         this.refreshTokenService = refreshTokenService;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
@@ -115,10 +119,18 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenService.revogarTodos(usuario);
     }
 
-    private AuthResponse gerarAuthResponse(Usuario usuario, TokenData tokenData) {
+        private AuthResponse gerarAuthResponse(Usuario usuario, TokenData tokenData) {
         String accessToken = jwtService.gerarAccessToken(tokenData);
         String refreshToken = refreshTokenService.criarRefreshToken(usuario);
-        return new AuthResponse(accessToken, refreshToken, usuario.getNome());
+
+        Long idPessoa = usuarioPessoaRepository
+                .findByUsuarioId(usuario.getId())
+                .stream()
+                .findFirst()
+                .map(up -> up.getPessoa().getId())
+                .orElse(null);
+
+        return new AuthResponse(accessToken, refreshToken, usuario.getNome(), idPessoa);
     }
 
     private void registrarTentativaFalha(Usuario usuario) {

@@ -5,10 +5,13 @@ const API_BASE = 'http://192.168.0.148:8080';
 
 const AUTH_TOKEN_KEY = 'locvac:auth:token';
 const REFRESH_TOKEN_KEY = 'locvac:auth:refresh';
+const PESSOA_ID_KEY = 'locvac:auth:pessoaId';
 
 interface AuthResponse {
 	accessToken: string;
 	refreshToken: string;
+	nome: string;
+	idPessoa: number;
 }
 
 interface LoginRequest {
@@ -21,11 +24,18 @@ interface CadastroRequest {
 	email: string;
 	senha: string;
 	telefone: string;
+	dataNascimento: string;
+	cpf: string;
+	sexoBiologico: 'MASCULINO' | 'FEMININO';
+	cep: string;
 }
 
 export async function login(data: LoginRequest): Promise<AuthResponse> {
 	const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, data);
 	await saveTokens(response.data);
+	if (response.data.idPessoa) {
+		await AsyncStorage.setItem('locvac:auth:pessoaId', String(response.data.idPessoa));
+	}
 	return response.data;
 }
 
@@ -63,10 +73,25 @@ export async function isAuthenticated(): Promise<boolean> {
 async function saveTokens(auth: AuthResponse): Promise<void> {
 	await AsyncStorage.setItem(AUTH_TOKEN_KEY, auth.accessToken);
 	await AsyncStorage.setItem(REFRESH_TOKEN_KEY, auth.refreshToken);
+	if (auth.idPessoa) {
+		await AsyncStorage.setItem(PESSOA_ID_KEY, String(auth.idPessoa));
+	}
+}
+
+export async function getPessoaId(): Promise<number | null> {
+  const id = await AsyncStorage.getItem(PESSOA_ID_KEY);
+  return id ? Number(id) : null;
+}
+
+export async function fetchPerfil(idPessoa: number) {
+  const response = await axios.get(`${API_BASE}/pessoas/perfil`, {
+    params: { idPessoa },
+  });
+  return response.data; // PessoaResponseDTO
 }
 
 async function clearTokens(): Promise<void> {
-	await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY]);
+	await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY, PESSOA_ID_KEY]);
 }
 
 // Interceptor para adicionar o token JWT em todas as requisições

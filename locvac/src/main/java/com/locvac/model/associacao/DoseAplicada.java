@@ -15,7 +15,7 @@ public class DoseAplicada {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_dose")
-        private String id;
+        private Long id;
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id_pessoa", nullable = false)
@@ -105,7 +105,7 @@ public class DoseAplicada {
                 unidadeSaude = unidadeSaude;
         }
 
-        public String getId() {
+        public Long getId() {
                 return id;
         }
 

@@ -15,6 +15,7 @@ type CampaignsSectionProps = {
 };
 
 export default function CampaignsSection({ campaigns, onOpenModal, onDelete }: CampaignsSectionProps) {
+  console.log('DEBUG CampaignsSection campaigns:', campaigns);
   return (
     <View style={styles.sectionBlock}>
       <View style={styles.sectionTitleRow}>

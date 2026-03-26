@@ -12,7 +12,7 @@ public class VacinaInformativo {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @Column(name = "id_informativo")
-        private String id;
+        private Long id;
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id_vacina", nullable = false)
@@ -64,7 +64,7 @@ public class VacinaInformativo {
                 this.secoes = secoes;
         }
 
-        public String getId() {
+        public Long getId() {
                 return id;
         }
 

@@ -9,4 +9,6 @@ public interface ParticipacaoCampanhaService {
     ParticipacaoCampanhaResponseDTO cadastrar(ParticipacaoCampanhaRequestDTO dto);
 
     List<ParticipacaoCampanhaResponseDTO> listarTodos();
+
+    List<ParticipacaoCampanhaResponseDTO> listarPorPessoa(Long idPessoa);
 }
