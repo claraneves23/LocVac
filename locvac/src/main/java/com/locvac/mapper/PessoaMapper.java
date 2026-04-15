@@ -23,7 +23,8 @@ public class PessoaMapper {
         return pessoa;
     }
 
-    public PessoaResponseDTO toResponse(Pessoa pessoa) {
+    // Novo método para dependentes, aceita parentesco
+    public PessoaResponseDTO toResponse(Pessoa pessoa, String dscParentesco) {
         return new PessoaResponseDTO(
                 pessoa.getId(),
                 pessoa.getNome(),
@@ -35,7 +36,13 @@ public class PessoaMapper {
                 pessoa.getTelefone(),
                 pessoa.getFotoUrl(),
                 pessoa.getNomeResponsavel(),
-                pessoa.isAtivo()
+                pessoa.isAtivo(),
+                dscParentesco
         );
+    }
+
+    // Mantém o antigo para usos gerais
+    public PessoaResponseDTO toResponse(Pessoa pessoa) {
+        return toResponse(pessoa, null);
     }
 }

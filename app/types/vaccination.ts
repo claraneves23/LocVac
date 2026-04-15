@@ -45,6 +45,7 @@ export interface FamilyMember {
   state?: string;
   zipCode?: string;
   phone?: string;
+  email?: string; // Adicionado para uso na tela de usuário
 }
 
 export interface Vaccine {

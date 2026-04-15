@@ -5,6 +5,8 @@ import com.locvac.dto.pessoa.PessoaResponseDTO;
 
 import java.util.List;
 
+import java.util.UUID;
+
 public interface PessoaService {
 
     PessoaResponseDTO cadastrar(PessoaRequestDTO dto);
@@ -12,4 +14,6 @@ public interface PessoaService {
     PessoaResponseDTO getPerfil(Long idPessoa);
 
     List<PessoaResponseDTO> listarTodos();
+
+    List<PessoaResponseDTO> listarDependentes(UUID usuarioId);
 }

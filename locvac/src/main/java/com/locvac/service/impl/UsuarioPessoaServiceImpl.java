@@ -41,4 +41,13 @@ public class UsuarioPessoaServiceImpl implements UsuarioPessoaService {
     public void remover(String id) {
         usuarioPessoaRepository.deleteById(id);
     }
+
+    // Implementação do novo método
+    @Override
+    public List<UsuarioPessoaResponseDTO> buscarPorPessoa(Long idPessoa) {
+        return usuarioPessoaRepository.findByPessoaId(idPessoa)
+                .stream()
+                .map(usuarioPessoaMapper::toResponse)
+                .toList();
+    }
 }

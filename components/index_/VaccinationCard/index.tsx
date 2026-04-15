@@ -33,7 +33,9 @@ export default function VaccinationCard({ profile, onOpenImagePreview }: Vaccina
           </Pressable>
         ) : (
           <View style={styles.cardProfileBadge}>
-            <Text style={styles.cardProfileText}>{profile.name.charAt(0)}</Text>
+            <Text style={styles.cardProfileText}>
+              {profile.name && profile.name.length > 0 ? profile.name.charAt(0) : '?'}
+            </Text>
           </View>
         )}
       </View>

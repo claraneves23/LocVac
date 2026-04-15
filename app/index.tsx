@@ -5,9 +5,9 @@ import { router, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ALERTS_BY_PROFILE, MAIN_USER } from './data/family';
+import { ALERTS_BY_PROFILE } from './data/family';
+import { getDependents } from './service/dependentsService';
 import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
-import { getDependents } from '../src/storage/dependents';
 import { getVaccines, addVaccine, updateVaccine, deleteVaccine } from '../src/storage/vaccines';
 import { getMandatoryVaccineRecordsByProfile, updateMandatoryVaccineRecord } from '../src/storage/mandatory-vaccines';
 import { getOtherVaccinesByProfile, addOtherVaccine, updateOtherVaccine, deleteOtherVaccine } from '../src/storage/other-vaccines';
@@ -58,7 +58,7 @@ export default function Index() {
   // O componente Login já gerencia o fluxo de autenticação/cadastro
   // e redireciona para a tela principal após login
   // return <Login />; // Removido para evitar código inalcançável
-  const [dependents, setDependents] = useState<Dependent[]>([]);
+  const [dependents, setDependents] = useState<FamilyMember[]>([]);
   const [vaccines, setVaccines] = useState<VaccineApplication[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,6 +75,7 @@ export default function Index() {
   const [showMandatoryDatePicker, setShowMandatoryDatePicker] = useState(false);
   const [mandatoryVaccineDate, setMandatoryVaccineDate] = useState(new Date());
   const [mainUser, setMainUser] = useState<FamilyMember | null>(null);
+  const [usuarioId, setUsuarioId] = useState<string | null>(null);
 
   // Estados para o formulário de vacina obrigatória
   const [mandatoryIsApplied, setMandatoryIsApplied] = useState(false);
@@ -115,39 +116,51 @@ export default function Index() {
         .catch(() => setAvailableCampaigns([]));
     }, []);
 
-    useEffect(() => {
-      const loadProfile = async () => {
-    try {
-      const idPessoa = await getPessoaId();
-      console.log('DEBUG idPessoa:', idPessoa);
-      if (!idPessoa) {
+  useEffect(() => {
+    const loadProfileAndDependents = async () => {
+      try {
+        const idPessoa = await getPessoaId();
+        if (!idPessoa) {
+          setIsLoading(false);
+          return;
+        }
+        const perfil = await fetchPerfil(idPessoa);
+        setMainUser({
+          id: String(perfil.id),
+          userId: String(perfil.id),
+          name: perfil.nome,
+          birthDate: perfil.dataNascimento,
+          sex: perfil.sexoBiologico,
+          kind: 'user',
+          zipCode: perfil.cep,
+          phone: perfil.telefone,
+          // outros campos se necessário
+        });
+        setSelectedProfileId(String(perfil.id));
+        // Buscar o idUsuario titular para buscar dependentes
+        // Se o backend já retorna o idUsuario, use diretamente, senão busque pelo endpoint correto
+        let usuarioIdTitular = null;
+        if (perfil.idUsuario) {
+          usuarioIdTitular = perfil.idUsuario;
+        } else {
+          // fallback: buscar pelo endpoint
+          const { getUsuarioTitularIdByPessoaId } = await import('./service/dependentsService');
+          usuarioIdTitular = await getUsuarioTitularIdByPessoaId(perfil.id);
+        }
+        setUsuarioId(usuarioIdTitular);
+        if (usuarioIdTitular) {
+          const dependentsFromApi = await getDependents(usuarioIdTitular);
+          setDependents(dependentsFromApi);
+        } else {
+          setDependents([]);
+        }
         setIsLoading(false);
-        return;
-      }
-
-      const perfil = await fetchPerfil(idPessoa);
-      console.log('DEBUG perfil:', perfil);
-
-      setMainUser({
-        id: String(perfil.id),
-        userId: String(perfil.id),
-        name: perfil.nome,
-        birthDate: perfil.dataNascimento,
-        sex: perfil.sexoBiologico,
-        kind: 'user',
-        zipCode: perfil.cep,
-        phone: perfil.telefone,
-        // preencha os demais campos conforme PessoaResponseDTO
-      });
-      setSelectedProfileId(String(perfil.id));
-      setIsLoading(false);
       } catch (error) {
-        console.error('DEBUG Erro ao carregar perfil:', error);
+        console.error('DEBUG Erro ao carregar perfil/dependentes:', error);
         setIsLoading(false);
       }
     };
-
-  loadProfile();
+    loadProfileAndDependents();
   }, []);
 
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
@@ -158,9 +171,11 @@ export default function Index() {
   const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
 
   const loadDependents = useCallback(async () => {
-    const stored = await getDependents();
-    setDependents(stored);
-  }, []);
+    if (usuarioId) {
+      const dependentsFromApi = await getDependents(usuarioId);
+      setDependents(dependentsFromApi);
+    }
+  }, [usuarioId]);
 
   const loadVaccines = useCallback(async () => {
     const stored = await getVaccines();
@@ -225,11 +240,8 @@ export default function Index() {
   );
 
   const familyMembers = useMemo<FamilyMember[]>(() => {
-  if (!mainUser) return [];
-  return [
-    mainUser,
-    ...dependents.map((d) => ({ ...d, kind: 'dependent' as const })),
-  ];
+    if (!mainUser) return [];
+    return [mainUser, ...dependents];
   }, [mainUser, dependents]);
 
   const selectedProfile = useMemo((): FamilyMember => {

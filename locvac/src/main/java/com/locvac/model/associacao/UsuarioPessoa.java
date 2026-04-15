@@ -2,6 +2,7 @@ package com.locvac.model.associacao;
 
 import com.locvac.model.core.Pessoa;
 import com.locvac.model.core.Usuario;
+import com.locvac.model.enums.TipoVinculo;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -23,8 +24,9 @@ public class UsuarioPessoa {
     @JoinColumn(name = "id_pessoa", nullable = false)
     private Pessoa pessoa;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo_vinculo", nullable = false)
-    private String tipoVinculo;
+    private TipoVinculo tipoVinculo;
 
     @Column(name = "pode_visualizar", nullable = false)
     private boolean podeVisualizar;
@@ -34,6 +36,9 @@ public class UsuarioPessoa {
 
     @Column(name = "data_vinculo")
     private LocalDate dataVinculo;
+    
+    @Column(name = "dsc_parentesco")
+    private String dscParentesco;
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
@@ -43,7 +48,7 @@ public class UsuarioPessoa {
         this.pessoa = pessoa;
     }
 
-    public void setTipoVinculo(String tipoVinculo) {
+    public void setTipoVinculo(TipoVinculo tipoVinculo) {
         this.tipoVinculo = tipoVinculo;
     }
 
@@ -59,6 +64,10 @@ public class UsuarioPessoa {
         this.dataVinculo = dataVinculo;
     }
 
+    public void setDscParentesco(String dscParentesco) {
+        this.dscParentesco = dscParentesco;
+    }
+
     public Long getId() {
         return id;
     }
@@ -71,7 +80,7 @@ public class UsuarioPessoa {
         return pessoa;
     }
 
-    public String getTipoVinculo() {
+    public TipoVinculo getTipoVinculo() {
         return tipoVinculo;
     }
 
@@ -85,5 +94,9 @@ public class UsuarioPessoa {
 
     public LocalDate getDataVinculo() {
         return dataVinculo;
+    }
+
+    public String getDscParentesco() {
+        return dscParentesco;
     }
 }

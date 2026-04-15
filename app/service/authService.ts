@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = 'http://192.168.0.148:8080';
+const API_BASE = 'http://192.168.0.10:8080';
 
 const AUTH_TOKEN_KEY = 'locvac:auth:token';
 const REFRESH_TOKEN_KEY = 'locvac:auth:refresh';

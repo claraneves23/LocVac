@@ -57,7 +57,7 @@ export default function ProfileModal({
                     />
                   ) : (
                     <Text style={styles.modalOptionBadgeText}>
-                      {profile.name.charAt(0)}
+                      {profile.name && profile.name.length > 0 ? profile.name.charAt(0) : '?'}
                     </Text>
                   )}
                 </View>

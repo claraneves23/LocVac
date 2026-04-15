@@ -23,6 +23,12 @@ public class UsuarioPessoaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioPessoaService.cadastrar(dto));
     }
 
+
+    @GetMapping("/por-pessoa")
+    public ResponseEntity<List<UsuarioPessoaResponseDTO>> buscarPorPessoa(@RequestParam Long idPessoa) {
+        return ResponseEntity.ok(usuarioPessoaService.buscarPorPessoa(idPessoa));
+    }
+
     @GetMapping
     public ResponseEntity<List<UsuarioPessoaResponseDTO>> listarTodos() {
         return ResponseEntity.ok(usuarioPessoaService.listarTodos());

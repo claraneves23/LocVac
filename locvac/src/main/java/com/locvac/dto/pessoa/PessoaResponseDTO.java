@@ -5,7 +5,6 @@ import com.locvac.model.enums.Sexo;
 import java.time.LocalDate;
 
 public record PessoaResponseDTO(
-
         Long id,
         String nome,
         LocalDate dataNascimento,
@@ -16,5 +15,6 @@ public record PessoaResponseDTO(
         String telefone,
         String fotoUrl,
         String nomeResponsavel,
-        boolean ativo
+        boolean ativo,
+        String dscParentesco
 ) {}

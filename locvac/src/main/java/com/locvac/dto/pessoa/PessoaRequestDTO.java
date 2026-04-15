@@ -14,7 +14,6 @@ public record PessoaRequestDTO(
         @NotNull(message = "A data de nascimento é obrigatória")
         LocalDate dataNascimento,
 
-        @NotBlank(message = "O CPF é obrigatório")
         String cpf,
 
         @NotNull(message = "O sexo biológico é obrigatório")

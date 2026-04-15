@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
+import com.locvac.model.enums.TipoVinculo;
 
 @Service
 @Transactional
@@ -61,7 +62,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         UsuarioPessoa usuarioPessoa = new UsuarioPessoa();
         usuarioPessoa.setUsuario(usuario);
         usuarioPessoa.setPessoa(pessoa);
-        usuarioPessoa.setTipoVinculo("titular");
+        usuarioPessoa.setTipoVinculo(TipoVinculo.TITULAR);
         usuarioPessoa.setPodeVisualizar(true);
         usuarioPessoa.setPodeEditar(true);
         usuarioPessoa.setDataVinculo(LocalDate.now());

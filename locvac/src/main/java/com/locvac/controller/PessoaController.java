@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
 
 import java.util.List;
 
@@ -33,5 +34,10 @@ public class PessoaController {
     @GetMapping("/perfil")
     public ResponseEntity<PessoaResponseDTO> getPerfil(@RequestParam Long idPessoa) {
         return ResponseEntity.ok(service.getPerfil(idPessoa));
+    }
+
+    @GetMapping("/dependentes")
+    public ResponseEntity<List<PessoaResponseDTO>> listarDependentes(@RequestParam UUID usuarioId) {
+        return ResponseEntity.ok(service.listarDependentes(usuarioId));
     }
 }

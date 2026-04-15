@@ -20,18 +20,34 @@ import * as ImagePicker from 'expo-image-picker';
 import * as NavigationBar from 'expo-navigation-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MAIN_USER } from './data/family';
-import { Dependent } from './types/vaccination';
-import { getDependents, addDependent, updateDependent, removeDependent } from '../src/storage/dependents';
+import { getPessoaId, fetchPerfil } from './service/authService';
+import { FamilyMember } from './types/vaccination';
+import { getDependents, addDependentAndLink, getUsuarioTitularIdByPessoaId } from './service/dependentsService';
 import { logout } from './service/authService';
 
-const SEX_OPTIONS: Dependent['sex'][] = ['M', 'F', 'Outro'];
+const SEX_OPTIONS = ['M', 'F', 'Outro'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
 
-type DraftDependent = Omit<Dependent, 'id' | 'userId'> & { id?: string };
+type DraftDependent = {
+  id?: string;
+  name: string;
+  birthDate: string;
+  birthPlace?: string;
+  relationship: string;
+  guardianName?: string;
+  sex: 'M' | 'F' | 'Outro';
+  photoUri?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phone?: string;
+};
 
 export default function User() {
   const router = useRouter();
-  const [dependents, setDependents] = useState<Dependent[]>([]);
+  const [mainUser, setMainUser] = useState<FamilyMember | null>(null);
+  const [dependents, setDependents] = useState<FamilyMember[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
@@ -57,15 +73,54 @@ export default function User() {
     return `${day}/${month}/${year}`;
   };
 
-  const loadDependents = useCallback(async () => {
-    const stored = await getDependents();
-    setDependents(stored);
+
+  // Carrega dados do titular e dependentes
+  const loadUserAndDependents = useCallback(async () => {
+    try {
+      const idPessoa = await getPessoaId();
+      console.log('DEBUG idPessoa:', idPessoa);
+      if (!idPessoa) return;
+      const perfil = await fetchPerfil(idPessoa);
+      console.log('DEBUG perfil:', perfil);
+      const usuarioId = await getUsuarioTitularIdByPessoaId(idPessoa);
+      console.log('DEBUG usuarioId (UUID):', usuarioId);
+      const mainUserObj = {
+        id: usuarioId || '',
+        userId: usuarioId || '',
+        name: perfil.nome,
+        birthDate: perfil.dataNascimento,
+        birthPlace: perfil.localNascimento,
+        sex: perfil.sexoBiologico,
+        kind: 'user' as const,
+        zipCode: perfil.cep,
+        phone: perfil.telefone,
+        email: perfil.email,
+        address: perfil.endereco,
+        city: perfil.cidade,
+        state: perfil.estado,
+      };
+      setMainUser(mainUserObj);
+      console.log('DEBUG mainUser:', mainUserObj);
+      // Busca dependentes usando o UUID do usuário titular
+      if (usuarioId) {
+        const fetched = await getDependents(usuarioId);
+        console.log('DEBUG dependents response:', fetched);
+        setDependents(fetched);
+      } else {
+        setDependents([]);
+      }
+    } catch (e) {
+      console.log('ERROR loadUserAndDependents:', e);
+      setMainUser(null);
+      setDependents([]);
+    }
   }, []);
+
 
   useFocusEffect(
     useCallback(() => {
-      loadDependents();
-    }, [loadDependents])
+      loadUserAndDependents();
+    }, [loadUserAndDependents])
   );
 
   useEffect(() => {
@@ -112,23 +167,9 @@ export default function User() {
     setIsModalOpen(true);
   };
 
-  const openEdit = (dependent: Dependent) => {
-    setDraft({
-      id: dependent.id,
-      name: dependent.name,
-      birthDate: dependent.birthDate,
-      birthPlace: dependent.birthPlace || '',
-      relationship: dependent.relationship,
-      guardianName: dependent.guardianName || '',
-      sex: dependent.sex,
-      photoUri: dependent.photoUri,
-      address: dependent.address || '',
-      city: dependent.city || '',
-      state: dependent.state || '',
-      zipCode: dependent.zipCode || '',
-      phone: dependent.phone || '',
-    });
-    setIsModalOpen(true);
+  // Edição local desabilitada para dependentes reais do backend
+  const openEdit = (_dependent: any) => {
+    // noop
   };
 
   const handlePickImage = async (fromCamera: boolean) => {
@@ -164,81 +205,42 @@ export default function User() {
     return true;
   };
 
+  // Permite adicionar dependente real via backend
   const handleSave = async () => {
-    if (!validateDraft()) {
+    if (!validateDraft() || !mainUser) {
       return;
     }
-
-    if (draft.id) {
-      const updated = await updateDependent({
-        id: draft.id,
-        userId: MAIN_USER.id,
-        name: draft.name.trim(),
-        birthDate: draft.birthDate.trim(),
-        birthPlace: draft.birthPlace?.trim() || undefined,
-        relationship: draft.relationship.trim(),
-        guardianName: draft.guardianName?.trim() || undefined,
-        sex: draft.sex,
-        photoUri: draft.photoUri,
-        address: draft.address?.trim() || undefined,
-        city: draft.city?.trim() || undefined,
-        state: draft.state?.trim() || undefined,
-        zipCode: draft.zipCode?.trim() || undefined,
-        phone: draft.phone?.trim() || undefined,
-      });
-      setDependents(updated);
-    } else {
-      const newDependent: Dependent = {
-        id: `dep-${Date.now()}`,
-        userId: MAIN_USER.id,
-        name: draft.name.trim(),
-        birthDate: draft.birthDate.trim(),
-        birthPlace: draft.birthPlace?.trim() || undefined,
-        relationship: draft.relationship.trim(),
-        guardianName: draft.guardianName?.trim() || undefined,
-        sex: draft.sex,
-        photoUri: draft.photoUri,
-        address: draft.address?.trim() || undefined,
-        city: draft.city?.trim() || undefined,
-        state: draft.state?.trim() || undefined,
-        zipCode: draft.zipCode?.trim() || undefined,
-        phone: draft.phone?.trim() || undefined,
-      };
-      const updated = await addDependent(newDependent);
-      setDependents(updated);
+    try {
+      await addDependentAndLink(mainUser.id, draft);
+      setIsModalOpen(false);
+      resetDraft();
+      loadUserAndDependents();
+    } catch (e: any) {
+      Alert.alert('Erro', 'Não foi possível adicionar o dependente.');
+      console.log('Erro ao cadastrar dependente:', e?.response?.data || e);
     }
-
-    setIsModalOpen(false);
-    resetDraft();
   };
 
-  const handleRemove = (dependent: Dependent) => {
-    Alert.alert('Remover dependente?', `Deseja remover ${dependent.name}?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Remover',
-        style: 'destructive',
-        onPress: async () => {
-          const updated = await removeDependent(dependent.id);
-          setDependents(updated);
-        },
-      },
-    ]);
+  // Remoção local desabilitada para dependentes reais do backend
+  const handleRemove = (_dependent: any) => {
+    Alert.alert('Função indisponível', 'A remoção de dependentes reais deve ser feita pelo sistema oficial.');
   };
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.profile}>
-          <View style={styles.photo}>
-            <Text style={styles.photoInitial}>{MAIN_USER.name.charAt(0)}</Text>
+        {mainUser && (
+          <View style={styles.profile}>
+            <View style={styles.photo}>
+              <Text style={styles.photoInitial}>{mainUser.name ? mainUser.name.charAt(0) : ''}</Text>
+            </View>
+            <View>
+              <Text style={styles.name}>{mainUser.name}</Text>
+              <Text style={styles.subtitle}>Titular da conta</Text>
+              <Text style={styles.subtitle}>{mainUser.email}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.name}>{MAIN_USER.name}</Text>
-            <Text style={styles.subtitle}>Titular da conta</Text>
-            <Text style={styles.subtitle}>{MAIN_USER.email}</Text>
-          </View>
-        </View>
+        )}
 
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
@@ -253,33 +255,33 @@ export default function User() {
             <Text style={styles.dependentSummary}>Nenhum dependente cadastrado.</Text>
           ) : (
             <View style={styles.dependentsList}>
-              {dependents.map((dependent) => (
-                <View key={dependent.id} style={styles.dependentCard}>
-                  <View style={styles.dependentRow}>
-                    {dependent.photoUri ? (
-                      <Image source={{ uri: dependent.photoUri }} style={styles.dependentAvatar} />
-                    ) : (
-                      <View style={styles.dependentAvatarPlaceholder}>
-                        <Text style={styles.dependentAvatarInitial}>{dependent.name.charAt(0)}</Text>
+              {dependents.map((dependent) => {
+                console.log('DEBUG dependente:', {
+                  id: dependent.id,
+                  name: dependent.name,
+                  relationship: dependent.relationship,
+                  kind: dependent.kind
+                });
+                return (
+                  <View key={dependent.id} style={styles.dependentCard}>
+                    <View style={styles.dependentRow}>
+                      {dependent.photoUri ? (
+                        <Image source={{ uri: dependent.photoUri }} style={styles.dependentAvatar} />
+                      ) : (
+                        <View style={styles.dependentAvatarPlaceholder}>
+                          <Text style={styles.dependentAvatarInitial}>{dependent.name ? dependent.name.charAt(0) : ''}</Text>
+                        </View>
+                      )}
+                      <View style={styles.dependentInfo}>
+                        <Text style={styles.dependentName}>{dependent.name}</Text>
+                        <Text style={styles.dependentMeta}>
+                          {dependent.relationship || dependent.kind} • {formatDateToBR(dependent.birthDate)} • {dependent.sex}
+                        </Text>
                       </View>
-                    )}
-                    <View style={styles.dependentInfo}>
-                      <Text style={styles.dependentName}>{dependent.name}</Text>
-                      <Text style={styles.dependentMeta}>
-                        {dependent.relationship} • {formatDateToBR(dependent.birthDate)} • {dependent.sex}
-                      </Text>
                     </View>
                   </View>
-                  <View style={styles.dependentActions}>
-                    <TouchableOpacity style={styles.dependentActionButton} onPress={() => openEdit(dependent)}>
-                      <Ionicons name="pencil" size={16} color="#29442dff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.dependentActionButton} onPress={() => handleRemove(dependent)}>
-                      <Ionicons name="trash" size={16} color="#d32f2f" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
         </View>
