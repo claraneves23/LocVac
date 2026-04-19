@@ -2,7 +2,6 @@ import { View, Text, Pressable, Modal, ScrollView, TextInput, StyleSheet, Platfo
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { MANDATORY_FIRST_YEAR_VACCINES } from '../../../app/data/mandatory-vaccines';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
@@ -13,6 +12,7 @@ const formatDateToBR = (isoDate: string | undefined): string => {
 type MandatoryVaccineModalProps = {
   visible: boolean;
   vaccineId: string | null;
+  vaccineName?: string;
   isApplied: boolean;
   date: string;
   lot: string;
@@ -35,6 +35,7 @@ type MandatoryVaccineModalProps = {
 export default function MandatoryVaccineModal({
   visible,
   vaccineId,
+  vaccineName,
   isApplied,
   date,
   lot,
@@ -53,9 +54,7 @@ export default function MandatoryVaccineModal({
   onSave,
   onClose,
 }: MandatoryVaccineModalProps) {
-  const vaccineName = vaccineId
-    ? MANDATORY_FIRST_YEAR_VACCINES.find((v) => v.id === vaccineId)?.name
-    : '';
+  const title = vaccineName ?? '';
 
   return (
     <Modal
@@ -71,7 +70,7 @@ export default function MandatoryVaccineModal({
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{vaccineName}</Text>
+            <Text style={styles.modalTitle}>{title}</Text>
             <Pressable onPress={onClose}>
               <Ionicons name="close" size={18} color="#29442dff" />
             </Pressable>

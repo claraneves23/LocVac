@@ -102,7 +102,7 @@ public class DoseAplicada {
         }
 
         public void setUnidadeSaude(String unidadeSaude) {
-                unidadeSaude = unidadeSaude;
+                this.unidadeSaude = unidadeSaude;
         }
 
         public Long getId() {

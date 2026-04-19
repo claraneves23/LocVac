@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { FamilyMember } from '../types/vaccination';
 
-const API_URL = 'http://192.168.0.10:8080'; // mesmo padrão dos outros services
+const API_URL = 'https://locvac-production.up.railway.app';
 
 export async function addDependentAndLink(usuarioId: string, dependent: Omit<FamilyMember, 'id' | 'userId' | 'kind'> & { cpf?: string }): Promise<void> {
   // 1. Cria a pessoa

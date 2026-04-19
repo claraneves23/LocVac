@@ -34,6 +34,12 @@ public class Vacina {
     @Column(name = "tipo_secao_vacinacao", nullable = false)
     private TipoSecaoVacinacao tipoSecaoVacinacao;
 
+    public Vacina() {}
+
+    public Vacina(Long id) {
+        this.id = id;
+    }
+
     public void setNome(String nome) {
         this.nome = nome;
     }

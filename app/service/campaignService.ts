@@ -1,22 +1,20 @@
-// Busca participações de campanha por pessoa
-export async function fetchParticipacoesByPessoa(idPessoa: number) {
-  const response = await axios.get(`http://192.168.0.10:8080/participacaoCampanha/por-pessoa/${idPessoa}`);
-  return response.data;
-}
 import axios from 'axios';
 import { Campanha } from '../types/vaccination';
 
-const API_URL = 'http://192.168.0.10:8080/campanhas'; // IP local para acesso via Expo Go
+const API_BASE = 'https://locvac-production.up.railway.app';
 
 export async function fetchCampaigns(): Promise<Campanha[]> {
-	const response = await axios.get(API_URL);
+	const response = await axios.get(`${API_BASE}/campanhas`);
 	return response.data;
 }
 
-// Envia uma participação de campanha para o backend
+export async function fetchParticipacoesByPessoa(idPessoa: number) {
+  const response = await axios.get(`${API_BASE}/participacaoCampanha/por-pessoa/${idPessoa}`);
+  return response.data;
+}
+
 export async function addParticipacaoCampanha({ idPessoa, idCampanha, dataParticipacao }: { idPessoa: number, idCampanha: number, dataParticipacao: string }) {
-  const API_URL = 'http://192.168.0.10:8080/participacaoCampanha/novaParticipacao';
-  return axios.post(API_URL, {
+  return axios.post(`${API_BASE}/participacaoCampanha/novaParticipacao`, {
     idPessoa,
     idCampanha,
     dataParticipacao
