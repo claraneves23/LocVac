@@ -24,7 +24,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Desabilita CSRF — não necessário para APIs REST stateless
+                .cors(cors -> {})
+                // Desabilita CSRF — não necessário para APIs REST stateless
             .csrf(AbstractHttpConfigurer::disable)
 
             // Sem sessão — autenticação via JWT a cada requisição

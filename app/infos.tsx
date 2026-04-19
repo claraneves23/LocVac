@@ -15,7 +15,7 @@ export default function Infos() {
   const [helpVisible, setHelpVisible] = useState(false);
   const router = useRouter();
   const [activeSlide, setActiveSlide] = useState(0);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Filtro de vacinas
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
