@@ -8,8 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERTS_BY_PROFILE } from './data/family';
 import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
 import { getVaccines, addVaccine, updateVaccine, deleteVaccine } from '../src/storage/vaccines';
-import { fetchMandatoryVaccines, fetchDosesPorPessoa, registrarDose, atualizarDose, deletarDose, VacinaDTO } from './service/mandatoryVaccineService';
-import { getOtherVaccinesByProfile, addOtherVaccine, updateOtherVaccine, deleteOtherVaccine } from '../src/storage/other-vaccines';
+import { fetchMandatoryVaccines, fetchDosesPorPessoa, registrarDose, atualizarDose, deletarDose, VacinaDTO, fetchOutrasVacinasPorPessoa, registrarOutraVacina, atualizarOutraVacina } from './service/mandatoryVaccineService';
 import { getCampaignsByProfile, addCampaign, updateCampaign, deleteCampaign } from '../src/storage/campaigns';
 import { fetchCampaigns, addParticipacaoCampanha, fetchParticipacoesByPessoa } from './service/campaignService';
 import { Campanha } from './types/vaccination';
@@ -162,9 +161,21 @@ export default function Index() {
   }, [selectedProfileId, mandatoryVaccineList]);
 
   const loadOtherVaccines = useCallback(async () => {
-    if (selectedProfileId) {
-      const vaccines = await getOtherVaccinesByProfile(selectedProfileId);
-      setOtherVaccines(vaccines);
+    if (!selectedProfileId) return;
+    try {
+      const doses = await fetchOutrasVacinasPorPessoa(Number(selectedProfileId));
+      setOtherVaccines(doses.map((d) => ({
+        id: String(d.id),
+        profileId: String(d.idPessoa),
+        vaccineName: d.nomeVacina,
+        applicationDate: d.dataAplicacao ?? undefined,
+        lot: d.lote ?? undefined,
+        code: d.observacao ?? undefined,
+        professionalName: d.nomeProfissional ?? undefined,
+        professionalId: d.registroProfissional ?? undefined,
+      })));
+    } catch {
+      setOtherVaccines([]);
     }
   }, [selectedProfileId]);
 
@@ -450,26 +461,23 @@ export default function Index() {
   const handleSaveOtherVaccine = async () => {
     if (!otherVaccineName.trim()) return;
 
-    const vaccine: OtherVaccine = {
-      id: editingOtherVaccine?.id || `ov-${Date.now()}`,
-      profileId: selectedProfile.id,
-      vaccineName: otherVaccineName.trim(),
-      applicationDate: otherVaccineAppDate || undefined,
-      lot: otherVaccineLot.trim() || undefined,
-      code: otherVaccineCode.trim() || undefined,
-      professionalName: otherVaccineProfName.trim() || undefined,
-      professionalId: otherVaccineProfId.trim() || undefined,
+    const payload = {
+      idPessoa: Number(selectedProfile.id),
+      nomeVacina: otherVaccineName.trim(),
+      dataAplicacao: otherVaccineAppDate || undefined,
+      lote: otherVaccineLot.trim() || undefined,
+      observacao: otherVaccineCode.trim() || undefined,
+      nomeProfissional: otherVaccineProfName.trim() || undefined,
+      registroProfissional: otherVaccineProfId.trim() || undefined,
     };
 
     if (editingOtherVaccine) {
-      await updateOtherVaccine(vaccine);
+      await atualizarOutraVacina(Number(editingOtherVaccine.id), payload);
     } else {
-      await addOtherVaccine(vaccine);
+      await registrarOutraVacina(payload);
     }
 
     await loadOtherVaccines();
-
-    // Limpar formulário
     setOtherVaccineName('');
     setOtherVaccineAppDate('');
     setOtherVaccineLot('');
@@ -481,7 +489,7 @@ export default function Index() {
   };
 
   const handleDeleteOtherVaccine = async (vaccineId: string) => {
-    await deleteOtherVaccine(vaccineId);
+    await deletarDose(Number(vaccineId));
     await loadOtherVaccines();
   };
 

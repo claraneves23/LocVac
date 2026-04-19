@@ -2,6 +2,7 @@ package com.locvac.controller;
 
 import com.locvac.dto.doseAplicada.DoseAplicadaRequestDTO;
 import com.locvac.dto.doseAplicada.DoseAplicadaResponseDTO;
+import com.locvac.dto.doseAplicada.OutraVacinaRequestDTO;
 import com.locvac.model.enums.TipoSecaoVacinacao;
 import com.locvac.service.DoseAplicadaService;
 import jakarta.validation.Valid;
@@ -47,5 +48,16 @@ public class DoseAplicadaController {
     public List<DoseAplicadaResponseDTO> listarPorPessoaETipo(@PathVariable Long idPessoa,
                                                                @PathVariable TipoSecaoVacinacao tipo) {
         return service.listarPorPessoaETipo(idPessoa, tipo);
+    }
+
+    @PostMapping("/outras-vacinas")
+    public ResponseEntity<DoseAplicadaResponseDTO> registrarOutraVacina(@RequestBody @Valid OutraVacinaRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarOutraVacina(dto));
+    }
+
+    @PutMapping("/outras-vacinas/{idDose}")
+    public ResponseEntity<DoseAplicadaResponseDTO> atualizarOutraVacina(@PathVariable Long idDose,
+                                                                         @RequestBody @Valid OutraVacinaRequestDTO dto) {
+        return ResponseEntity.ok(service.atualizarOutraVacina(idDose, dto));
     }
 }
