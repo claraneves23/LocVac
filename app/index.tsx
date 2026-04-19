@@ -6,15 +6,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ALERTS_BY_PROFILE } from './data/family';
-import { getDependents } from './service/dependentsService';
 import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
 import { getVaccines, addVaccine, updateVaccine, deleteVaccine } from '../src/storage/vaccines';
-import { getMandatoryVaccineRecordsByProfile, updateMandatoryVaccineRecord } from '../src/storage/mandatory-vaccines';
-import { getOtherVaccinesByProfile, addOtherVaccine, updateOtherVaccine, deleteOtherVaccine } from '../src/storage/other-vaccines';
+import { fetchMandatoryVaccines, fetchDosesPorPessoa, registrarDose, atualizarDose, deletarDose, VacinaDTO, fetchOutrasVacinasPorPessoa, registrarOutraVacina, atualizarOutraVacina } from './service/mandatoryVaccineService';
 import { getCampaignsByProfile, addCampaign, updateCampaign, deleteCampaign } from '../src/storage/campaigns';
 import { fetchCampaigns, addParticipacaoCampanha, fetchParticipacoesByPessoa } from './service/campaignService';
 import { Campanha } from './types/vaccination';
-import { getPessoaId, fetchPerfil } from './service/authService';
+import { useAppContext } from './context/AppContext';
 
 // Componentes
 import Header from '../components/index_/Header';
@@ -58,10 +56,9 @@ export default function Index() {
   // O componente Login já gerencia o fluxo de autenticação/cadastro
   // e redireciona para a tela principal após login
   // return <Login />; // Removido para evitar código inalcançável
-  const [dependents, setDependents] = useState<FamilyMember[]>([]);
+  const { mainUser, dependents, usuarioId, refreshDependents } = useAppContext();
   const [vaccines, setVaccines] = useState<VaccineApplication[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAddVaccineModalOpen, setIsAddVaccineModalOpen] = useState(false);
   const [editingVaccine, setEditingVaccine] = useState<VaccineApplication | null>(null);
@@ -69,13 +66,12 @@ export default function Index() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [mandatoryVaccineList, setMandatoryVaccineList] = useState<VacinaDTO[]>([]);
   const [mandatoryVaccineRecords, setMandatoryVaccineRecords] = useState<MandatoryVaccineRecord[]>([]);
   const [isMandatoryVaccineModalOpen, setIsMandatoryVaccineModalOpen] = useState(false);
   const [editingMandatoryVaccine, setEditingMandatoryVaccine] = useState<{ vaccineId: string; record?: MandatoryVaccineRecord } | null>(null);
   const [showMandatoryDatePicker, setShowMandatoryDatePicker] = useState(false);
   const [mandatoryVaccineDate, setMandatoryVaccineDate] = useState(new Date());
-  const [mainUser, setMainUser] = useState<FamilyMember | null>(null);
-  const [usuarioId, setUsuarioId] = useState<string | null>(null);
 
   // Estados para o formulário de vacina obrigatória
   const [mandatoryIsApplied, setMandatoryIsApplied] = useState(false);
@@ -109,59 +105,23 @@ export default function Index() {
   const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
   const [availableCampaigns, setAvailableCampaigns] = useState<Campanha[]>([]);
   const [showCampaignPicker, setShowCampaignPicker] = useState(false);
-    // Carregar campanhas disponíveis do backend para o select
-    useEffect(() => {
-      fetchCampaigns()
-        .then(setAvailableCampaigns)
-        .catch(() => setAvailableCampaigns([]));
-    }, []);
+  useEffect(() => {
+    fetchCampaigns()
+      .then(setAvailableCampaigns)
+      .catch(() => setAvailableCampaigns([]));
+  }, []);
 
   useEffect(() => {
-    const loadProfileAndDependents = async () => {
-      try {
-        const idPessoa = await getPessoaId();
-        if (!idPessoa) {
-          setIsLoading(false);
-          return;
-        }
-        const perfil = await fetchPerfil(idPessoa);
-        setMainUser({
-          id: String(perfil.id),
-          userId: String(perfil.id),
-          name: perfil.nome,
-          birthDate: perfil.dataNascimento,
-          sex: perfil.sexoBiologico,
-          kind: 'user',
-          zipCode: perfil.cep,
-          phone: perfil.telefone,
-          // outros campos se necessário
-        });
-        setSelectedProfileId(String(perfil.id));
-        // Buscar o idUsuario titular para buscar dependentes
-        // Se o backend já retorna o idUsuario, use diretamente, senão busque pelo endpoint correto
-        let usuarioIdTitular = null;
-        if (perfil.idUsuario) {
-          usuarioIdTitular = perfil.idUsuario;
-        } else {
-          // fallback: buscar pelo endpoint
-          const { getUsuarioTitularIdByPessoaId } = await import('./service/dependentsService');
-          usuarioIdTitular = await getUsuarioTitularIdByPessoaId(perfil.id);
-        }
-        setUsuarioId(usuarioIdTitular);
-        if (usuarioIdTitular) {
-          const dependentsFromApi = await getDependents(usuarioIdTitular);
-          setDependents(dependentsFromApi);
-        } else {
-          setDependents([]);
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error('DEBUG Erro ao carregar perfil/dependentes:', error);
-        setIsLoading(false);
-      }
-    };
-    loadProfileAndDependents();
+    fetchMandatoryVaccines()
+      .then(setMandatoryVaccineList)
+      .catch(() => setMandatoryVaccineList([]));
   }, []);
+
+  useEffect(() => {
+    if (mainUser && !selectedProfileId) {
+      setSelectedProfileId(mainUser.id);
+    }
+  }, [mainUser]);
 
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<ParticipatingCampaign | null>(null);
@@ -170,29 +130,52 @@ export default function Index() {
   const [campaignName, setCampaignName] = useState('');
   const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
 
-  const loadDependents = useCallback(async () => {
-    if (usuarioId) {
-      const dependentsFromApi = await getDependents(usuarioId);
-      setDependents(dependentsFromApi);
-    }
-  }, [usuarioId]);
-
   const loadVaccines = useCallback(async () => {
     const stored = await getVaccines();
     setVaccines(stored);
   }, []);
 
   const loadMandatoryVaccineRecords = useCallback(async () => {
-    if (selectedProfileId) {
-      const records = await getMandatoryVaccineRecordsByProfile(selectedProfileId);
+    if (!selectedProfileId) return;
+    try {
+      const [vaccines, doses] = await Promise.all([
+        mandatoryVaccineList.length > 0 ? Promise.resolve(mandatoryVaccineList) : fetchMandatoryVaccines(),
+        fetchDosesPorPessoa(Number(selectedProfileId)),
+      ]);
+      if (mandatoryVaccineList.length === 0) setMandatoryVaccineList(vaccines);
+      const records: MandatoryVaccineRecord[] = doses.map((d) => ({
+        id: String(d.id),
+        profileId: String(d.idPessoa),
+        vaccineId: String(d.idVacina),
+        isApplied: true,
+        applicationDate: d.dataAplicacao,
+        lot: d.lote ?? undefined,
+        code: d.observacao ?? undefined,
+        professionalName: d.nomeProfissional ?? undefined,
+        professionalId: d.registroProfissional ?? undefined,
+      }));
       setMandatoryVaccineRecords(records);
+    } catch (e) {
+      setMandatoryVaccineRecords([]);
     }
-  }, [selectedProfileId]);
+  }, [selectedProfileId, mandatoryVaccineList]);
 
   const loadOtherVaccines = useCallback(async () => {
-    if (selectedProfileId) {
-      const vaccines = await getOtherVaccinesByProfile(selectedProfileId);
-      setOtherVaccines(vaccines);
+    if (!selectedProfileId) return;
+    try {
+      const doses = await fetchOutrasVacinasPorPessoa(Number(selectedProfileId));
+      setOtherVaccines(doses.map((d) => ({
+        id: String(d.id),
+        profileId: String(d.idPessoa),
+        vaccineName: d.nomeVacina,
+        applicationDate: d.dataAplicacao ?? undefined,
+        lot: d.lote ?? undefined,
+        code: d.observacao ?? undefined,
+        professionalName: d.nomeProfissional ?? undefined,
+        professionalId: d.registroProfissional ?? undefined,
+      })));
+    } catch {
+      setOtherVaccines([]);
     }
   }, [selectedProfileId]);
 
@@ -231,12 +214,11 @@ export default function Index() {
 
   useFocusEffect(
     useCallback(() => {
-      loadDependents();
       loadVaccines();
       loadMandatoryVaccineRecords();
       loadOtherVaccines();
       loadCampaigns();
-    }, [loadDependents, loadVaccines, loadMandatoryVaccineRecords, loadOtherVaccines, loadCampaigns])
+    }, [loadVaccines, loadMandatoryVaccineRecords, loadOtherVaccines, loadCampaigns])
   );
 
   const familyMembers = useMemo<FamilyMember[]>(() => {
@@ -409,28 +391,28 @@ export default function Index() {
   };
 
   const handleSaveMandatoryVaccine = async () => {
-    if (!editingMandatoryVaccine) {
-      // Nunca deve acontecer, mas para o TS garantir, retorna cedo
-      return;
-    }
+    if (!editingMandatoryVaccine) return;
 
     const { vaccineId, record } = editingMandatoryVaccine;
-    const newRecord: MandatoryVaccineRecord = {
-      id: record?.id || `mvr-${Date.now()}`,
-      profileId: selectedProfile.id,
-      vaccineId,
-      isApplied: mandatoryIsApplied,
-      applicationDate: mandatoryDate || undefined,
-      lot: mandatoryLot.trim() || undefined,
-      code: mandatoryCode.trim() || undefined,
-      professionalName: mandatoryProfName.trim() || undefined,
-      professionalId: mandatoryProfId.trim() || undefined,
+    const payload = {
+      idPessoa: Number(selectedProfile.id),
+      idVacina: Number(vaccineId),
+      dataAplicacao: mandatoryDate || new Date().toISOString().split('T')[0],
+      lote: mandatoryLot.trim() || undefined,
+      observacao: mandatoryCode.trim() || undefined,
+      nomeProfissional: mandatoryProfName.trim() || undefined,
+      registroProfissional: mandatoryProfId.trim() || undefined,
     };
 
-    await updateMandatoryVaccineRecord(newRecord);
-    await loadMandatoryVaccineRecords();
+    if (!mandatoryIsApplied && record?.id) {
+      await deletarDose(Number(record.id));
+    } else if (mandatoryIsApplied && record?.id) {
+      await atualizarDose(Number(record.id), payload);
+    } else if (mandatoryIsApplied) {
+      await registrarDose(payload);
+    }
 
-    // Limpar formulário
+    await loadMandatoryVaccineRecords();
     setMandatoryIsApplied(false);
     setMandatoryDate('');
     setMandatoryLot('');
@@ -479,26 +461,23 @@ export default function Index() {
   const handleSaveOtherVaccine = async () => {
     if (!otherVaccineName.trim()) return;
 
-    const vaccine: OtherVaccine = {
-      id: editingOtherVaccine?.id || `ov-${Date.now()}`,
-      profileId: selectedProfile.id,
-      vaccineName: otherVaccineName.trim(),
-      applicationDate: otherVaccineAppDate || undefined,
-      lot: otherVaccineLot.trim() || undefined,
-      code: otherVaccineCode.trim() || undefined,
-      professionalName: otherVaccineProfName.trim() || undefined,
-      professionalId: otherVaccineProfId.trim() || undefined,
+    const payload = {
+      idPessoa: Number(selectedProfile.id),
+      nomeVacina: otherVaccineName.trim(),
+      dataAplicacao: otherVaccineAppDate || undefined,
+      lote: otherVaccineLot.trim() || undefined,
+      observacao: otherVaccineCode.trim() || undefined,
+      nomeProfissional: otherVaccineProfName.trim() || undefined,
+      registroProfissional: otherVaccineProfId.trim() || undefined,
     };
 
     if (editingOtherVaccine) {
-      await updateOtherVaccine(vaccine);
+      await atualizarOutraVacina(Number(editingOtherVaccine.id), payload);
     } else {
-      await addOtherVaccine(vaccine);
+      await registrarOutraVacina(payload);
     }
 
     await loadOtherVaccines();
-
-    // Limpar formulário
     setOtherVaccineName('');
     setOtherVaccineAppDate('');
     setOtherVaccineLot('');
@@ -510,7 +489,7 @@ export default function Index() {
   };
 
   const handleDeleteOtherVaccine = async (vaccineId: string) => {
-    await deleteOtherVaccine(vaccineId);
+    await deletarDose(Number(vaccineId));
     await loadOtherVaccines();
   };
 
@@ -595,18 +574,8 @@ export default function Index() {
   const nextVaccine = pendingVaccines.find((item) => item.dueDate);
   const activeAlerts = ALERTS_BY_PROFILE[selectedProfile.id] ?? [];
 
-console.log('DEBUG mainUser:', mainUser, 'isLoading:', isLoading);
+  if (!mainUser) return null;
 
-  // Guard antes do return principal — enquanto carrega, mostra só o loading
-  if (isLoading || !mainUser) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Carregando...</Text>
-      </View>
-    );
-  }
-
-  // Daqui pra baixo, selectedProfile sempre tem dados
   return (
     
     <View style={styles.container}>
@@ -629,6 +598,7 @@ console.log('DEBUG mainUser:', mainUser, 'isLoading:', isLoading);
           {/* Componente da seção de Vacinas 
           Obrigatórias do 1º Ano de Vida */}
           <MandatoryVaccinesSection
+            vaccines={mandatoryVaccineList}
             records={mandatoryVaccineRecords}
             onOpenModal={openMandatoryVaccineModal}
           />
@@ -663,6 +633,7 @@ console.log('DEBUG mainUser:', mainUser, 'isLoading:', isLoading);
       <MandatoryVaccineModal
         visible={isMandatoryVaccineModalOpen}
         vaccineId={editingMandatoryVaccine?.vaccineId ?? null}
+        vaccineName={mandatoryVaccineList.find(v => String(v.id) === editingMandatoryVaccine?.vaccineId)?.nome}
         isApplied={mandatoryIsApplied}
         date={mandatoryDate}
         lot={mandatoryLot}

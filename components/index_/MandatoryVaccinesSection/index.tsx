@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { MandatoryVaccineRecord } from '../../../app/types/vaccination';
-import { MANDATORY_FIRST_YEAR_VACCINES } from '../../../app/data/mandatory-vaccines';
+import { VacinaDTO } from '../../../app/service/mandatoryVaccineService';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
@@ -10,20 +10,22 @@ const formatDateToBR = (isoDate: string | undefined): string => {
 };
 
 type MandatoryVaccinesSectionProps = {
+  vaccines: VacinaDTO[];
   records: MandatoryVaccineRecord[];
   onOpenModal: (vaccineId: string) => void;
 };
 
-export default function MandatoryVaccinesSection({ records, onOpenModal }: MandatoryVaccinesSectionProps) {
+export default function MandatoryVaccinesSection({ vaccines, records, onOpenModal }: MandatoryVaccinesSectionProps) {
+  if (vaccines.length === 0) return null;
+
   return (
     <View style={styles.sectionBlock}>
       <Text style={styles.sectionTitle}>VACINAS DO 1° ANO DE VIDA</Text>
       <View style={styles.mandatoryVaccinesContainer}>
         {(() => {
           let lastAvailableIdx = -1;
-          for (let i = 0; i < MANDATORY_FIRST_YEAR_VACCINES.length; i++) {
-            const v = MANDATORY_FIRST_YEAR_VACCINES[i];
-            const rec = records.find((r) => r.vaccineId === v.id);
+          for (let i = 0; i < vaccines.length; i++) {
+            const rec = records.find((r) => r.vaccineId === String(vaccines[i].id));
             if (!rec?.isApplied) {
               lastAvailableIdx = i;
               break;
@@ -31,8 +33,8 @@ export default function MandatoryVaccinesSection({ records, onOpenModal }: Manda
           }
 
           let canShow = true;
-          return MANDATORY_FIRST_YEAR_VACCINES.map((vaccine, idx) => {
-            const record = records.find((r) => r.vaccineId === vaccine.id);
+          return vaccines.map((vaccine, idx) => {
+            const record = records.find((r) => r.vaccineId === String(vaccine.id));
 
             if (!canShow && !record?.isApplied) return null;
 
@@ -42,14 +44,14 @@ export default function MandatoryVaccinesSection({ records, onOpenModal }: Manda
               <Pressable
                 key={vaccine.id}
                 style={styles.mandatoryVaccineItem}
-                onPress={() => isLastAvailable ? onOpenModal(vaccine.id) : undefined}
+                onPress={() => isLastAvailable ? onOpenModal(String(vaccine.id)) : undefined}
                 disabled={!isLastAvailable}
               >
                 <View style={styles.mandatoryVaccineHeader}>
                   <View style={styles.mandatoryVaccineInfo}>
                     <View style={styles.mandatoryVaccineTexts}>
-                      <Text style={styles.mandatoryVaccineName}>{vaccine.name}</Text>
-                      <Text style={styles.mandatoryVaccineDesc}>{vaccine.description}</Text>
+                      <Text style={styles.mandatoryVaccineName}>{vaccine.nome}</Text>
+                      <Text style={styles.mandatoryVaccineDesc}>{vaccine.descricao}</Text>
                     </View>
                   </View>
                   <View style={styles.mandatoryVaccineStatus}>

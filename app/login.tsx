@@ -17,11 +17,13 @@ import { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { login, cadastrar } from './service/authService';
+import { useAppContext } from './context/AppContext';
 
 type Mode = 'login' | 'cadastro';
 
 export default function Login() {
   const router = useRouter();
+  const { loadAll } = useAppContext();
   const [mode, setMode] = useState<Mode>('login');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,6 +71,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login({ email: email.trim(), senha });
+      await loadAll();
       router.replace('/');
     } catch (error: any) {
       const message =

@@ -13,17 +13,17 @@ import {
   TextInput,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as NavigationBar from 'expo-navigation-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MAIN_USER } from './data/family';
-import { getPessoaId, fetchPerfil } from './service/authService';
-import { FamilyMember } from './types/vaccination';
-import { getDependents, addDependentAndLink, getUsuarioTitularIdByPessoaId } from './service/dependentsService';
 import { logout } from './service/authService';
+import { FamilyMember } from './types/vaccination';
+import { addDependentAndLink } from './service/dependentsService';
+import { useAppContext } from './context/AppContext';
 
 const SEX_OPTIONS = ['M', 'F', 'Outro'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
@@ -46,8 +46,7 @@ type DraftDependent = {
 
 export default function User() {
   const router = useRouter();
-  const [mainUser, setMainUser] = useState<FamilyMember | null>(null);
-  const [dependents, setDependents] = useState<FamilyMember[]>([]);
+  const { mainUser, dependents, usuarioId, refreshDependents, reset } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
@@ -73,55 +72,6 @@ export default function User() {
     return `${day}/${month}/${year}`;
   };
 
-
-  // Carrega dados do titular e dependentes
-  const loadUserAndDependents = useCallback(async () => {
-    try {
-      const idPessoa = await getPessoaId();
-      console.log('DEBUG idPessoa:', idPessoa);
-      if (!idPessoa) return;
-      const perfil = await fetchPerfil(idPessoa);
-      console.log('DEBUG perfil:', perfil);
-      const usuarioId = await getUsuarioTitularIdByPessoaId(idPessoa);
-      console.log('DEBUG usuarioId (UUID):', usuarioId);
-      const mainUserObj = {
-        id: usuarioId || '',
-        userId: usuarioId || '',
-        name: perfil.nome,
-        birthDate: perfil.dataNascimento,
-        birthPlace: perfil.localNascimento,
-        sex: perfil.sexoBiologico,
-        kind: 'user' as const,
-        zipCode: perfil.cep,
-        phone: perfil.telefone,
-        email: perfil.email,
-        address: perfil.endereco,
-        city: perfil.cidade,
-        state: perfil.estado,
-      };
-      setMainUser(mainUserObj);
-      console.log('DEBUG mainUser:', mainUserObj);
-      // Busca dependentes usando o UUID do usuário titular
-      if (usuarioId) {
-        const fetched = await getDependents(usuarioId);
-        console.log('DEBUG dependents response:', fetched);
-        setDependents(fetched);
-      } else {
-        setDependents([]);
-      }
-    } catch (e) {
-      console.log('ERROR loadUserAndDependents:', e);
-      setMainUser(null);
-      setDependents([]);
-    }
-  }, []);
-
-
-  useFocusEffect(
-    useCallback(() => {
-      loadUserAndDependents();
-    }, [loadUserAndDependents])
-  );
 
   useEffect(() => {
     const updateSystemBars = async () => {
@@ -211,10 +161,10 @@ export default function User() {
       return;
     }
     try {
-      await addDependentAndLink(mainUser.id, draft);
+      await addDependentAndLink(usuarioId!, draft);
       setIsModalOpen(false);
       resetDraft();
-      loadUserAndDependents();
+      await refreshDependents();
     } catch (e: any) {
       Alert.alert('Erro', 'Não foi possível adicionar o dependente.');
       console.log('Erro ao cadastrar dependente:', e?.response?.data || e);
@@ -303,6 +253,7 @@ export default function User() {
             style={[styles.option, { justifyContent: 'center', backgroundColor: '#ef4444', borderRadius: 8, marginTop: 12 }]}
             onPress={async () => {
               await logout();
+              reset();
               router.replace('/login');
             }}
           >
