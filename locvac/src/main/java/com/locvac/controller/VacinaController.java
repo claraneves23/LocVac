@@ -18,8 +18,11 @@ public class VacinaController {
     }
 
     @GetMapping
-    public List<VacinaResponseDTO> listarPorTipo(@RequestParam TipoSecaoVacinacao tipo) {
-        return repository.findByTipoSecaoVacinacaoAndAtivaTrue(tipo).stream()
+    public List<VacinaResponseDTO> listar(@RequestParam(required = false) TipoSecaoVacinacao tipo) {
+        var vacinas = tipo != null
+                ? repository.findByTipoSecaoVacinacaoAndAtivaTrue(tipo)
+                : repository.findByAtivaTrue();
+        return vacinas.stream()
                 .map(v -> new VacinaResponseDTO(v.getId(), v.getNome(), v.getDescricao(), v.getDose(), v.getCodigoPNI(), v.getTipoSecaoVacinacao()))
                 .toList();
     }

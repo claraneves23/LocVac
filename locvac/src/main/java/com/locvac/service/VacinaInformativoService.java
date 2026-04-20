@@ -18,6 +18,4 @@ public interface VacinaInformativoService {
     List<VacinaInformativoResponseDTO> findAll();
 
     List<VacinaInformativoResponseDTO> findByVacina(Long idVacina);
-
-    VacinaInformativoResponseDTO findAtivoByVacina(Long idVacina);
 }

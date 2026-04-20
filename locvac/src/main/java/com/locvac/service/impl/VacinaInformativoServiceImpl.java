@@ -52,7 +52,6 @@ public class VacinaInformativoServiceImpl implements VacinaInformativoService {
         entity.setDataPublicacao(dto.getDataPublicacao());
         entity.setOrgaoEmissor(dto.getOrgaoEmissor());
         entity.setFonteReferencia(dto.getFonteReferencia());
-        entity.setAtiva(dto.isAtiva());
         VacinaInformativo updated = repository.save(entity);
         return mapper.toResponse(updated);
     }
@@ -82,18 +81,8 @@ public class VacinaInformativoServiceImpl implements VacinaInformativoService {
 
     @Override
     public List<VacinaInformativoResponseDTO> findByVacina(Long idVacina) {
-        return repository.findByVacinaIdAndAtivaTrue(idVacina).stream()
+        return repository.findByVacinaId(idVacina).stream()
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public VacinaInformativoResponseDTO findAtivoByVacina(Long idVacina) {
-        List<VacinaInformativo> ativos = repository.findByVacinaIdAndAtivaTrue(idVacina);
-        if (ativos.isEmpty()) {
-            throw new RuntimeException("Nenhum informativo ativo encontrado para a vacina");
-        }
-        // Assume o primeiro ou o mais recente
-        return mapper.toResponse(ativos.get(0));
     }
 }

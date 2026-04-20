@@ -8,7 +8,6 @@ public class VacinaInformativoRequestDTO {
     private LocalDate dataPublicacao;
     private String orgaoEmissor;
     private String fonteReferencia;
-    private boolean ativa;
 
     // Getters and Setters
     public Long getIdVacina() {
@@ -49,13 +48,5 @@ public class VacinaInformativoRequestDTO {
 
     public void setFonteReferencia(String fonteReferencia) {
         this.fonteReferencia = fonteReferencia;
-    }
-
-    public boolean isAtiva() {
-        return ativa;
-    }
-
-    public void setAtiva(boolean ativa) {
-        this.ativa = ativa;
     }
 }

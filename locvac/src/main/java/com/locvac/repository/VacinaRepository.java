@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface VacinaRepository extends JpaRepository<Vacina, Long> {
     List<Vacina> findByTipoSecaoVacinacaoAndAtivaTrue(TipoSecaoVacinacao tipo);
+    List<Vacina> findByAtivaTrue();
     boolean existsByCodigoPNI(String codigoPNI);
 }

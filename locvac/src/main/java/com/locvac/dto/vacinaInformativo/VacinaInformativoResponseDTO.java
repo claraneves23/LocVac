@@ -13,7 +13,6 @@ public class VacinaInformativoResponseDTO {
     private LocalDate dataPublicacao;
     private String orgaoEmissor;
     private String fonteReferencia;
-    private boolean ativa;
     private List<VacinaSecaoInformativaResponseDTO> secoes;
 
     // Getters and Setters
@@ -71,14 +70,6 @@ public class VacinaInformativoResponseDTO {
 
     public void setFonteReferencia(String fonteReferencia) {
         this.fonteReferencia = fonteReferencia;
-    }
-
-    public boolean isAtiva() {
-        return ativa;
-    }
-
-    public void setAtiva(boolean ativa) {
-        this.ativa = ativa;
     }
 
     public List<VacinaSecaoInformativaResponseDTO> getSecoes() {

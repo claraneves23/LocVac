@@ -1,53 +1,24 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useEffect, useState } from 'react';
+import { fetchTodasVacinas } from '../service/infoService';
+import { VacinaDTO } from '../service/mandatoryVaccineService';
 
 export default function VaccinesInfo() {
   const router = useRouter();
+  const [vacinas, setVacinas] = useState<VacinaDTO[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const vaccines = [
-    {
-      id: '1',
-      name: 'BCG',
-      description: 'Tuberculose',
-      benefit: 'Protege contra tuberculose, doença infecciosa grave que afeta principalmente os pulmões.',
-    },
-    {
-      id: '2',
-      name: 'Hepatite B',
-      description: 'Infecção do fígado',
-      benefit: 'Evita cirrose e câncer de fígado, doenças potencialmente fatais.',
-    },
-    {
-      id: '3',
-      name: 'Poliomielite',
-      description: 'Paralisia infantil',
-      benefit: 'Previne paralisia permanente, doença praticamente erradicada no Brasil.',
-    },
-    {
-      id: '4',
-      name: 'Tríplice (DPT)',
-      description: 'Difteria, Coqueluche e Tétano',
-      benefit: 'Protege contra três doenças graves que podem ser fatais sem tratamento.',
-    },
-    {
-      id: '5',
-      name: 'Febre Amarela',
-      description: 'Doença viral transmitida por mosquitos',
-      benefit: 'Essencial para quem viaja para regiões endêmicas da doença.',
-    },
-    {
-      id: '6',
-      name: 'Meningocócica',
-      description: 'Meningite bacteriana',
-      benefit: 'Previne meningite, doença que pode ser fatal e deixar sequelas graves.',
-    },
-  ];
+  useEffect(() => {
+    fetchTodasVacinas()
+      .then(setVacinas)
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back-outline" size={28} color="#29442dff" />
@@ -67,32 +38,32 @@ export default function VaccinesInfo() {
 
         <Text style={styles.sectionTitle}>Principais Vacinas</Text>
 
-        {vaccines.map((vaccine) => (
-          <TouchableOpacity
-            key={vaccine.id}
-            style={styles.vaccineCard}
-            onPress={() => router.push({
-              pathname: '/infos/vaccine-details',
-              params: { vaccineId: vaccine.id, vaccineName: vaccine.name },
-            })}
-            activeOpacity={0.7}
-          >
-            <View style={styles.vaccineHeader}>
-              <View style={styles.vaccineIconBox}>
-                <Ionicons name="shield-checkmark-outline" size={28} color="#29442dff" />
+        {loading ? (
+          <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 24 }} />
+        ) : (
+          vacinas.map((vaccine) => (
+            <TouchableOpacity
+              key={vaccine.id}
+              style={styles.vaccineCard}
+              onPress={() => router.push({
+                pathname: '/infos/vaccine-details',
+                params: { vaccineId: vaccine.id, vaccineName: vaccine.nome },
+              })}
+              activeOpacity={0.7}
+            >
+              <View style={styles.vaccineHeader}>
+                <View style={styles.vaccineIconBox}>
+                  <Ionicons name="shield-checkmark-outline" size={28} color="#29442dff" />
+                </View>
+                <View style={styles.vaccineInfo}>
+                  <Text style={styles.vaccineName}>{vaccine.nome}</Text>
+                  <Text style={styles.vaccineDesc}>{vaccine.descricao}</Text>
+                </View>
+                <Ionicons name="chevron-forward-outline" size={24} color="#ACDAD8" />
               </View>
-              <View style={styles.vaccineInfo}>
-                <Text style={styles.vaccineName}>{vaccine.name}</Text>
-                <Text style={styles.vaccineDesc}>{vaccine.description}</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={24} color="#ACDAD8" />
-            </View>
-            <View style={styles.benefitBox}>
-              <Text style={styles.benefitLabel}>Benefício:</Text>
-              <Text style={styles.benefitText}>{vaccine.benefit}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          ))
+        )}
 
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={24} color="#1976D2" />
@@ -198,21 +169,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 2,
-  },
-  benefitBox: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
-  benefitLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#29442dff',
-    marginBottom: 4,
-  },
-  benefitText: {
-    fontSize: 12,
-    color: '#666',
-    lineHeight: 16,
   },
   infoBox: {
     flexDirection: 'row',

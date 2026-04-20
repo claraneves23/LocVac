@@ -1,32 +1,25 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, FlatList, Image, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, FlatList, Image, Platform, ActivityIndicator } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as NavigationBar from 'expo-navigation-bar';
-
-interface Vaccine {
-  id: string;
-  name: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-}
+import { fetchTodasVacinas } from './service/infoService';
+import { VacinaDTO } from './service/mandatoryVaccineService';
 
 export default function Infos() {
   const [helpVisible, setHelpVisible] = useState(false);
   const router = useRouter();
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Filtro de vacinas
-  const [filterVisible, setFilterVisible] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const filterOptions = [
-    { key: 'all', label: 'Todas' },
-    { key: 'crianca', label: 'Criança' },
-    { key: 'adolescente', label: 'Adolescente' },
-    { key: 'adulto', label: 'Adulto' },
-    { key: 'idoso', label: 'Idoso' },
-    { key: 'viagem', label: 'Viagem' },
-  ];
+  const [vacinas, setVacinas] = useState<VacinaDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTodasVacinas()
+      .then(setVacinas)
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     const updateSystemBars = async () => {
@@ -75,21 +68,10 @@ export default function Infos() {
     },
   ];
 
-  const vaccines: Vaccine[] = [
-    { id: '1', name: 'BCG', icon: 'shield-checkmark-outline' },
-    { id: '5', name: 'Febre Amarela', icon: 'shield-checkmark-outline' },
-    { id: '2', name: 'Hepatite B', icon: 'shield-checkmark-outline' },
-    { id: '6', name: 'Meningocócica', icon: 'shield-checkmark-outline' },
-    { id: '7', name: 'Pneumocócica', icon: 'shield-checkmark-outline' },
-    { id: '3', name: 'Poliomielite', icon: 'shield-checkmark-outline' },
-    { id: '8', name: 'Rotavírus', icon: 'shield-checkmark-outline' },
-    { id: '4', name: 'Tríplice (DPT)', icon: 'shield-checkmark-outline' },
-  ];
-
-  const handleVaccinePress = (vaccine: Vaccine) => {
+  const handleVaccinePress = (vaccine: VacinaDTO) => {
     router.push({
       pathname: '/infos/vaccine-details',
-      params: { vaccineId: vaccine.id, vaccineName: vaccine.name },
+      params: { vaccineId: vaccine.id, vaccineName: vaccine.nome },
     });
   };
 
@@ -166,15 +148,11 @@ export default function Infos() {
 
         {/* Lista de Vacinas */}
         <View style={styles.vaccinesSection}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, marginTop: 16 }}>
-            <Text style={styles.sectionTitle}>Vacinas</Text>
-            <TouchableOpacity onPress={() => setFilterVisible(true)} style={{ padding: 4 }}>
-              <Ionicons name="filter" size={24} color="#29442dff" />
-            </TouchableOpacity>
-          </View>
-          {vaccines
-            .filter((vaccine) => selectedFilter === 'all' || vaccine.name.toLowerCase().includes(selectedFilter))
-            .map((vaccine) => (
+          <Text style={styles.sectionTitle}>Vacinas</Text>
+          {loading ? (
+            <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 24 }} />
+          ) : (
+            vacinas.map((vaccine) => (
               <TouchableOpacity
                 key={vaccine.id}
                 style={styles.vaccineItem}
@@ -182,57 +160,16 @@ export default function Infos() {
                 activeOpacity={0.7}
               >
                 <Ionicons
-                  name={vaccine.icon}
+                  name="shield-checkmark-outline"
                   size={24}
                   color="#29442dff"
                   style={styles.vaccineIcon}
                 />
-                <Text style={styles.vaccineName}>{vaccine.name}</Text>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={24}
-                  color="#29442dff"
-                />
+                <Text style={styles.vaccineName}>{vaccine.nome}</Text>
+                <Ionicons name="chevron-forward-outline" size={24} color="#29442dff" />
               </TouchableOpacity>
-            ))}
-              {/* Modal de filtro */}
-              <Modal
-                visible={filterVisible}
-                transparent
-                animationType="fade"
-                statusBarTranslucent
-                hardwareAccelerated
-                onRequestClose={() => setFilterVisible(false)}
-              >
-                <View style={styles.modalOverlay}>
-                  <View style={[styles.modalContent, { maxWidth: 340, alignItems: 'center', padding: 24 }]}> 
-                    <Text style={[styles.modalTitle, { fontSize: 18, marginBottom: 18 }]}>Filtrar Vacinas</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-                      {filterOptions.map((option, idx) => (
-                        <TouchableOpacity
-                          key={option.key}
-                          style={{
-                            paddingVertical: 10,
-                            paddingHorizontal: 18,
-                            borderRadius: 8,
-                            marginBottom: 8,
-                            backgroundColor: selectedFilter === option.key ? '#29442d40' : '#F3F4F6',
-                            width: '45%',
-                            alignItems: 'center',
-                            marginRight: idx % 2 === 0 ? 8 : 0,
-                          }}
-                          onPress={() => setSelectedFilter(option.key)}
-                        >
-                          <Text style={{ color: selectedFilter === option.key ? '#29442dff' : '#29442dff', fontWeight: selectedFilter === option.key ? 'bold' : 'normal', fontSize: 15 }}>{option.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                    <TouchableOpacity style={{ marginTop: 18, paddingVertical: 10, paddingHorizontal: 32, borderRadius: 8, backgroundColor: '#29442dff', width: '100%', alignItems: 'center' }} onPress={() => setFilterVisible(false)}>
-                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Fechar</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
+            ))
+          )}
         </View>
 
         <View style={{ height: 80 }} />

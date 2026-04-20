@@ -10,9 +10,7 @@ import java.util.Optional;
 @Repository
 public interface VacinaInformativoRepository extends JpaRepository<VacinaInformativo, Long> {
 
-    List<VacinaInformativo> findByVacinaIdAndAtivaTrue(Long idVacina);
+    List<VacinaInformativo> findByVacinaId(Long idVacina);
 
     Optional<VacinaInformativo> findByVacinaIdAndVersao(Long idVacina, Integer versao);
-
-    List<VacinaInformativo> findByAtivaTrue();
 }

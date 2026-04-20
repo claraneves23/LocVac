@@ -26,7 +26,6 @@ public class VacinaInformativoMapper {
         entity.setDataPublicacao(dto.getDataPublicacao());
         entity.setOrgaoEmissor(dto.getOrgaoEmissor());
         entity.setFonteReferencia(dto.getFonteReferencia());
-        entity.setAtiva(dto.isAtiva());
         return entity;
     }
 
@@ -39,7 +38,6 @@ public class VacinaInformativoMapper {
         dto.setDataPublicacao(entity.getDataPublicacao());
         dto.setOrgaoEmissor(entity.getOrgaoEmissor());
         dto.setFonteReferencia(entity.getFonteReferencia());
-        dto.setAtiva(entity.isAtiva());
         if (entity.getSecoes() != null) {
             List<VacinaSecaoInformativaResponseDTO> secoesDto = entity.getSecoes().stream()
                     .map(secaoMapper::toResponse)

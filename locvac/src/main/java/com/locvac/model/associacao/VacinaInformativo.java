@@ -30,9 +30,6 @@ public class VacinaInformativo {
         @Column(name = "fonte_referencia", nullable = false)
         private String fonteReferencia;
 
-        @Column(name = "ativa", nullable = false)
-        private boolean ativa;
-
         @OneToMany(mappedBy = "informativo", fetch = FetchType.LAZY)
         private List<VacinaSecaoInformativa> secoes;
 
@@ -54,10 +51,6 @@ public class VacinaInformativo {
 
         public void setFonteReferencia(String fonteReferencia) {
                 this.fonteReferencia = fonteReferencia;
-        }
-
-        public void setAtiva(boolean ativa) {
-                this.ativa = ativa;
         }
 
         public void setSecoes(List<VacinaSecaoInformativa> secoes) {
@@ -86,10 +79,6 @@ public class VacinaInformativo {
 
         public String getFonteReferencia() {
                 return fonteReferencia;
-        }
-
-        public boolean isAtiva() {
-                return ativa;
         }
 
         public List<VacinaSecaoInformativa> getSecoes() {

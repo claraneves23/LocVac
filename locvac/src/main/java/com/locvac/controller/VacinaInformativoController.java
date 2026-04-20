@@ -54,10 +54,4 @@ public class VacinaInformativoController {
         List<VacinaInformativoResponseDTO> response = service.findByVacina(idVacina);
         return ResponseEntity.ok(response);
     }
-
-    @GetMapping("/vacina/{idVacina}/ativo")
-    public ResponseEntity<VacinaInformativoResponseDTO> findAtivoByVacina(@PathVariable Long idVacina) {
-        VacinaInformativoResponseDTO response = service.findAtivoByVacina(idVacina);
-        return ResponseEntity.ok(response);
-    }
 }
