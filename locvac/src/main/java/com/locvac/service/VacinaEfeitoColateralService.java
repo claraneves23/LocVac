@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface VacinaEfeitoColateralService {
 
-    VacinaEfeitoColateralResponseDTO create(VacinaEfeitoColateralRequestDTO dto);
+    List<VacinaEfeitoColateralResponseDTO> create(List<VacinaEfeitoColateralRequestDTO> dtos);
 
     VacinaEfeitoColateralResponseDTO update(Long id, VacinaEfeitoColateralRequestDTO dto);
 

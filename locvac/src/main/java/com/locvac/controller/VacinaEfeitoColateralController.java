@@ -21,8 +21,8 @@ public class VacinaEfeitoColateralController {
     }
 
     @PostMapping
-    public ResponseEntity<VacinaEfeitoColateralResponseDTO> create(@RequestBody VacinaEfeitoColateralRequestDTO dto) {
-        VacinaEfeitoColateralResponseDTO response = service.create(dto);
+    public ResponseEntity<List<VacinaEfeitoColateralResponseDTO>> create(@RequestBody List<VacinaEfeitoColateralRequestDTO> dtos) {
+        List<VacinaEfeitoColateralResponseDTO> response = service.create(dtos);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

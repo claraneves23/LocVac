@@ -20,8 +20,8 @@ public class VacinaSecaoInformativaController {
     }
 
     @PostMapping
-    public ResponseEntity<VacinaSecaoInformativaResponseDTO> create(@RequestBody VacinaSecaoInformativaRequestDTO dto) {
-        VacinaSecaoInformativaResponseDTO response = service.create(dto);
+    public ResponseEntity<List<VacinaSecaoInformativaResponseDTO>> create(@RequestBody List<VacinaSecaoInformativaRequestDTO> dtos) {
+        List<VacinaSecaoInformativaResponseDTO> response = service.create(dtos);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

@@ -32,13 +32,14 @@ public class VacinaEfeitoColateralServiceImpl implements VacinaEfeitoColateralSe
 
     @Override
     @Transactional
-    public VacinaEfeitoColateralResponseDTO create(VacinaEfeitoColateralRequestDTO dto) {
-        Vacina vacina = vacinaRepository.findById(dto.getIdVacina())
-                .orElseThrow(() -> new RuntimeException("Vacina não encontrada"));
-        VacinaEfeitoColateral entity = mapper.toEntity(dto);
-        entity.setVacina(vacina);
-        VacinaEfeitoColateral saved = repository.save(entity);
-        return mapper.toResponse(saved);
+    public List<VacinaEfeitoColateralResponseDTO> create(List<VacinaEfeitoColateralRequestDTO> dtos) {
+        return dtos.stream().map(dto -> {
+            Vacina vacina = vacinaRepository.findById(dto.getIdVacina())
+                    .orElseThrow(() -> new RuntimeException("Vacina não encontrada: " + dto.getIdVacina()));
+            VacinaEfeitoColateral entity = mapper.toEntity(dto);
+            entity.setVacina(vacina);
+            return mapper.toResponse(repository.save(entity));
+        }).collect(Collectors.toList());
     }
 
     @Override

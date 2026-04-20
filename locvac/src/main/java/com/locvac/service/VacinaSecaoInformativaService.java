@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface VacinaSecaoInformativaService {
 
-    VacinaSecaoInformativaResponseDTO create(VacinaSecaoInformativaRequestDTO dto);
+    List<VacinaSecaoInformativaResponseDTO> create(List<VacinaSecaoInformativaRequestDTO> dtos);
 
     VacinaSecaoInformativaResponseDTO update(Long id, VacinaSecaoInformativaRequestDTO dto);
 

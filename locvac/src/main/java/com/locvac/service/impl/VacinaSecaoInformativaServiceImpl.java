@@ -31,13 +31,14 @@ public class VacinaSecaoInformativaServiceImpl implements VacinaSecaoInformativa
 
     @Override
     @Transactional
-    public VacinaSecaoInformativaResponseDTO create(VacinaSecaoInformativaRequestDTO dto) {
-        VacinaInformativo informativo = informativoRepository.findById(dto.getIdInformativo())
-                .orElseThrow(() -> new RuntimeException("Informativo não encontrado"));
-        VacinaSecaoInformativa entity = mapper.toEntity(dto);
-        entity.setInformativo(informativo);
-        VacinaSecaoInformativa saved = repository.save(entity);
-        return mapper.toResponse(saved);
+    public List<VacinaSecaoInformativaResponseDTO> create(List<VacinaSecaoInformativaRequestDTO> dtos) {
+        return dtos.stream().map(dto -> {
+            VacinaInformativo informativo = informativoRepository.findById(dto.getIdInformativo())
+                    .orElseThrow(() -> new RuntimeException("Informativo não encontrado: " + dto.getIdInformativo()));
+            VacinaSecaoInformativa entity = mapper.toEntity(dto);
+            entity.setInformativo(informativo);
+            return mapper.toResponse(repository.save(entity));
+        }).collect(Collectors.toList());
     }
 
     @Override
