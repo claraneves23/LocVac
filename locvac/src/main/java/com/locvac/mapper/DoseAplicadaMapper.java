@@ -28,11 +28,13 @@ public class DoseAplicadaMapper {
     }
 
     public DoseAplicadaResponseDTO toResponse(DoseAplicada dose) {
+        Long idVacina = dose.getVacina() != null ? dose.getVacina().getId() : null;
+        String nomeVacina = dose.getVacina() != null ? dose.getVacina().getNome() : dose.getNomeCustom();
         return new DoseAplicadaResponseDTO(
                 dose.getId(),
                 dose.getPessoa().getId(),
-                dose.getVacina().getId(),
-                dose.getVacina().getNome(),
+                idVacina,
+                nomeVacina,
                 dose.getDataAplicacao(),
                 dose.getLote(),
                 dose.getObservacao(),

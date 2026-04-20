@@ -6,7 +6,6 @@ import com.locvac.dto.doseAplicada.OutraVacinaRequestDTO;
 import com.locvac.mapper.DoseAplicadaMapper;
 import com.locvac.model.associacao.DoseAplicada;
 import com.locvac.model.core.Pessoa;
-import com.locvac.model.core.Vacina;
 import com.locvac.model.enums.TipoSecaoVacinacao;
 import com.locvac.repository.DoseAplicadaRepository;
 import com.locvac.repository.PessoaRepository;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-
 import java.util.List;
 
 @Service
@@ -74,6 +72,11 @@ public class DoseAplicadaServiceImpl implements DoseAplicadaService {
 
     @Override
     public List<DoseAplicadaResponseDTO> listarPorPessoaETipo(Long idPessoa, TipoSecaoVacinacao tipo) {
+        if (tipo == TipoSecaoVacinacao.OUTRAS_VACINAS) {
+            return repository.findByPessoaIdAndNomeCustomIsNotNull(idPessoa).stream()
+                    .map(mapper::toResponse)
+                    .toList();
+        }
         return repository.findByPessoaIdAndVacinaTipoSecaoVacinacao(idPessoa, tipo).stream()
                 .map(mapper::toResponse)
                 .toList();
@@ -82,17 +85,9 @@ public class DoseAplicadaServiceImpl implements DoseAplicadaService {
     @Override
     public DoseAplicadaResponseDTO registrarOutraVacina(OutraVacinaRequestDTO dto) {
         validarPessoa(dto.idPessoa());
-        Vacina vacina = new Vacina();
-        vacina.setNome(dto.nomeVacina());
-        vacina.setDescricao(dto.nomeVacina());
-        vacina.setDose("-");
-        vacina.setAtiva(true);
-        vacina.setTipoSecaoVacinacao(TipoSecaoVacinacao.OUTRAS_VACINAS);
-        Vacina vacinaSalva = vacinaRepository.save(vacina);
-
         DoseAplicada dose = new DoseAplicada();
         dose.setPessoa(new Pessoa(dto.idPessoa()));
-        dose.setVacina(vacinaSalva);
+        dose.setNomeCustom(dto.nomeVacina());
         dose.setDoseNumero(1);
         dose.setDataAplicacao(dto.dataAplicacao() != null ? dto.dataAplicacao() : LocalDate.now());
         dose.setLote(dto.lote());
@@ -108,9 +103,7 @@ public class DoseAplicadaServiceImpl implements DoseAplicadaService {
     public DoseAplicadaResponseDTO atualizarOutraVacina(Long idDose, OutraVacinaRequestDTO dto) {
         DoseAplicada dose = repository.findById(idDose)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dose não encontrada"));
-        dose.getVacina().setNome(dto.nomeVacina());
-        dose.getVacina().setDescricao(dto.nomeVacina());
-        vacinaRepository.save(dose.getVacina());
+        dose.setNomeCustom(dto.nomeVacina());
         dose.setDataAplicacao(dto.dataAplicacao() != null ? dto.dataAplicacao() : dose.getDataAplicacao());
         dose.setLote(dto.lote());
         dose.setObservacao(dto.observacao());
