@@ -22,8 +22,11 @@ public class DoseAplicada {
         private Pessoa pessoa;
 
         @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "id_vacina", nullable = false)
+        @JoinColumn(name = "id_vacina", nullable = true)
         private Vacina vacina;
+
+        @Column(name = "nome_custom")
+        private String nomeCustom;
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id_categoria")
@@ -103,6 +106,14 @@ public class DoseAplicada {
 
         public void setUnidadeSaude(String unidadeSaude) {
                 this.unidadeSaude = unidadeSaude;
+        }
+
+        public void setNomeCustom(String nomeCustom) {
+                this.nomeCustom = nomeCustom;
+        }
+
+        public String getNomeCustom() {
+                return nomeCustom;
         }
 
         public Long getId() {
