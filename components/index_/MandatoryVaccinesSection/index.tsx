@@ -150,8 +150,6 @@ const styles = StyleSheet.create({
   mandatoryVaccineDetails: {
     marginTop: 8,
     paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E8EEE8',
     gap: 4,
   },
   mandatoryVaccineDetail: {

@@ -1,8 +1,12 @@
 package com.locvac.controller;
 
+import com.locvac.dto.vacina.VacinaRequestDTO;
 import com.locvac.dto.vacina.VacinaResponseDTO;
+import com.locvac.model.core.Vacina;
 import com.locvac.model.enums.TipoSecaoVacinacao;
 import com.locvac.repository.VacinaRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,5 +29,20 @@ public class VacinaController {
         return vacinas.stream()
                 .map(v -> new VacinaResponseDTO(v.getId(), v.getNome(), v.getDescricao(), v.getDose(), v.getCodigoPNI(), v.getTipoSecaoVacinacao()))
                 .toList();
+    }
+
+    @PostMapping
+    public ResponseEntity<VacinaResponseDTO> criar(@RequestBody VacinaRequestDTO dto) {
+        Vacina v = new Vacina();
+        v.setNome(dto.getNome());
+        v.setDescricao(dto.getDescricao());
+        v.setDose(dto.getDose());
+        v.setViaAdministracao(dto.getViaAdministracao());
+        v.setCodigoPNI(dto.getCodigoPNI());
+        v.setAtiva(true);
+        v.setTipoSecaoVacinacao(dto.getTipoSecaoVacinacao());
+        Vacina saved = repository.save(v);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new VacinaResponseDTO(saved.getId(), saved.getNome(), saved.getDescricao(), saved.getDose(), saved.getCodigoPNI(), saved.getTipoSecaoVacinacao()));
     }
 }
