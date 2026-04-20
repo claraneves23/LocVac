@@ -72,6 +72,11 @@ public class DoseAplicadaServiceImpl implements DoseAplicadaService {
 
     @Override
     public List<DoseAplicadaResponseDTO> listarPorPessoaETipo(Long idPessoa, TipoSecaoVacinacao tipo) {
+        if (tipo == TipoSecaoVacinacao.OUTRAS_VACINAS) {
+            return repository.findByPessoaIdAndNomeCustomIsNotNull(idPessoa).stream()
+                    .map(mapper::toResponse)
+                    .toList();
+        }
         return repository.findByPessoaIdAndVacinaTipoSecaoVacinacao(idPessoa, tipo).stream()
                 .map(mapper::toResponse)
                 .toList();

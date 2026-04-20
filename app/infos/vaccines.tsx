@@ -13,7 +13,10 @@ export default function VaccinesInfo() {
 
   useEffect(() => {
     fetchTodasVacinas()
-      .then(setVacinas)
+      .then(data => {
+        const unicas = data.filter((v, i, arr) => arr.findIndex(x => x.nome === v.nome) === i);
+        setVacinas(unicas);
+      })
       .finally(() => setLoading(false));
   }, []);
 
