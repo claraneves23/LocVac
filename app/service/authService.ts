@@ -133,7 +133,7 @@ axios.interceptors.response.use(
 		const status = error.response?.status;
 
 		if (
-			status === 401 &&
+			(status === 401 || status === 403) &&
 			!original._retry &&
 			!original.url?.includes('/auth/refresh') &&
 			!original.url?.includes('/auth/login')
