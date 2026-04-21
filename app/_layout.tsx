@@ -6,6 +6,7 @@ import { Platform, StyleSheet, View, Text, ActivityIndicator } from 'react-nativ
 import { BottomBar } from '../components/BottomBar';
 import { getNavigationDirection } from './navigation-direction';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { setAuthErrorCallback } from './service/authService';
 
 const MAIN_TAB_ROUTES = ['index', 'search', 'infos', 'user'];
 const HIDE_BOTTOM_BAR_ROUTES = ['/login'];
@@ -23,6 +24,10 @@ function LayoutContent() {
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const { isLoading: appLoading } = useAppContext();
+
+  useEffect(() => {
+    setAuthErrorCallback(() => router.replace('/login'));
+  }, [router]);
 
   useEffect(() => {
     const checkAuth = async () => {

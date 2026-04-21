@@ -94,22 +94,77 @@ async function clearTokens(): Promise<void> {
 	await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, REFRESH_TOKEN_KEY, PESSOA_ID_KEY]);
 }
 
-// Interceptor para adicionar o token JWT em todas as requisições
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value: any) => void; reject: (reason?: any) => void }> = [];
+let authErrorCallback: (() => void) | null = null;
+
+export function setAuthErrorCallback(cb: () => void) {
+	authErrorCallback = cb;
+}
+
+const processQueue = (error: any, token: string | null = null) => {
+	failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
+	failedQueue = [];
+};
+
 axios.interceptors.request.use(async (config) => {
-	// Não adiciona o token para login/cadastro
 	if (
 		config.url?.includes('/auth/login') ||
+		config.url?.includes('/auth/refresh') ||
 		config.url?.includes('/usuarios/cadastro')
 	) {
 		return config;
 	}
-	const token = await AsyncStorage.getItem('locvac:auth:token');
-	if (token && config.headers && typeof config.headers.set === 'function') {
-		config.headers.set('Authorization', `Bearer ${token}`);
-	} else if (token) {
-		// fallback para objetos simples
-        // Garante que config.headers seja do tipo AxiosRequestHeaders
-        (config.headers as any)["Authorization"] = `Bearer ${token}`;
+	const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+	if (token) {
+		if (typeof config.headers?.set === 'function') {
+			config.headers.set('Authorization', `Bearer ${token}`);
+		} else {
+			(config.headers as any)['Authorization'] = `Bearer ${token}`;
+		}
 	}
 	return config;
 });
+
+axios.interceptors.response.use(
+	(response) => response,
+	async (error) => {
+		const original = error.config;
+		const status = error.response?.status;
+
+		if (
+			status === 401 &&
+			!original._retry &&
+			!original.url?.includes('/auth/refresh') &&
+			!original.url?.includes('/auth/login')
+		) {
+			if (isRefreshing) {
+				return new Promise((resolve, reject) => {
+					failedQueue.push({ resolve, reject });
+				}).then((token) => {
+					(original.headers as any)['Authorization'] = `Bearer ${token}`;
+					return axios(original);
+				});
+			}
+
+			original._retry = true;
+			isRefreshing = true;
+
+			try {
+				const auth = await refreshToken();
+				processQueue(null, auth.accessToken);
+				(original.headers as any)['Authorization'] = `Bearer ${auth.accessToken}`;
+				return axios(original);
+			} catch (refreshError) {
+				processQueue(refreshError, null);
+				await clearTokens();
+				authErrorCallback?.();
+				return Promise.reject(refreshError);
+			} finally {
+				isRefreshing = false;
+			}
+		}
+
+		return Promise.reject(error);
+	}
+);
