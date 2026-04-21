@@ -50,7 +50,7 @@ export default function Infos() {
   const infoCarousel = [
     {
       id: '1',
-      title: 'Vacinas Importantes',
+      title: 'Dúvidas Frequentes',
       description: 'Saiba quais são as principais vacinas',
       image: 'https://tse3.mm.bing.net/th/id/OIP.noOj5oWP8cYqCwU2p0QLAAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3',
       route: '/infos/vaccines',
