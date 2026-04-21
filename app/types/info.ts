@@ -6,6 +6,24 @@ export type SecaoInformativaDTO = {
   ordemExibicao: number;
 };
 
+export type CarrosselItemDTO = {
+  id: number;
+  titulo: string;
+  descricao: string;
+  imagemUrl: string;
+  ordemExibicao: number;
+  ativo: boolean;
+};
+
+export type CarrosselConteudoDTO = {
+  id: number;
+  idCarrosselItem: number;
+  tituloSecao: string;
+  conteudo: string | null;
+  itens: string[];
+  ordemExibicao: number;
+};
+
 export type VacinaInformativoDTO = {
   id: number;
   idVacina: number;
