@@ -1,17 +1,51 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { ALERTS_BY_PROFILE, MAIN_USER } from './data/family';
-import { MANDATORY_FIRST_YEAR_VACCINES } from './data/mandatory-vaccines';
-import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
-import { getDependents } from '../src/storage/dependents';
-import { getVaccines } from '../src/storage/vaccines';
-import { getMandatoryVaccineRecords } from '../src/storage/mandatory-vaccines';
-import { getOtherVaccines } from '../src/storage/other-vaccines';
-import { getCampaigns } from '../src/storage/campaigns';
+import { useAppContext } from './context/AppContext';
+import { FamilyMember, Campanha } from './types/vaccination';
+import {
+  fetchDosesPorPessoa,
+  fetchOutrasVacinasPorPessoa,
+  fetchMandatoryVaccines,
+  DoseAplicadaDTO,
+  VacinaDTO,
+} from './service/mandatoryVaccineService';
+import {
+  fetchCampaigns,
+  fetchParticipacoesByPessoa,
+  ParticipacaoDTO,
+} from './service/campaignService';
+import { getRecommendedAgeMonths, getAgeInMonths } from './utils/vaccineAge';
+
+type ActiveTab = 'history' | 'pending';
+
+type ProfileData = {
+  member: FamilyMember;
+  applied: DoseAplicadaDTO[];
+  other: DoseAplicadaDTO[];
+  participacoes: ParticipacaoDTO[];
+};
+
+type HistoryEntry = {
+  key: string;
+  type: 'mandatory' | 'other' | 'campaign';
+  name: string;
+  date?: string;
+  detail?: string;
+  member: FamilyMember;
+};
+
+type PendingEntry = {
+  key: string;
+  type: 'vaccine' | 'campaign';
+  name: string;
+  description?: string;
+  deadline?: string;
+  urgency: 'high' | 'medium' | 'low';
+  member: FamilyMember;
+};
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
@@ -19,310 +53,193 @@ const formatDateToBR = (isoDate: string | undefined): string => {
   return `${day}/${month}/${year}`;
 };
 
-const SELECTED_PROFILE_KEY = 'selectedProfileId';
-
-type ActiveTab = 'history' | 'pending';
-
-interface HistoryEntry {
-  id: string;
-  type: 'vaccine' | 'mandatory' | 'other' | 'campaign';
-  name: string;
-  date?: string;
-  details?: string;
-  profileId: string;
-  profileName: string;
-}
-
-interface PendingEntry {
-  id: string;
-  type: 'pending_vaccine' | 'missing_mandatory' | 'alert';
-  name: string;
-  description?: string;
-  dueDate?: string;
-  profileId: string;
-  profileName: string;
-  urgency: 'high' | 'medium' | 'low';
-}
-
 export default function Search() {
+  const { mainUser, dependents } = useAppContext();
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('history');
-  const [dependents, setDependents] = useState<Dependent[]>([]);
-  const [vaccines, setVaccines] = useState<VaccineApplication[]>([]);
-  const [mandatoryRecords, setMandatoryRecords] = useState<MandatoryVaccineRecord[]>([]);
-  const [otherVaccines, setOtherVaccines] = useState<OtherVaccine[]>([]);
-  const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [filterProfile, setFilterProfile] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [mandatoryVaccines, setMandatoryVaccines] = useState<VacinaDTO[]>([]);
+  const [campaigns, setCampaigns] = useState<Campanha[]>([]);
+  const [profilesData, setProfilesData] = useState<ProfileData[]>([]);
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      const saved = await AsyncStorage.getItem(SELECTED_PROFILE_KEY);
-      setSelectedProfileId(saved || MAIN_USER.id);
-    };
-    loadProfile();
-  }, []);
-
-  const loadAll = useCallback(async () => {
-    const [deps, vacs, mandatory, other, camps] = await Promise.all([
-      getDependents(),
-      getVaccines(),
-      getMandatoryRecords(),
-      getOtherVaccines(),
-      getCampaigns(),
-    ]);
-    setDependents(deps);
-    setVaccines(vacs);
-    setMandatoryRecords(mandatory);
-    setOtherVaccines(other);
-    setCampaigns(camps);
-  }, []);
+  const familyMembers = useMemo<FamilyMember[]>(
+    () => (mainUser ? [mainUser, ...dependents] : []),
+    [mainUser, dependents]
+  );
 
   useFocusEffect(
     useCallback(() => {
-      loadAll();
-    }, [loadAll])
+      if (!mainUser) return;
+      const members: FamilyMember[] = [mainUser, ...dependents];
+      setLoading(true);
+
+      const fetchAll = async () => {
+        const [mandatory, camps] = await Promise.all([
+          fetchMandatoryVaccines(),
+          fetchCampaigns(),
+        ]);
+        const data = await Promise.all(
+          members.map(async (member) => {
+            const [applied, other, participacoes] = await Promise.all([
+              fetchDosesPorPessoa(Number(member.id)),
+              fetchOutrasVacinasPorPessoa(Number(member.id)),
+              fetchParticipacoesByPessoa(Number(member.id)),
+            ]);
+            return { member, applied, other, participacoes };
+          })
+        );
+        setMandatoryVaccines(mandatory);
+        setCampaigns(camps);
+        setProfilesData(data);
+      };
+
+      fetchAll().catch(() => {}).finally(() => setLoading(false));
+    }, [mainUser?.id, dependents.length])
   );
 
-  const familyMembers = useMemo<FamilyMember[]>(
-    () => [
-      {
-        id: MAIN_USER.id,
-        userId: MAIN_USER.id,
-        name: MAIN_USER.name,
-        birthDate: MAIN_USER.birthDate,
-        birthPlace: MAIN_USER.birthPlace,
-        sex: MAIN_USER.sex,
-        kind: 'user' as const,
-      },
-      ...dependents.map((d) => ({
-        id: d.id,
-        userId: d.userId,
-        name: d.name,
-        birthDate: d.birthDate,
-        birthPlace: d.birthPlace,
-        sex: d.sex,
-        kind: 'dependent' as const,
-        photoUri: d.photoUri,
-      })),
-    ],
-    [dependents]
-  );
-
-  const getProfileName = useCallback(
-    (profileId: string) => {
-      if (profileId === MAIN_USER.id) return MAIN_USER.name;
-      const dep = dependents.find((d) => d.id === profileId);
-      return dep?.name || 'Desconhecido';
-    },
-    [dependents]
-  );
-
-  // ── HISTÓRICO ──
   const historyEntries = useMemo<HistoryEntry[]>(() => {
     const entries: HistoryEntry[] = [];
 
-    vaccines
-      .filter((v) => v.status === 'applied')
-      .forEach((v) => {
+    profilesData.forEach(({ member, applied, other, participacoes }) => {
+      applied.forEach((dose) => {
         entries.push({
-          id: v.id,
-          type: 'vaccine',
-          name: v.vaccineName,
-          date: v.applicationDate,
-          details: [v.lot && `Lote: ${v.lot}`, v.healthUnit && `Local: ${v.healthUnit}`]
-            .filter(Boolean)
-            .join(' • '),
-          profileId: v.profileId,
-          profileName: getProfileName(v.profileId),
-        });
-      });
-
-    mandatoryRecords
-      .filter((r) => r.isApplied)
-      .forEach((r) => {
-        const vaccineInfo = MANDATORY_FIRST_YEAR_VACCINES.find((v) => v.id === r.vaccineId);
-        entries.push({
-          id: r.id,
+          key: `mandatory-${dose.id}`,
           type: 'mandatory',
-          name: vaccineInfo?.name || r.vaccineId,
-          date: r.applicationDate,
-          details: [r.lot && `Lote: ${r.lot}`, r.professionalName && `Prof: ${r.professionalName}`]
-            .filter(Boolean)
-            .join(' • '),
-          profileId: r.profileId,
-          profileName: getProfileName(r.profileId),
+          name: dose.nomeVacina,
+          date: dose.dataAplicacao,
+          detail:
+            [dose.lote && `Lote: ${dose.lote}`, dose.nomeProfissional && `Prof: ${dose.nomeProfissional}`]
+              .filter(Boolean)
+              .join(' • ') || undefined,
+          member,
         });
       });
 
-    otherVaccines.forEach((v) => {
-      entries.push({
-        id: v.id,
-        type: 'other',
-        name: v.vaccineName,
-        date: v.applicationDate,
-        details: [v.lot && `Lote: ${v.lot}`, v.professionalName && `Prof: ${v.professionalName}`]
-          .filter(Boolean)
-          .join(' • '),
-        profileId: v.profileId,
-        profileName: getProfileName(v.profileId),
+      other.forEach((dose) => {
+        entries.push({
+          key: `other-${dose.id}`,
+          type: 'other',
+          name: dose.nomeVacina,
+          date: dose.dataAplicacao,
+          detail:
+            [dose.lote && `Lote: ${dose.lote}`, dose.unidadeSaude && `Local: ${dose.unidadeSaude}`]
+              .filter(Boolean)
+              .join(' • ') || undefined,
+          member,
+        });
+      });
+
+      participacoes.forEach((p) => {
+        const camp = campaigns.find((c) => c.id === p.idCampanha);
+        entries.push({
+          key: `camp-${p.id}`,
+          type: 'campaign',
+          name: camp?.nome ?? p.nomeCampanha ?? `Campanha #${p.idCampanha}`,
+          date: p.dataParticipacao,
+          member,
+        });
       });
     });
 
-    campaigns.forEach((c) => {
-      entries.push({
-        id: c.id,
-        type: 'campaign',
-        name: c.campaignName,
-        date: c.participationDate,
-        profileId: c.profileId,
-        profileName: getProfileName(c.profileId),
-      });
-    });
-
-    entries.sort((a, b) => {
+    return entries.sort((a, b) => {
       if (!a.date && !b.date) return 0;
       if (!a.date) return 1;
       if (!b.date) return -1;
       return b.date.localeCompare(a.date);
     });
+  }, [profilesData, campaigns]);
 
-    return entries;
-  }, [vaccines, mandatoryRecords, otherVaccines, campaigns, getProfileName]);
-
-  const filteredHistory = useMemo(() => {
-    if (!filterProfile) return historyEntries;
-    return historyEntries.filter((e) => e.profileId === filterProfile);
-  }, [historyEntries, filterProfile]);
-
-  // ── PENDÊNCIAS ──
   const pendingEntries = useMemo<PendingEntry[]>(() => {
     const entries: PendingEntry[] = [];
 
-    // Vacinas pendentes/atrasadas
-    vaccines
-      .filter((v) => v.status === 'pending' || v.status === 'overdue')
-      .forEach((v) => {
-        const isOverdue = v.status === 'overdue' || (v.dueDate && v.dueDate < new Date().toISOString().split('T')[0]);
-        entries.push({
-          id: v.id,
-          type: 'pending_vaccine',
-          name: v.vaccineName,
-          description: isOverdue ? 'Vacina em atraso' : 'Vacina pendente',
-          dueDate: v.dueDate,
-          profileId: v.profileId,
-          profileName: getProfileName(v.profileId),
-          urgency: isOverdue ? 'high' : v.dueDate ? 'medium' : 'low',
-        });
-      });
+    profilesData.forEach(({ member, applied, participacoes }) => {
+      const appliedIds = new Set(applied.map((d) => d.idVacina));
+      const ageMonths = getAgeInMonths(member.birthDate);
 
-    // Vacinas obrigatórias do 1º ano não aplicadas
-    familyMembers.forEach((member) => {
-      const profileRecords = mandatoryRecords.filter((r) => r.profileId === member.id);
-      MANDATORY_FIRST_YEAR_VACCINES.forEach((vaccine) => {
-        const record = profileRecords.find((r) => r.vaccineId === vaccine.id);
-        if (!record || !record.isApplied) {
+      // Encontra a próxima vacina obrigatória faltante na progressão:
+      // deve ser a primeira (na ordem retornada pela API) que o perfil ainda
+      // não tomou E cuja idade recomendada já foi atingida.
+      const nextMissing = mandatoryVaccines.find(
+        (v) => !appliedIds.has(v.id) && ageMonths >= getRecommendedAgeMonths(v)
+      );
+
+      if (nextMissing) {
+        entries.push({
+          key: `missing-${member.id}-${nextMissing.id}`,
+          type: 'vaccine',
+          name: nextMissing.nome,
+          description: nextMissing.descricao,
+          urgency: 'medium',
+          member,
+        });
+      }
+
+      const joinedIds = new Set(participacoes.map((p) => p.idCampanha));
+      campaigns
+        .filter((c) => c.ativa && !joinedIds.has(c.id))
+        .forEach((c) => {
           entries.push({
-            id: `missing-${member.id}-${vaccine.id}`,
-            type: 'missing_mandatory',
-            name: vaccine.name,
-            description: vaccine.description,
-            profileId: member.id,
-            profileName: getProfileName(member.id),
-            urgency: 'medium',
+            key: `pending-camp-${member.id}-${c.id}`,
+            type: 'campaign',
+            name: c.nome,
+            description: `Público-alvo: ${c.publicoAlvo}`,
+            deadline: c.dataFim,
+            urgency: 'low',
+            member,
           });
-        }
-      });
-    });
-
-    // Alertas ativos
-    Object.entries(ALERTS_BY_PROFILE).forEach(([profileId, alerts]) => {
-      alerts.forEach((alertMsg, index) => {
-        entries.push({
-          id: `alert-${profileId}-${index}`,
-          type: 'alert',
-          name: alertMsg,
-          profileId,
-          profileName: getProfileName(profileId),
-          urgency: alertMsg.toLowerCase().includes('atraso') || alertMsg.toLowerCase().includes('vence') ? 'high' : 'medium',
         });
-      });
     });
 
-    // Ordenar por urgência
-    const urgencyOrder = { high: 0, medium: 1, low: 2 };
-    entries.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+    const urgencyOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    return entries.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+  }, [profilesData, mandatoryVaccines, campaigns]);
 
-    return entries;
-  }, [vaccines, mandatoryRecords, familyMembers, getProfileName]);
+  const filteredHistory = useMemo(
+    () => (!filterProfile ? historyEntries : historyEntries.filter((e) => e.member.id === filterProfile)),
+    [historyEntries, filterProfile]
+  );
 
-  const filteredPending = useMemo(() => {
-    if (!filterProfile) return pendingEntries;
-    return pendingEntries.filter((e) => e.profileId === filterProfile);
-  }, [pendingEntries, filterProfile]);
-
-  // ── Helpers de tipo (histórico) ──
-  const getTypeLabel = (type: HistoryEntry['type']) => {
-    switch (type) {
-      case 'vaccine': return 'Vacina';
-      case 'mandatory': return 'Obrigatória';
-      case 'other': return 'Outra Vacina';
-      case 'campaign': return 'Campanha';
-    }
-  };
-
-  const getTypeColor = (type: HistoryEntry['type']) => {
-    switch (type) {
-      case 'vaccine': return '#09BEA5';
-      case 'mandatory': return '#005570';
-      case 'other': return '#6B7280';
-      case 'campaign': return '#D97706';
-    }
-  };
-
-  const getTypeIcon = (type: HistoryEntry['type']): React.ComponentProps<typeof Ionicons>['name'] => {
-    switch (type) {
-      case 'vaccine': return 'medkit';
-      case 'mandatory': return 'shield-checkmark';
-      case 'other': return 'medical';
-      case 'campaign': return 'megaphone';
-    }
-  };
-
-  // ── Helpers de tipo (pendências) ──
-  const getPendingTypeLabel = (type: PendingEntry['type']) => {
-    switch (type) {
-      case 'pending_vaccine': return 'Vacina Pendente';
-      case 'missing_mandatory': return 'Obrigatória Faltante';
-      case 'alert': return 'Alerta';
-    }
-  };
-
-  const getPendingTypeColor = (type: PendingEntry['type']) => {
-    switch (type) {
-      case 'pending_vaccine': return '#D97706';
-      case 'missing_mandatory': return '#DC2626';
-      case 'alert': return '#7C3AED';
-    }
-  };
-
-  const getPendingTypeIcon = (type: PendingEntry['type']): React.ComponentProps<typeof Ionicons>['name'] => {
-    switch (type) {
-      case 'pending_vaccine': return 'time';
-      case 'missing_mandatory': return 'alert-circle';
-      case 'alert': return 'notifications';
-    }
-  };
-
-  const getUrgencyColor = (urgency: PendingEntry['urgency']) => {
-    switch (urgency) {
-      case 'high': return '#DC2626';
-      case 'medium': return '#D97706';
-      case 'low': return '#6B7280';
-    }
-  };
+  const filteredPending = useMemo(
+    () => (!filterProfile ? pendingEntries : pendingEntries.filter((e) => e.member.id === filterProfile)),
+    [pendingEntries, filterProfile]
+  );
 
   const pendingCount = filteredPending.length;
   const highUrgencyCount = filteredPending.filter((e) => e.urgency === 'high').length;
+
+  const getTypeLabel = (type: HistoryEntry['type']) => {
+    if (type === 'mandatory') return 'Obrigatória';
+    if (type === 'other') return 'Outra Vacina';
+    return 'Campanha';
+  };
+
+  const getTypeColor = (type: HistoryEntry['type']) => {
+    if (type === 'mandatory') return '#005570';
+    if (type === 'other') return '#6B7280';
+    return '#D97706';
+  };
+
+  const getTypeIcon = (type: HistoryEntry['type']): React.ComponentProps<typeof Ionicons>['name'] => {
+    if (type === 'mandatory') return 'shield-checkmark';
+    if (type === 'other') return 'medical';
+    return 'megaphone';
+  };
+
+  const getPendingTypeLabel = (type: PendingEntry['type']) =>
+    type === 'vaccine' ? 'Vacina Faltante' : 'Campanha';
+
+  const getPendingTypeColor = (type: PendingEntry['type']) =>
+    type === 'vaccine' ? '#DC2626' : '#D97706';
+
+  const getPendingTypeIcon = (type: PendingEntry['type']): React.ComponentProps<typeof Ionicons>['name'] =>
+    type === 'vaccine' ? 'alert-circle' : 'megaphone';
+
+  const getUrgencyColor = (urgency: PendingEntry['urgency']) => {
+    if (urgency === 'high') return '#DC2626';
+    if (urgency === 'medium') return '#D97706';
+    return '#6B7280';
+  };
 
   return (
     <View style={styles.container}>
@@ -333,7 +250,6 @@ export default function Search() {
         </View>
       </View>
 
-      {/* Abas */}
       <View style={styles.tabContainer}>
         <Pressable
           style={[styles.tab, activeTab === 'history' && styles.tabActive]}
@@ -356,7 +272,6 @@ export default function Search() {
         </Pressable>
       </View>
 
-      {/* Filtro por perfil */}
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
           <Pressable
@@ -379,9 +294,12 @@ export default function Search() {
         </ScrollView>
       </View>
 
-      {activeTab === 'history' ? (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#005570" />
+        </View>
+      ) : activeTab === 'history' ? (
         <>
-          {/* Contadores do histórico */}
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{filteredHistory.filter((e) => e.type !== 'campaign').length}</Text>
@@ -397,7 +315,6 @@ export default function Search() {
             </View>
           </View>
 
-          {/* Lista de histórico */}
           <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
             {filteredHistory.length === 0 ? (
               <View style={styles.emptyContainer}>
@@ -407,7 +324,7 @@ export default function Search() {
               </View>
             ) : (
               filteredHistory.map((entry) => (
-                <View key={`${entry.type}-${entry.id}`} style={styles.historyCard}>
+                <View key={entry.key} style={styles.historyCard}>
                   <View style={styles.historyCardHeader}>
                     <View style={[styles.typeIconContainer, { backgroundColor: getTypeColor(entry.type) + '15' }]}>
                       <Ionicons name={getTypeIcon(entry.type)} size={20} color={getTypeColor(entry.type)} />
@@ -416,13 +333,17 @@ export default function Search() {
                       <Text style={styles.historyCardName}>{entry.name}</Text>
                       <View style={styles.historyCardMeta}>
                         <View style={[styles.typeBadge, { backgroundColor: getTypeColor(entry.type) + '20' }]}>
-                          <Text style={[styles.typeBadgeText, { color: getTypeColor(entry.type) }]}>{getTypeLabel(entry.type)}</Text>
+                          <Text style={[styles.typeBadgeText, { color: getTypeColor(entry.type) }]}>
+                            {getTypeLabel(entry.type)}
+                          </Text>
                         </View>
-                        <Text style={styles.profileLabel}>{entry.profileName}</Text>
+                        <Text style={styles.profileLabel}>
+                          {entry.member.kind === 'user' ? 'Você' : entry.member.name}
+                        </Text>
                       </View>
                     </View>
                   </View>
-                  {(entry.date || entry.details) && (
+                  {(entry.date || entry.detail) && (
                     <View style={styles.historyCardDetails}>
                       {entry.date && (
                         <View style={styles.detailRow}>
@@ -430,10 +351,10 @@ export default function Search() {
                           <Text style={styles.detailText}>{formatDateToBR(entry.date)}</Text>
                         </View>
                       )}
-                      {entry.details && (
+                      {entry.detail && (
                         <View style={styles.detailRow}>
                           <Ionicons name="information-circle-outline" size={14} color="#66776b" />
-                          <Text style={styles.detailText}>{entry.details}</Text>
+                          <Text style={styles.detailText}>{entry.detail}</Text>
                         </View>
                       )}
                     </View>
@@ -446,14 +367,13 @@ export default function Search() {
         </>
       ) : (
         <>
-          {/* Contadores de pendências */}
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
               <Text style={[styles.statValue, highUrgencyCount > 0 && { color: '#DC2626' }]}>{highUrgencyCount}</Text>
               <Text style={styles.statLabel}>Urgentes</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>{filteredPending.filter((e) => e.type === 'missing_mandatory').length}</Text>
+              <Text style={styles.statValue}>{filteredPending.filter((e) => e.type === 'vaccine').length}</Text>
               <Text style={styles.statLabel}>Faltantes</Text>
             </View>
             <View style={styles.statCard}>
@@ -462,7 +382,6 @@ export default function Search() {
             </View>
           </View>
 
-          {/* Lista de pendências */}
           <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
             {filteredPending.length === 0 ? (
               <View style={styles.emptyContainer}>
@@ -472,7 +391,7 @@ export default function Search() {
               </View>
             ) : (
               filteredPending.map((entry) => (
-                <View key={entry.id} style={[styles.historyCard, { borderLeftWidth: 3, borderLeftColor: getUrgencyColor(entry.urgency) }]}>
+                <View key={entry.key} style={[styles.historyCard, { borderLeftWidth: 3, borderLeftColor: getUrgencyColor(entry.urgency) }]}>
                   <View style={styles.historyCardHeader}>
                     <View style={[styles.typeIconContainer, { backgroundColor: getPendingTypeColor(entry.type) + '15' }]}>
                       <Ionicons name={getPendingTypeIcon(entry.type)} size={20} color={getPendingTypeColor(entry.type)} />
@@ -481,13 +400,17 @@ export default function Search() {
                       <Text style={styles.historyCardName}>{entry.name}</Text>
                       <View style={styles.historyCardMeta}>
                         <View style={[styles.typeBadge, { backgroundColor: getPendingTypeColor(entry.type) + '20' }]}>
-                          <Text style={[styles.typeBadgeText, { color: getPendingTypeColor(entry.type) }]}>{getPendingTypeLabel(entry.type)}</Text>
+                          <Text style={[styles.typeBadgeText, { color: getPendingTypeColor(entry.type) }]}>
+                            {getPendingTypeLabel(entry.type)}
+                          </Text>
                         </View>
-                        <Text style={styles.profileLabel}>{entry.profileName}</Text>
+                        <Text style={styles.profileLabel}>
+                          {entry.member.kind === 'user' ? 'Você' : entry.member.name}
+                        </Text>
                       </View>
                     </View>
                   </View>
-                  {(entry.description || entry.dueDate) && (
+                  {(entry.description || entry.deadline) && (
                     <View style={styles.historyCardDetails}>
                       {entry.description && (
                         <View style={styles.detailRow}>
@@ -495,11 +418,11 @@ export default function Search() {
                           <Text style={styles.detailText}>{entry.description}</Text>
                         </View>
                       )}
-                      {entry.dueDate && (
+                      {entry.deadline && (
                         <View style={styles.detailRow}>
                           <Ionicons name="calendar-outline" size={14} color={getUrgencyColor(entry.urgency)} />
                           <Text style={[styles.detailText, { color: getUrgencyColor(entry.urgency), fontWeight: '600' }]}>
-                            Prevista: {formatDateToBR(entry.dueDate)}
+                            Válida até: {formatDateToBR(entry.deadline)}
                           </Text>
                         </View>
                       )}
@@ -516,10 +439,6 @@ export default function Search() {
       <StatusBar style="dark" />
     </View>
   );
-}
-
-async function getMandatoryRecords(): Promise<MandatoryVaccineRecord[]> {
-  return getMandatoryVaccineRecords();
 }
 
 const styles = StyleSheet.create({
@@ -613,6 +532,11 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statsRow: {
     flexDirection: 'row',

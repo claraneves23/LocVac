@@ -149,12 +149,3 @@ export const APPLICATIONS: VaccineApplication[] = [
     status: 'applied',
   },
 ];
-
-export const ALERTS_BY_PROFILE: Record<string, string[]> = {
-  [MAIN_USER.id]: ['Influenza anual prevista para o próximo mês.'],
-  'dep-1': [
-    'Reforço da DTP vence em 8 dias.',
-    'Influenza anual prevista para esta semana.',
-  ],
-  'dep-2': ['Poliomielite entra em atraso em 12 dias.'],
-};

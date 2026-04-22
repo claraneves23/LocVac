@@ -9,6 +9,8 @@ public class VacinaRequestDTO {
     private String viaAdministracao;
     private String codigoPNI;
     private TipoSecaoVacinacao tipoSecaoVacinacao;
+    private Integer idadeMinimaMeses;
+    private Integer idadeMaximaMeses;
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
@@ -27,4 +29,10 @@ public class VacinaRequestDTO {
 
     public TipoSecaoVacinacao getTipoSecaoVacinacao() { return tipoSecaoVacinacao; }
     public void setTipoSecaoVacinacao(TipoSecaoVacinacao tipoSecaoVacinacao) { this.tipoSecaoVacinacao = tipoSecaoVacinacao; }
+
+    public Integer getIdadeMinimaMeses() { return idadeMinimaMeses; }
+    public void setIdadeMinimaMeses(Integer idadeMinimaMeses) { this.idadeMinimaMeses = idadeMinimaMeses; }
+
+    public Integer getIdadeMaximaMeses() { return idadeMaximaMeses; }
+    public void setIdadeMaximaMeses(Integer idadeMaximaMeses) { this.idadeMaximaMeses = idadeMaximaMeses; }
 }

@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as NavigationBar from 'expo-navigation-bar';
-import { fetchCarrosselAtivos } from './service/infoService';
+import { fetchCarrosselAtivos, fetchTodasVacinas } from './service/infoService';
 import { CarrosselItemDTO } from './types/info';
+import { VacinaDTO } from './service/mandatoryVaccineService';
 
 export default function Infos() {
   const [helpVisible, setHelpVisible] = useState(false);
@@ -13,12 +14,23 @@ export default function Infos() {
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [carrosselItems, setCarrosselItems] = useState<CarrosselItemDTO[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [vacinas, setVacinas] = useState<VacinaDTO[]>([]);
+  const [loadingCarrossel, setLoadingCarrossel] = useState(true);
+  const [loadingVacinas, setLoadingVacinas] = useState(true);
 
   useEffect(() => {
     fetchCarrosselAtivos()
-      .then(data => setCarrosselItems(data))
-      .finally(() => setLoading(false));
+      .then((data) => setCarrosselItems(data))
+      .catch((err) => console.log('Erro ao carregar carrossel:', err?.response?.status, err?.response?.data || err?.message))
+      .finally(() => setLoadingCarrossel(false));
+
+    fetchTodasVacinas()
+      .then((data) => {
+        const unicas = data.filter((v, i, arr) => arr.findIndex((x) => x.nome === v.nome) === i);
+        setVacinas(unicas);
+      })
+      .catch((err) => console.log('Erro ao carregar vacinas:', err?.response?.status, err?.response?.data || err?.message))
+      .finally(() => setLoadingVacinas(false));
   }, []);
 
   useEffect(() => {
@@ -47,6 +59,13 @@ export default function Infos() {
     });
   };
 
+  const handleVaccinePress = (vaccine: VacinaDTO) => {
+    router.push({
+      pathname: '/infos/vaccine-details',
+      params: { vaccineId: vaccine.id, vaccineName: vaccine.nome },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -57,8 +76,10 @@ export default function Infos() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.carouselSection}>
-          {loading ? (
+          {loadingCarrossel ? (
             <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 24 }} />
+          ) : carrosselItems.length === 0 ? (
+            <Text style={styles.emptyText}>Nenhum conteúdo disponível no momento.</Text>
           ) : (
             <>
               <FlatList
@@ -99,6 +120,33 @@ export default function Infos() {
                 ))}
               </View>
             </>
+          )}
+        </View>
+
+        <View style={styles.vaccinesSection}>
+          <Text style={styles.sectionTitle}>Vacinas</Text>
+          {loadingVacinas ? (
+            <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 24 }} />
+          ) : vacinas.length === 0 ? (
+            <Text style={styles.emptyText}>Nenhuma vacina disponível no momento.</Text>
+          ) : (
+            vacinas.map((vaccine) => (
+              <TouchableOpacity
+                key={vaccine.id}
+                style={styles.vaccineItem}
+                onPress={() => handleVaccinePress(vaccine)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={24}
+                  color="#29442dff"
+                  style={styles.vaccineIcon}
+                />
+                <Text style={styles.vaccineName}>{vaccine.nome}</Text>
+                <Ionicons name="chevron-forward-outline" size={24} color="#29442dff" />
+              </TouchableOpacity>
+            ))
           )}
         </View>
 
@@ -170,6 +218,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#29442dff',
+    marginBottom: 12,
+    marginTop: 16,
+  },
   carouselSection: {
     marginVertical: 16,
     marginHorizontal: -16,
@@ -215,6 +270,37 @@ const styles = StyleSheet.create({
   indicatorActive: {
     backgroundColor: '#29442dff',
     width: 24,
+  },
+  vaccinesSection: {
+    marginBottom: '10%',
+  },
+  vaccineItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginVertical: 6,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  vaccineIcon: {
+    marginRight: 12,
+  },
+  vaccineName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#607367',
+    fontSize: 13,
+    marginTop: 16,
   },
   modalOverlay: {
     flex: 1,

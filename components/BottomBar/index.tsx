@@ -26,7 +26,7 @@ export const BottomBar = () => {
   },
   {
     name: 'Histórico',
-    route: '/search',
+    route: '/hist',
     icon: 'time-outline',
     iconActive: 'time',
   },

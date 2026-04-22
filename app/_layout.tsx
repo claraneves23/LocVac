@@ -8,7 +8,7 @@ import { getNavigationDirection } from './navigation-direction';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { setAuthErrorCallback } from './service/authService';
 
-const MAIN_TAB_ROUTES = ['index', 'search', 'infos', 'user'];
+const MAIN_TAB_ROUTES = ['index', 'hist', 'infos', 'user'];
 const HIDE_BOTTOM_BAR_ROUTES = ['/login'];
 
 export default function Layout() {

@@ -8,7 +8,15 @@ export async function fetchCampaigns(): Promise<Campanha[]> {
 	return response.data;
 }
 
-export async function fetchParticipacoesByPessoa(idPessoa: number) {
+export type ParticipacaoDTO = {
+  id: number;
+  idPessoa: number;
+  idCampanha: number;
+  dataParticipacao: string;
+  nomeCampanha?: string;
+};
+
+export async function fetchParticipacoesByPessoa(idPessoa: number): Promise<ParticipacaoDTO[]> {
   const response = await axios.get(`${API_BASE}/participacaoCampanha/por-pessoa/${idPessoa}`);
   return response.data;
 }

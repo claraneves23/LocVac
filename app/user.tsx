@@ -19,7 +19,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as NavigationBar from 'expo-navigation-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { MAIN_USER } from './data/family';
 import { logout } from './service/authService';
 import { FamilyMember } from './types/vaccination';
 import { addDependentAndLink } from './service/dependentsService';

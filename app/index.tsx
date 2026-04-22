@@ -1,15 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal, Platform, TextInput, Alert } from 'react-native';
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ALERTS_BY_PROFILE } from './data/family';
-import { Dependent, FamilyMember, VaccineApplication, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
-import { getVaccines, addVaccine, updateVaccine, deleteVaccine } from '../src/storage/vaccines';
+import { Dependent, FamilyMember, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
 import { fetchMandatoryVaccines, fetchDosesPorPessoa, registrarDose, atualizarDose, deletarDose, VacinaDTO, fetchOutrasVacinasPorPessoa, registrarOutraVacina, atualizarOutraVacina } from './service/mandatoryVaccineService';
-import { getCampaignsByProfile, addCampaign, updateCampaign, deleteCampaign } from '../src/storage/campaigns';
 import { fetchCampaigns, addParticipacaoCampanha, fetchParticipacoesByPessoa } from './service/campaignService';
 import { Campanha } from './types/vaccination';
 import { useAppContext } from './context/AppContext';
@@ -57,13 +54,8 @@ export default function Index() {
   // e redireciona para a tela principal após login
   // return <Login />; // Removido para evitar código inalcançável
   const { mainUser, dependents, usuarioId, refreshDependents } = useAppContext();
-  const [vaccines, setVaccines] = useState<VaccineApplication[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isAddVaccineModalOpen, setIsAddVaccineModalOpen] = useState(false);
-  const [editingVaccine, setEditingVaccine] = useState<VaccineApplication | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
   const [mandatoryVaccineList, setMandatoryVaccineList] = useState<VacinaDTO[]>([]);
@@ -80,13 +72,6 @@ export default function Index() {
   const [mandatoryCode, setMandatoryCode] = useState('');
   const [mandatoryProfName, setMandatoryProfName] = useState('');
   const [mandatoryProfId, setMandatoryProfId] = useState('');
-
-  // Estados para o formulário de adicionar vacina
-  const [newVaccineName, setNewVaccineName] = useState('');
-  const [newVaccineDate, setNewVaccineDate] = useState('');
-  const [newVaccineLot, setNewVaccineLot] = useState('');
-  const [newVaccineHealthUnit, setNewVaccineHealthUnit] = useState('');
-  const [newVaccineNotes, setNewVaccineNotes] = useState('');
 
   // Estados para outras vacinas
   const [otherVaccines, setOtherVaccines] = useState<OtherVaccine[]>([]);
@@ -129,11 +114,6 @@ export default function Index() {
   const [campaignDate, setCampaignDate] = useState(new Date());
   const [campaignName, setCampaignName] = useState('');
   const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
-
-  const loadVaccines = useCallback(async () => {
-    const stored = await getVaccines();
-    setVaccines(stored);
-  }, []);
 
   const loadMandatoryVaccineRecords = useCallback(async () => {
     if (!selectedProfileId) return;
@@ -180,26 +160,19 @@ export default function Index() {
   }, [selectedProfileId]);
 
 
-  // Carrega participações de campanha do backend
   const loadCampaigns = useCallback(async () => {
-    if (selectedProfileId) {
-      try {
-        console.log('DEBUG loadCampaigns selectedProfileId:', selectedProfileId);
-        const participacoes = await fetchParticipacoesByPessoa(Number(selectedProfileId));
-        console.log('DEBUG loadCampaigns participacoes:', participacoes);
-        // Mapeia para o formato ParticipatingCampaign esperado pelo frontend
-        const mapped = participacoes.map((p: any) => ({
-          id: String(p.id),
-          profileId: String(p.idPessoa),
-          campaignName: p.nomeCampanha,
-          participationDate: p.dataParticipacao,
-        }));
-        console.log('DEBUG loadCampaigns mapped:', mapped);
-        setCampaigns(mapped);
-      } catch (e) {
-        console.log('DEBUG loadCampaigns erro:', e);
-        setCampaigns([]);
-      }
+    if (!selectedProfileId) return;
+    try {
+      const participacoes = await fetchParticipacoesByPessoa(Number(selectedProfileId));
+      const mapped = participacoes.map((p) => ({
+        id: String(p.id),
+        profileId: String(p.idPessoa),
+        campaignName: p.nomeCampanha ?? `Campanha #${p.idCampanha}`,
+        participationDate: p.dataParticipacao,
+      }));
+      setCampaigns(mapped);
+    } catch {
+      setCampaigns([]);
     }
   }, [selectedProfileId]);
 
@@ -214,11 +187,10 @@ export default function Index() {
 
   useFocusEffect(
     useCallback(() => {
-      loadVaccines();
       loadMandatoryVaccineRecords();
       loadOtherVaccines();
       loadCampaigns();
-    }, [loadVaccines, loadMandatoryVaccineRecords, loadOtherVaccines, loadCampaigns])
+    }, [loadMandatoryVaccineRecords, loadOtherVaccines, loadCampaigns])
   );
 
   const familyMembers = useMemo<FamilyMember[]>(() => {
@@ -264,89 +236,6 @@ export default function Index() {
     };
     updateSystemBars();
   }, [isProfileModalOpen]);
-
-  const openAddVaccineModal = () => {
-    setEditingVaccine(null);
-    setNewVaccineName('');
-    const today = new Date();
-    setSelectedDate(today);
-    setNewVaccineDate(today.toISOString().split('T')[0]);
-    setNewVaccineLot('');
-    setNewVaccineHealthUnit('');
-    setNewVaccineNotes('');
-    setIsAddVaccineModalOpen(true);
-  };
-
-  const openEditVaccineModal = (vaccine: VaccineApplication) => {
-    setEditingVaccine(vaccine);
-    setNewVaccineName(vaccine.vaccineName);
-    const date = vaccine.applicationDate ? parseDate(vaccine.applicationDate) : new Date();
-    setSelectedDate(date);
-    setNewVaccineDate(vaccine.applicationDate || '');
-    setNewVaccineLot(vaccine.lot || '');
-    setNewVaccineHealthUnit(vaccine.healthUnit || '');
-    setNewVaccineNotes(vaccine.notes || '');
-    setIsAddVaccineModalOpen(true);
-  };
-
-  const handleDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (date) {
-      setSelectedDate(date);
-      const isoDate = date.toISOString().split('T')[0];
-      setNewVaccineDate(isoDate);
-    }
-  };
-
-  const handleDeleteVaccine = async (vaccineId: string) => {
-    await deleteVaccine(vaccineId);
-    await loadVaccines();
-  };
-
-  const handleAddVaccine = async () => {
-    if (!newVaccineName.trim()) {
-      alert('Por favor, informe o nome da vacina.');
-      return;
-    }
-
-    if (editingVaccine) {
-      // Editar vacina existente
-      const updatedVaccine: VaccineApplication = {
-        ...editingVaccine,
-        vaccineName: newVaccineName.trim(),
-        applicationDate: newVaccineDate || undefined,
-        lot: newVaccineLot.trim() || undefined,
-        healthUnit: newVaccineHealthUnit.trim() || undefined,
-        notes: newVaccineNotes.trim() || undefined,
-      };
-      await updateVaccine(updatedVaccine);
-    } else {
-      // Adicionar nova vacina
-      const newVaccine: VaccineApplication = {
-        id: `vac-${Date.now()}`,
-        profileId: selectedProfile.id,
-        vaccineId: `custom-${Date.now()}`,
-        vaccineName: newVaccineName.trim(),
-        applicationDate: newVaccineDate || new Date().toISOString().split('T')[0],
-        lot: newVaccineLot.trim() || undefined,
-        healthUnit: newVaccineHealthUnit.trim() || undefined,
-        notes: newVaccineNotes.trim() || undefined,
-        status: 'applied',
-      };
-      await addVaccine(newVaccine);
-    }
-
-    await loadVaccines();
-
-    // Limpar formulário
-    setNewVaccineName('');
-    setNewVaccineDate('');
-    setNewVaccineLot('');
-    setNewVaccineHealthUnit('');
-    setNewVaccineNotes('');
-    setEditingVaccine(null);
-    setIsAddVaccineModalOpen(false);
-  };
 
   const openImagePreview = (uri?: string) => {
     if (!uri) return;
@@ -520,59 +409,34 @@ export default function Index() {
   };
 
   const handleSaveCampaign = async () => {
-    if (!campaignName.trim() || !campaignParticipationDate) return;
+    if (!campaignName.trim() || !campaignParticipationDate || editingCampaign) return;
 
-    const campaign: ParticipatingCampaign = {
-      id: editingCampaign?.id || `cmp-${Date.now()}`,
-      profileId: selectedProfile.id,
-      campaignName: campaignName.trim(),
-      participationDate: campaignParticipationDate,
-    };
-
-    if (editingCampaign) {
-      await updateCampaign(campaign);
-    } else {
-      // Integração com backend: ParticipacaoCampanha
-      const campanhaSelecionada = availableCampaigns.find(c => c.nome === campaignName);
-      if (!campanhaSelecionada) {
-        Alert.alert('Erro', 'Selecione uma campanha válida.');
-        return;
-      }
-      try {
-        await addParticipacaoCampanha({
-          idPessoa: Number(selectedProfile.id),
-          idCampanha: campanhaSelecionada.id,
-          dataParticipacao: campaignParticipationDate,
-        });
-      } catch (e) {
-        Alert.alert('Erro', 'Não foi possível registrar a participação na campanha.');
-        return;
-      }
+    const campanhaSelecionada = availableCampaigns.find((c) => c.nome === campaignName);
+    if (!campanhaSelecionada) {
+      Alert.alert('Erro', 'Selecione uma campanha válida.');
+      return;
+    }
+    try {
+      await addParticipacaoCampanha({
+        idPessoa: Number(selectedProfile.id),
+        idCampanha: campanhaSelecionada.id,
+        dataParticipacao: campaignParticipationDate,
+      });
+    } catch {
+      Alert.alert('Erro', 'Não foi possível registrar a participação na campanha.');
+      return;
     }
 
     await loadCampaigns();
-
-    // Limpar formulário
     setCampaignName('');
     setCampaignParticipationDate('');
     setEditingCampaign(null);
     setIsCampaignModalOpen(false);
   };
 
-  const handleDeleteCampaign = async (campaignId: string) => {
-    await deleteCampaign(campaignId);
-    await loadCampaigns();
+  const handleDeleteCampaign = async (_campaignId: string) => {
+    Alert.alert('Indisponível', 'A remoção de participações de campanha ainda não é suportada.');
   };
-
-  const selectedApplications = useMemo(
-    () => vaccines.filter((item) => item.profileId === selectedProfile.id),
-    [vaccines, selectedProfile.id]
-  );
-
-  const pendingVaccines = selectedApplications.filter((item) => item.status === 'pending');
-  const appliedVaccines = selectedApplications.filter((item) => item.status === 'applied');
-  const nextVaccine = pendingVaccines.find((item) => item.dueDate);
-  const activeAlerts = ALERTS_BY_PROFILE[selectedProfile.id] ?? [];
 
   if (!mainUser) return null;
 
@@ -706,7 +570,7 @@ export default function Index() {
         onClose={() => setIsImageModalOpen(false)}
       />
 
-      <StatusBar style={isProfileModalOpen || isAddVaccineModalOpen || isImageModalOpen || isMandatoryVaccineModalOpen || isOtherVaccineModalOpen || isCampaignModalOpen ? 'light' : 'dark'} />
+      <StatusBar style={isProfileModalOpen || isImageModalOpen || isMandatoryVaccineModalOpen || isOtherVaccineModalOpen || isCampaignModalOpen ? 'light' : 'dark'} />
     </View>
   );
 }

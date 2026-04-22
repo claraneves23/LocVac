@@ -27,7 +27,7 @@ public class VacinaController {
                 ? repository.findByTipoSecaoVacinacaoAndAtivaTrue(tipo)
                 : repository.findByAtivaTrue();
         return vacinas.stream()
-                .map(v -> new VacinaResponseDTO(v.getId(), v.getNome(), v.getDescricao(), v.getDose(), v.getCodigoPNI(), v.getTipoSecaoVacinacao()))
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -41,8 +41,22 @@ public class VacinaController {
         v.setCodigoPNI(dto.getCodigoPNI());
         v.setAtiva(true);
         v.setTipoSecaoVacinacao(dto.getTipoSecaoVacinacao());
+        v.setIdadeMinimaMeses(dto.getIdadeMinimaMeses());
+        v.setIdadeMaximaMeses(dto.getIdadeMaximaMeses());
         Vacina saved = repository.save(v);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new VacinaResponseDTO(saved.getId(), saved.getNome(), saved.getDescricao(), saved.getDose(), saved.getCodigoPNI(), saved.getTipoSecaoVacinacao()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+    }
+
+    private VacinaResponseDTO toResponse(Vacina v) {
+        return new VacinaResponseDTO(
+                v.getId(),
+                v.getNome(),
+                v.getDescricao(),
+                v.getDose(),
+                v.getCodigoPNI(),
+                v.getTipoSecaoVacinacao(),
+                v.getIdadeMinimaMeses(),
+                v.getIdadeMaximaMeses()
+        );
     }
 }

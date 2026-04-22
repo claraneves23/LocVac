@@ -8,5 +8,7 @@ public record VacinaResponseDTO(
         String descricao,
         String dose,
         String codigoPNI,
-        TipoSecaoVacinacao tipoSecaoVacinacao
+        TipoSecaoVacinacao tipoSecaoVacinacao,
+        Integer idadeMinimaMeses,
+        Integer idadeMaximaMeses
 ) {}

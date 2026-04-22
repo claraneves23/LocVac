@@ -18,36 +18,43 @@ public class VacinaDataInitializer implements ApplicationRunner {
         this.repository = repository;
     }
 
+    private record SeedVacina(String codigo, String nome, String descricao, String dose, Integer idadeMinimaMeses) {}
+
     @Override
     public void run(ApplicationArguments args) {
-        List<String[]> vacinas = List.of(
-            new String[]{"mfy-1",  "BCG",                          "Tuberculose",                                              "Dose única"},
-            new String[]{"mfy-2",  "Paralisia Infantil",           "1ª dose",                                                  "1ª dose"},
-            new String[]{"mfy-3",  "Tetra",                        "Difteria, Tétano, Coqueluche, Hemófilo - 1ª dose",         "1ª dose"},
-            new String[]{"mfy-4",  "Hepatite B",                   "1ª dose",                                                  "1ª dose"},
-            new String[]{"mfy-5",  "Paralisia Infantil",           "2ª dose",                                                  "2ª dose"},
-            new String[]{"mfy-6",  "Tetra",                        "Difteria, Tétano, Coqueluche, Hemófilo - 2ª dose",         "2ª dose"},
-            new String[]{"mfy-7",  "Hepatite B",                   "2ª dose",                                                  "2ª dose"},
-            new String[]{"mfy-8",  "Paralisia Infantil",           "3ª dose",                                                  "3ª dose"},
-            new String[]{"mfy-9",  "Tetra",                        "Difteria, Tétano, Coqueluche, Hemófilo - 3ª dose",         "3ª dose"},
-            new String[]{"mfy-10", "Hepatite B",                   "3ª dose",                                                  "3ª dose"},
-            new String[]{"mfy-11", "Paralisia Infantil",           "Reforço",                                                  "Reforço"},
-            new String[]{"mfy-12", "Difteria/Tétano/Coqueluche",   "1º reforço",                                               "1º reforço"},
-            new String[]{"mfy-13", "Sarampo/Caxumba/Rubéola",      "1ª dose",                                                  "1ª dose"},
-            new String[]{"mfy-14", "Paralisia Infantil",           "2º reforço",                                               "2º reforço"},
-            new String[]{"mfy-15", "Difteria/Tétano/Coqueluche",   "2º reforço",                                               "2º reforço"},
-            new String[]{"mfy-16", "Febre Amarela",                "Dose única",                                               "Dose única"}
+        List<SeedVacina> vacinas = List.of(
+            new SeedVacina("mfy-1",  "BCG",                        "Tuberculose",                                       "Dose única", 0),
+            new SeedVacina("mfy-2",  "Paralisia Infantil",         "1ª dose",                                           "1ª dose",    2),
+            new SeedVacina("mfy-3",  "Tetra",                      "Difteria, Tétano, Coqueluche, Hemófilo - 1ª dose",  "1ª dose",    2),
+            new SeedVacina("mfy-4",  "Hepatite B",                 "1ª dose",                                           "1ª dose",    0),
+            new SeedVacina("mfy-5",  "Paralisia Infantil",         "2ª dose",                                           "2ª dose",    4),
+            new SeedVacina("mfy-6",  "Tetra",                      "Difteria, Tétano, Coqueluche, Hemófilo - 2ª dose",  "2ª dose",    4),
+            new SeedVacina("mfy-7",  "Hepatite B",                 "2ª dose",                                           "2ª dose",    2),
+            new SeedVacina("mfy-8",  "Paralisia Infantil",         "3ª dose",                                           "3ª dose",    6),
+            new SeedVacina("mfy-9",  "Tetra",                      "Difteria, Tétano, Coqueluche, Hemófilo - 3ª dose",  "3ª dose",    6),
+            new SeedVacina("mfy-10", "Hepatite B",                 "3ª dose",                                           "3ª dose",    6),
+            new SeedVacina("mfy-11", "Paralisia Infantil",         "Reforço",                                           "Reforço",    15),
+            new SeedVacina("mfy-12", "Difteria/Tétano/Coqueluche", "1º reforço",                                        "1º reforço", 15),
+            new SeedVacina("mfy-13", "Sarampo/Caxumba/Rubéola",    "1ª dose",                                           "1ª dose",    12),
+            new SeedVacina("mfy-14", "Paralisia Infantil",         "2º reforço",                                        "2º reforço", 48),
+            new SeedVacina("mfy-15", "Difteria/Tétano/Coqueluche", "2º reforço",                                        "2º reforço", 48),
+            new SeedVacina("mfy-16", "Febre Amarela",              "Dose única",                                        "Dose única", 9)
         );
 
-        for (String[] dados : vacinas) {
-            if (!repository.existsByCodigoPNI(dados[0])) {
-                Vacina v = new Vacina();
-                v.setCodigoPNI(dados[0]);
-                v.setNome(dados[1]);
-                v.setDescricao(dados[2]);
-                v.setDose(dados[3]);
+        for (SeedVacina seed : vacinas) {
+            Vacina v = repository.findByCodigoPNI(seed.codigo()).orElse(null);
+            if (v == null) {
+                v = new Vacina();
+                v.setCodigoPNI(seed.codigo());
+                v.setNome(seed.nome());
+                v.setDescricao(seed.descricao());
+                v.setDose(seed.dose());
                 v.setAtiva(true);
                 v.setTipoSecaoVacinacao(TipoSecaoVacinacao.OBRIGATORIAS_PRIMEIRO_ANO);
+                v.setIdadeMinimaMeses(seed.idadeMinimaMeses());
+                repository.save(v);
+            } else if (v.getIdadeMinimaMeses() == null) {
+                v.setIdadeMinimaMeses(seed.idadeMinimaMeses());
                 repository.save(v);
             }
         }

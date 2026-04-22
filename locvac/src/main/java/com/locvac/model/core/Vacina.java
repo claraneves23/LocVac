@@ -34,6 +34,12 @@ public class Vacina {
     @Column(name = "tipo_secao_vacinacao", nullable = false)
     private TipoSecaoVacinacao tipoSecaoVacinacao;
 
+    @Column(name = "idade_minima_meses")
+    private Integer idadeMinimaMeses;
+
+    @Column(name = "idade_maxima_meses")
+    private Integer idadeMaximaMeses;
+
     public Vacina() {}
 
     public Vacina(Long id) {
@@ -98,5 +104,21 @@ public class Vacina {
 
     public TipoSecaoVacinacao getTipoSecaoVacinacao() {
         return tipoSecaoVacinacao;
+    }
+
+    public Integer getIdadeMinimaMeses() {
+        return idadeMinimaMeses;
+    }
+
+    public void setIdadeMinimaMeses(Integer idadeMinimaMeses) {
+        this.idadeMinimaMeses = idadeMinimaMeses;
+    }
+
+    public Integer getIdadeMaximaMeses() {
+        return idadeMaximaMeses;
+    }
+
+    public void setIdadeMaximaMeses(Integer idadeMaximaMeses) {
+        this.idadeMaximaMeses = idadeMaximaMeses;
     }
 }

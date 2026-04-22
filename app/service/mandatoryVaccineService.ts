@@ -8,6 +8,8 @@ export type VacinaDTO = {
   descricao: string;
   dose: string;
   codigoPNI: string;
+  idadeMinimaMeses: number | null;
+  idadeMaximaMeses: number | null;
 };
 
 export type DoseAplicadaDTO = {
