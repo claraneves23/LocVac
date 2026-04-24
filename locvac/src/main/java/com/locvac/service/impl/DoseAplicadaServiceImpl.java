@@ -2,6 +2,7 @@ package com.locvac.service.impl;
 
 import com.locvac.dto.doseAplicada.DoseAplicadaRequestDTO;
 import com.locvac.dto.doseAplicada.DoseAplicadaResponseDTO;
+import com.locvac.dto.doseAplicada.DoseAplicadaUpdateDTO;
 import com.locvac.dto.doseAplicada.OutraVacinaRequestDTO;
 import com.locvac.mapper.DoseAplicadaMapper;
 import com.locvac.model.associacao.DoseAplicada;
@@ -43,7 +44,7 @@ public class DoseAplicadaServiceImpl implements DoseAplicadaService {
     }
 
     @Override
-    public DoseAplicadaResponseDTO atualizar(Long idDose, DoseAplicadaRequestDTO dto) {
+    public DoseAplicadaResponseDTO atualizar(Long idDose, DoseAplicadaUpdateDTO dto) {
         DoseAplicada dose = repository.findById(idDose)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dose não encontrada"));
         dose.setDataAplicacao(dto.dataAplicacao());

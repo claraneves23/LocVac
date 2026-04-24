@@ -2,6 +2,7 @@ package com.locvac.controller;
 
 import com.locvac.dto.doseAplicada.DoseAplicadaRequestDTO;
 import com.locvac.dto.doseAplicada.DoseAplicadaResponseDTO;
+import com.locvac.dto.doseAplicada.DoseAplicadaUpdateDTO;
 import com.locvac.dto.doseAplicada.OutraVacinaRequestDTO;
 import com.locvac.model.enums.TipoSecaoVacinacao;
 import com.locvac.service.DoseAplicadaService;
@@ -29,7 +30,7 @@ public class DoseAplicadaController {
 
     @PutMapping("/{idDose}")
     public ResponseEntity<DoseAplicadaResponseDTO> atualizar(@PathVariable Long idDose,
-                                                             @RequestBody @Valid DoseAplicadaRequestDTO dto) {
+                                                             @RequestBody @Valid DoseAplicadaUpdateDTO dto) {
         return ResponseEntity.ok(service.atualizar(idDose, dto));
     }
 
@@ -60,4 +61,6 @@ public class DoseAplicadaController {
                                                                          @RequestBody @Valid OutraVacinaRequestDTO dto) {
         return ResponseEntity.ok(service.atualizarOutraVacina(idDose, dto));
     }
+
+    //dúvida: precisa de um endpoint para atualizar dose por pessoa e outro para atualizar outras vacinas por pessoa?
 }
