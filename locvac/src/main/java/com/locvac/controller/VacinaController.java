@@ -59,4 +59,7 @@ public class VacinaController {
                 v.getIdadeMaximaMeses()
         );
     }
+
+    // atualizar vacina
+    // deletar vacina (na verdade, só desativar, para não perder histórico de doses aplicadas)
 }

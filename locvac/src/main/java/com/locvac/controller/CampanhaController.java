@@ -48,4 +48,6 @@ public class CampanhaController {
         return ResponseEntity.ok(campanhaMapper.toResponse(campanha));
     }
 
+    //falta endpoint de atualizar campanha
+
 }

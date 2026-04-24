@@ -36,6 +36,9 @@ public class PessoaController {
         return ResponseEntity.ok(service.getPerfil(idPessoa));
     }
 
+    // atualizar perfil
+    // deletar perfil (na verdade, só desativar, para não perder histórico de doses aplicadas)
+
     @GetMapping("/dependentes")
     public ResponseEntity<List<PessoaResponseDTO>> listarDependentes(@RequestParam UUID usuarioId) {
         return ResponseEntity.ok(service.listarDependentes(usuarioId));

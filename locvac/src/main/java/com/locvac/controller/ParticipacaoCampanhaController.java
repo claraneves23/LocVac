@@ -30,6 +30,10 @@ public class ParticipacaoCampanhaController {
         return ResponseEntity.ok(service.listarPorPessoa(idPessoa));
     }
 
+    // atualizar participacao por pessoa
+
+    // deletar participacao por pessoa
+
     @GetMapping
     public ResponseEntity<List<ParticipacaoCampanhaResponseDTO>> listarTodos() {
         return ResponseEntity.ok(service.listarTodos());
