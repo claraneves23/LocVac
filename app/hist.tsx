@@ -157,21 +157,39 @@ export default function Search() {
       const appliedIds = new Set(applied.map((d) => d.idVacina));
       const ageMonths = getAgeInMonths(member.birthDate);
 
-      // Encontra a próxima vacina obrigatória faltante na progressão:
-      // deve ser a primeira (na ordem retornada pela API) que o perfil ainda
-      // não tomou E cuja idade recomendada já foi atingida.
-      const nextMissing = mandatoryVaccines.find(
-        (v) => !appliedIds.has(v.id) && ageMonths >= getRecommendedAgeMonths(v)
-      );
+      // Agrupa vacinas obrigatórias por faixa etária (idade mínima).
+      // A faixa ativa é a primeira faixa (em ordem crescente) que ainda
+      // contém vacinas não aplicadas. Só exibimos pendências se a idade
+      // da pessoa já alcançou a idade mínima dessa faixa — caso contrário,
+      // ainda não está no momento de vacinar.
+      const ageGroups = new Map<number, VacinaDTO[]>();
+      mandatoryVaccines.forEach((v) => {
+        const age = getRecommendedAgeMonths(v);
+        if (!ageGroups.has(age)) ageGroups.set(age, []);
+        ageGroups.get(age)!.push(v);
+      });
+      const sortedAges = Array.from(ageGroups.keys()).sort((a, b) => a - b);
 
-      if (nextMissing) {
-        entries.push({
-          key: `missing-${member.id}-${nextMissing.id}`,
-          type: 'vaccine',
-          name: nextMissing.nome,
-          description: nextMissing.descricao,
-          urgency: 'medium',
-          member,
+      let activeAge: number | null = null;
+      for (const age of sortedAges) {
+        const allApplied = ageGroups.get(age)!.every((v) => appliedIds.has(v.id));
+        if (!allApplied) {
+          activeAge = age;
+          break;
+        }
+      }
+
+      if (activeAge !== null && ageMonths >= activeAge) {
+        ageGroups.get(activeAge)!.forEach((v) => {
+          if (appliedIds.has(v.id)) return;
+          entries.push({
+            key: `missing-${member.id}-${v.id}`,
+            type: 'vaccine',
+            name: v.nome,
+            description: v.descricao,
+            urgency: 'medium',
+            member,
+          });
         });
       }
 

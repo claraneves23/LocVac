@@ -23,29 +23,50 @@ export default function MandatoryVaccinesSection({ vaccines, records, onOpenModa
       <Text style={styles.sectionTitle}>VACINAS DO 1° ANO DE VIDA</Text>
       <View style={styles.mandatoryVaccinesContainer}>
         {(() => {
-          let lastAvailableIdx = -1;
-          for (let i = 0; i < vaccines.length; i++) {
-            const rec = records.find((r) => r.vaccineId === String(vaccines[i].id));
-            if (!rec?.isApplied) {
-              lastAvailableIdx = i;
+          // Agrupa vacinas por idade mínima (faixa etária do PNI).
+          // A próxima faixa só é liberada após todas as vacinas da faixa
+          // atual terem sido aplicadas.
+          const ageGroups = new Map<number, typeof vaccines>();
+          vaccines.forEach((v) => {
+            const age = v.idadeMinimaMeses ?? 0;
+            if (!ageGroups.has(age)) ageGroups.set(age, []);
+            ageGroups.get(age)!.push(v);
+          });
+          const sortedAges = Array.from(ageGroups.keys()).sort((a, b) => a - b);
+
+          let activeAge: number | null = null;
+          for (const age of sortedAges) {
+            const groupVaccines = ageGroups.get(age)!;
+            const allApplied = groupVaccines.every((v) =>
+              records.some((r) => r.vaccineId === String(v.id) && r.isApplied)
+            );
+            if (!allApplied) {
+              activeAge = age;
               break;
             }
           }
 
-          let canShow = true;
-          return vaccines.map((vaccine, idx) => {
-            const record = records.find((r) => r.vaccineId === String(vaccine.id));
+          // Renderiza percorrendo as faixas etárias em ordem crescente, para
+          // que a ordem visual siga a cronologia do PNI mesmo quando o array
+          // recebido da API estiver fora de ordem.
+          const visibleAges =
+            activeAge === null
+              ? sortedAges
+              : sortedAges.filter((age) => age <= activeAge!);
 
-            if (!canShow && !record?.isApplied) return null;
+          return visibleAges.flatMap((age) => {
+            const groupVaccines = ageGroups.get(age)!;
+            const isInteractive = activeAge === null || age <= activeAge;
 
-            const isLastAvailable = idx === lastAvailableIdx;
+            return groupVaccines.map((vaccine) => {
+              const record = records.find((r) => r.vaccineId === String(vaccine.id));
 
-            const element = (
+              return (
               <Pressable
                 key={vaccine.id}
                 style={styles.mandatoryVaccineItem}
-                onPress={() => isLastAvailable ? onOpenModal(String(vaccine.id)) : undefined}
-                disabled={!isLastAvailable}
+                onPress={() => (isInteractive ? onOpenModal(String(vaccine.id)) : undefined)}
+                disabled={!isInteractive}
               >
                 <View style={styles.mandatoryVaccineHeader}>
                   <View style={styles.mandatoryVaccineInfo}>
@@ -86,10 +107,8 @@ export default function MandatoryVaccinesSection({ vaccines, records, onOpenModa
                   </View>
                 )}
               </Pressable>
-            );
-
-            if (!record?.isApplied) canShow = false;
-            return element;
+              );
+            });
           });
         })()}
       </View>
