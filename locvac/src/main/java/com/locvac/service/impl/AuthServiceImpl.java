@@ -45,7 +45,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public Object login(LoginRequest request) {
-        Usuario usuario = usuarioRepository.findByEmail(request.email())
+        String email = request.email() == null ? null : request.email().trim().toLowerCase();
+        Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
 
         if (usuario.getBloqueadoAte() != null &&
@@ -117,6 +118,12 @@ public class AuthServiceImpl implements AuthService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
         refreshTokenService.revogarTodos(usuario);
+    }
+
+    @Override
+    public AuthResponse autenticarUsuario(Usuario usuario) {
+        TokenData tokenData = new TokenData(usuario.getId(), usuario.getEmail());
+        return gerarAuthResponse(usuario, tokenData);
     }
 
         private AuthResponse gerarAuthResponse(Usuario usuario, TokenData tokenData) {

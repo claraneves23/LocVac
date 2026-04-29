@@ -11,12 +11,12 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  Keyboard,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { login, cadastrar } from './service/authService';
+import { login, iniciarCadastro } from './service/authService';
 import { useAppContext } from './context/AppContext';
 
 type Mode = 'login' | 'cadastro';
@@ -31,20 +31,57 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [dataNascimento, setDataNascimento] = useState<Date | undefined>(undefined);
-  const [cpf, setCpf] = useState('');
-  const [sexoBiologico, setSexoBiologico] = useState<'MASCULINO' | 'FEMININO' | ''>('');
-  const [cep, setCep] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const focusedInputRef = useRef<TextInput | null>(null);
+  const currentScrollY = useRef(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const emailRef = useRef<TextInput>(null);
+  const senhaRef = useRef<TextInput>(null);
+  const confirmarSenhaRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      const input = focusedInputRef.current;
+      const scroll = scrollRef.current;
+      if (!input || !scroll) return;
+      setTimeout(() => {
+        try {
+          (input as any).measure?.(
+            (_x: number, _y: number, _w: number, h: number, _pageX: number, pageY: number) => {
+              const keyboardTop = e.endCoordinates.screenY;
+              const inputBottom = pageY + h + 24;
+              if (inputBottom > keyboardTop) {
+                const delta = inputBottom - keyboardTop;
+                scroll.scrollTo({
+                  y: currentScrollY.current + delta,
+                  animated: true,
+                });
+              }
+            },
+          );
+        } catch {}
+      }, 100);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const focusFor = (ref: React.RefObject<TextInput | null>) => () => {
+    focusedInputRef.current = ref.current;
+  };
 
   const resetFields = () => {
     setEmail('');
     setSenha('');
-    setNome('');
-    setTelefone('');
     setConfirmarSenha('');
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -53,13 +90,6 @@ export default function Login() {
   const switchMode = (newMode: Mode) => {
     resetFields();
     setMode(newMode);
-  };
-
-  const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
   const handleLogin = async () => {
@@ -87,8 +117,7 @@ export default function Login() {
   };
 
   const handleCadastro = async () => {
-
-    if (!nome.trim() || !email.trim() || !senha.trim() || !telefone.trim() || !dataNascimento || !cpf.trim() || !sexoBiologico || !cep.trim()) {
+    if (!email.trim() || !senha.trim() || !confirmarSenha.trim()) {
       Alert.alert('Campos obrigatórios', 'Preencha todos os campos.');
       return;
     }
@@ -103,28 +132,15 @@ export default function Login() {
       return;
     }
 
-    const payload = {
-      nome: nome.trim(),
-      email: email.trim(),
-      senha,
-      telefone: telefone.replace(/\D/g, ''),
-      dataNascimento: dataNascimento?.toISOString().split('T')[0],
-      cpf: cpf.replace(/\D/g, ''),
-      sexoBiologico,
-      cep: cep.replace(/\D/g, ''),
-    };
-    console.log('Payload enviado para cadastro:', payload);
     setLoading(true);
     try {
-      await cadastrar(payload);
-      Alert.alert('Conta criada!', 'Faça login para continuar.', [
-        { text: 'OK', onPress: () => switchMode('login') },
-      ]);
+      await iniciarCadastro({ email: email.trim(), senha });
+      router.push({ pathname: '/verificar-email', params: { email: email.trim().toLowerCase() } });
     } catch (error: any) {
       const message =
         error?.response?.status === 409
           ? 'Este e-mail já está cadastrado.'
-          : 'Erro ao criar conta. Verifique sua conexão.';
+          : 'Erro ao iniciar cadastro. Verifique sua conexão.';
       Alert.alert('Erro', message);
     } finally {
       setLoading(false);
@@ -139,9 +155,15 @@ export default function Login() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          ref={scrollRef}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: 40 + keyboardHeight },
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScroll={(e) => { currentScrollY.current = e.nativeEvent.contentOffset.y; }}
+          scrollEventThrottle={16}
         >
           <View style={styles.logoContainer}>
             <Image
@@ -171,89 +193,14 @@ export default function Login() {
               </Pressable>
             </View>
 
-            {mode === 'cadastro' && (
-              <>
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>Nome completo</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={nome}
-                    onChangeText={setNome}
-                    placeholder="Digite seu nome"
-                    placeholderTextColor="#999"
-                    autoCapitalize="words"
-                  />
-                </View>
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>Data de nascimento</Text>
-                  <Pressable onPress={() => setShowDatePicker(true)} style={styles.input}>
-                    <Text style={{ color: dataNascimento ? '#1f3322' : '#999' }}>
-                      {dataNascimento ? dataNascimento.toLocaleDateString() : 'Selecione a data'}
-                    </Text>
-                  </Pressable>
-                  {showDatePicker && (
-                    <DateTimePicker
-                      value={dataNascimento || new Date(2000, 0, 1)}
-                      mode="date"
-                      display="default"
-                      onChange={(_, date) => {
-                        setShowDatePicker(false);
-                        if (date) setDataNascimento(date);
-                      }}
-                      maximumDate={new Date()}
-                    />
-                  )}
-                </View>
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>CPF</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={cpf}
-                    onChangeText={setCpf}
-                    placeholder="Digite seu CPF"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    maxLength={14}
-                  />
-                </View>
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>Sexo biológico</Text>
-                  <View style={{ flexDirection: 'row', gap: 16 }}>
-                    <Pressable
-                      style={[styles.input, { flex: 1, backgroundColor: sexoBiologico === 'MASCULINO' ? '#CAE3E2' : '#F2F7F6' }]}
-                      onPress={() => setSexoBiologico('MASCULINO')}
-                    >
-                      <Text style={{ color: '#1f3322', textAlign: 'center' }}>Masculino</Text>
-                    </Pressable>
-                    <Pressable
-                      style={[styles.input, { flex: 1, backgroundColor: sexoBiologico === 'FEMININO' ? '#CAE3E2' : '#F2F7F6' }]}
-                      onPress={() => setSexoBiologico('FEMININO')}
-                    >
-                      <Text style={{ color: '#1f3322', textAlign: 'center' }}>Feminino</Text>
-                    </Pressable>
-                  </View>
-                </View>
-                <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>CEP</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={cep}
-                    onChangeText={setCep}
-                    placeholder="Digite seu CEP"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    maxLength={9}
-                  />
-                </View>
-              </>
-            )}
-
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>E-mail</Text>
               <TextInput
+                ref={emailRef}
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
+                onFocus={focusFor(emailRef)}
                 placeholder="Digite seu e-mail"
                 placeholderTextColor="#999"
                 keyboardType="email-address"
@@ -262,27 +209,15 @@ export default function Login() {
               />
             </View>
 
-            {mode === 'cadastro' && (
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Telefone</Text>
-                <TextInput
-                  style={styles.input}
-                  value={telefone}
-                  onChangeText={(v) => setTelefone(formatPhone(v))}
-                  placeholder="(00) 00000-0000"
-                  placeholderTextColor="#999"
-                  keyboardType="phone-pad"
-                />
-              </View>
-            )}
-
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Senha</Text>
               <View style={styles.passwordContainer}>
                 <TextInput
+                  ref={senhaRef}
                   style={styles.passwordInput}
                   value={senha}
                   onChangeText={setSenha}
+                  onFocus={focusFor(senhaRef)}
                   placeholder="Digite sua senha"
                   placeholderTextColor="#999"
                   secureTextEntry={!showPassword}
@@ -306,9 +241,11 @@ export default function Login() {
                 <Text style={styles.label}>Confirmar senha</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
+                    ref={confirmarSenhaRef}
                     style={styles.passwordInput}
                     value={confirmarSenha}
                     onChangeText={setConfirmarSenha}
+                    onFocus={focusFor(confirmarSenhaRef)}
                     placeholder="Repita a senha"
                     placeholderTextColor="#999"
                     secureTextEntry={!showConfirmPassword}

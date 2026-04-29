@@ -26,6 +26,11 @@ public class PessoaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrar(dto));
     }
 
+    @PostMapping("/titular")
+    public ResponseEntity<PessoaResponseDTO> cadastrarTitular(@RequestBody @Valid PessoaRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.cadastrarTitular(dto));
+    }
+
     @GetMapping
     public ResponseEntity<List<PessoaResponseDTO>> listarTodos() {
         return ResponseEntity.ok(service.listarTodos());

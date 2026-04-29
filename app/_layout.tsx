@@ -9,7 +9,8 @@ import { AppProvider, useAppContext } from './context/AppContext';
 import { setAuthErrorCallback } from './service/authService';
 
 const MAIN_TAB_ROUTES = ['index', 'hist', 'infos', 'user'];
-const HIDE_BOTTOM_BAR_ROUTES = ['/login'];
+const HIDE_BOTTOM_BAR_ROUTES = ['/login', '/verificar-email', '/cadastro-titular'];
+const PUBLIC_ROUTES = ['/login', '/verificar-email'];
 
 export default function Layout() {
   return (
@@ -32,11 +33,24 @@ function LayoutContent() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = await AsyncStorage.getItem('locvac:auth:token');
+      const pessoaId = await AsyncStorage.getItem('locvac:auth:pessoaId');
       setCheckingAuth(false);
-      if (!token && pathname !== '/login') {
-        router.replace('/login');
+
+      if (!token) {
+        if (!PUBLIC_ROUTES.includes(pathname)) {
+          router.replace('/login');
+        }
+        return;
       }
-      if (token && pathname === '/login') {
+
+      if (!pessoaId) {
+        if (pathname !== '/cadastro-titular') {
+          router.replace('/cadastro-titular');
+        }
+        return;
+      }
+
+      if (PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular') {
         router.replace('/');
       }
     };
@@ -56,9 +70,9 @@ function LayoutContent() {
   }, []);
 
   const hideBottomBar = HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
-  const isOnLogin = pathname === '/login';
+  const isOnPublicOrSetup = PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular';
 
-  if ((checkingAuth || appLoading) && !isOnLogin) {
+  if ((checkingAuth || appLoading) && !isOnPublicOrSetup) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#29442d" />

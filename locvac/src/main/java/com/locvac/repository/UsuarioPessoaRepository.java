@@ -13,6 +13,8 @@ public interface UsuarioPessoaRepository extends JpaRepository<UsuarioPessoa, St
 
 	List<UsuarioPessoa> findByUsuarioIdAndTipoVinculo(UUID usuarioId, TipoVinculo tipoVinculo);
 
+	boolean existsByUsuarioIdAndTipoVinculo(UUID usuarioId, TipoVinculo tipoVinculo);
+
 	// Novo método para buscar por idPessoa
 	List<UsuarioPessoa> findByPessoaId(Long idPessoa);
 }

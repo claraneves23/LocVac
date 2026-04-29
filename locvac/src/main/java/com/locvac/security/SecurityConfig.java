@@ -42,7 +42,9 @@ public class SecurityConfig {
                     "/auth/login",
                     "/auth/refresh",
                     "/auth/mfa/verify",
-                    "/usuarios/cadastro",
+                    "/usuarios/cadastro/iniciar",
+                    "/usuarios/cadastro/confirmar",
+                    "/usuarios/cadastro/reenviar",
                     "/error"
                 ).permitAll()
 

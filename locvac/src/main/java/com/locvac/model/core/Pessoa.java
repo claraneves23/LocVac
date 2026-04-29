@@ -41,7 +41,7 @@ public class Pessoa {
     @Column(name = "foto_url")
     private String fotoUrl;
 
-    @Column(name = "nome_responsavel", nullable = false)
+    @Column(name = "nome_responsavel")
     private String nomeResponsavel;
 
     @Column(nullable = false)

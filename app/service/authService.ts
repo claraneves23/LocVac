@@ -19,19 +19,28 @@ interface LoginRequest {
 	senha: string;
 }
 
-interface CadastroRequest {
-	nome: string;
+interface IniciarCadastroRequest {
 	email: string;
 	senha: string;
-	telefone: string;
+}
+
+interface ConfirmarCadastroRequest {
+	email: string;
+	codigo: string;
+}
+
+export interface CadastroTitularRequest {
+	nome: string;
 	dataNascimento: string;
 	cpf: string;
 	sexoBiologico: 'MASCULINO' | 'FEMININO';
 	cep: string;
+	telefone: string;
 }
 
 export async function login(data: LoginRequest): Promise<AuthResponse> {
-	const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, data);
+	const payload = { email: data.email.trim().toLowerCase(), senha: data.senha };
+	const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, payload);
 	await saveTokens(response.data);
 	if (response.data.idPessoa) {
 		await AsyncStorage.setItem('locvac:auth:pessoaId', String(response.data.idPessoa));
@@ -39,8 +48,41 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
 	return response.data;
 }
 
-export async function cadastrar(data: CadastroRequest): Promise<void> {
-	await axios.post(`${API_BASE}/usuarios/cadastro`, data);
+export async function iniciarCadastro(data: IniciarCadastroRequest): Promise<void> {
+	const payload = { email: data.email.trim().toLowerCase(), senha: data.senha };
+	await axios.post(`${API_BASE}/usuarios/cadastro/iniciar`, payload);
+}
+
+export async function confirmarCadastro(data: ConfirmarCadastroRequest): Promise<AuthResponse> {
+	const payload = { email: data.email.trim().toLowerCase(), codigo: data.codigo };
+	const response = await axios.post<AuthResponse>(`${API_BASE}/usuarios/cadastro/confirmar`, payload);
+	await saveTokens(response.data);
+	return response.data;
+}
+
+export async function reenviarCodigo(email: string): Promise<void> {
+	await axios.post(`${API_BASE}/usuarios/cadastro/reenviar`, { email: email.trim().toLowerCase() });
+}
+
+export async function cadastrarTitular(data: CadastroTitularRequest): Promise<{ id: number }> {
+	const payload = {
+		nome: data.nome,
+		dataNascimento: data.dataNascimento,
+		cpf: data.cpf,
+		sexoBiologico: data.sexoBiologico,
+		cns: null,
+		cep: data.cep,
+		telefone: data.telefone,
+		fotoUrl: null,
+		nomeResponsavel: null,
+		ativo: true,
+	};
+	const response = await axios.post(`${API_BASE}/pessoas/titular`, payload);
+	const idPessoa = response.data?.id;
+	if (idPessoa) {
+		await AsyncStorage.setItem(PESSOA_ID_KEY, String(idPessoa));
+	}
+	return { id: idPessoa };
 }
 
 export async function refreshToken(): Promise<AuthResponse> {
@@ -111,7 +153,9 @@ axios.interceptors.request.use(async (config) => {
 	if (
 		config.url?.includes('/auth/login') ||
 		config.url?.includes('/auth/refresh') ||
-		config.url?.includes('/usuarios/cadastro')
+		config.url?.includes('/usuarios/cadastro/iniciar') ||
+		config.url?.includes('/usuarios/cadastro/confirmar') ||
+		config.url?.includes('/usuarios/cadastro/reenviar')
 	) {
 		return config;
 	}

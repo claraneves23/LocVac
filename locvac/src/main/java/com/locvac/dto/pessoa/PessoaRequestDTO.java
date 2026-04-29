@@ -29,7 +29,6 @@ public record PessoaRequestDTO(
 
         String fotoUrl,
 
-        @NotBlank(message = "O nome do responsável é obrigatório")
         String nomeResponsavel,
 
         @NotNull(message = "O campo ativo é obrigatório")
