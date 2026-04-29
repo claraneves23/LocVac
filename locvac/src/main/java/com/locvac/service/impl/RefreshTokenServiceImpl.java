@@ -48,6 +48,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public Optional<RefreshToken> validar(String tokenBruto) {
+        if (tokenBruto == null || tokenBruto.isBlank()) {
+            return Optional.empty();
+        }
+
         String hash = gerarHash(tokenBruto);
 
         return refreshTokenRepository.findByTokenHash(hash)
@@ -57,6 +61,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public void revogar(String tokenBruto) {
+        if (tokenBruto == null || tokenBruto.isBlank()) {
+            return;
+        }
+
         String hash = gerarHash(tokenBruto);
         refreshTokenRepository.findByTokenHash(hash).ifPresent(t -> {
             t.setRevoked(true);

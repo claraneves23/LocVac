@@ -1,46 +1,56 @@
 package com.locvac.service.impl;
 
 import com.locvac.service.EmailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
-import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+
+    private final RestClient restClient;
+    private final String apiKey;
     private final String from;
     private final String fromName;
 
     public EmailServiceImpl(
-            JavaMailSender mailSender,
+            @Value("${brevo.api-key}") String apiKey,
             @Value("${mail.from}") String from,
             @Value("${mail.from-name:LocVac}") String fromName
     ) {
-        this.mailSender = mailSender;
+        this.apiKey = apiKey;
         this.from = from;
         this.fromName = fromName;
+        this.restClient = RestClient.builder()
+                .baseUrl(BREVO_API_URL)
+                .build();
     }
 
     @Override
     public void enviarCodigoVerificacao(String destinatario, String codigo) {
+        Map<String, Object> body = Map.of(
+                "sender", Map.of("name", fromName, "email", from),
+                "to", List.of(Map.of("email", destinatario)),
+                "subject", "LocVac - Código de verificação",
+                "htmlContent", montarCorpo(codigo)
+        );
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
-
-            helper.setFrom(new InternetAddress(from, fromName));
-            helper.setTo(destinatario);
-            helper.setSubject("LocVac - Código de verificação");
-            helper.setText(montarCorpo(codigo), true);
-
-            mailSender.send(message);
-        } catch (MessagingException | UnsupportedEncodingException e) {
+            restClient.post()
+                    .header("api-key", apiKey)
+                    .header("accept", "application/json")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException e) {
             throw new RuntimeException("Falha ao enviar email de verificação.", e);
         }
     }

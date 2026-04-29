@@ -4,12 +4,7 @@ jwt.expiration.refresh=2592000000
 jwt.expiration.mfa=300000
 mfa.issuer=LocVac
 
-# Brevo SMTP
-spring.mail.host=smtp-relay.brevo.com
-spring.mail.port=587
-spring.mail.username=
-spring.mail.password=
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
+# Brevo HTTP API
+brevo.api-key=
 mail.from=
 mail.from-name=LocVac
