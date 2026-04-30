@@ -1,5 +1,7 @@
 package com.locvac.dto.campanha;
 
+import com.locvac.model.enums.PublicoAlvo;
+
 import java.time.LocalDate;
 
 public record CampanhaResponseDTO(
@@ -7,7 +9,7 @@ public record CampanhaResponseDTO(
         String nome,
         LocalDate dataInicio,
         LocalDate dataFim,
-        String publicoAlvo,
+        PublicoAlvo publicoAlvo,
         boolean ativa
 ) {
 }

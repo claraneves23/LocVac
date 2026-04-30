@@ -1,5 +1,6 @@
 package com.locvac.model.core;
 
+import com.locvac.model.enums.PublicoAlvo;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -24,8 +25,9 @@ public class Campanha {
     @Column(name = "data_fim", nullable = false)
     private LocalDate dataFim;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "publico_alvo", nullable = false)
-    private String publicoAlvo;
+    private PublicoAlvo publicoAlvo;
 
     @Column(nullable = false)
 
@@ -33,7 +35,7 @@ public class Campanha {
 
     public Campanha() {}
 
-    public Campanha(String nome, String doencaAlvo, LocalDate dataInicio, LocalDate dataFim, String publicoAlvo, boolean ativa) {
+    public Campanha(String nome, String doencaAlvo, LocalDate dataInicio, LocalDate dataFim, PublicoAlvo publicoAlvo, boolean ativa) {
         this.nome = nome;
         this.doencaAlvo = doencaAlvo;
         this.dataInicio = dataInicio;
@@ -62,7 +64,7 @@ public class Campanha {
         this.dataFim = dataFim;
     }
 
-    public void setPublicoAlvo(String publicoAlvo) {
+    public void setPublicoAlvo(PublicoAlvo publicoAlvo) {
         this.publicoAlvo = publicoAlvo;
     }
 
@@ -90,7 +92,7 @@ public class Campanha {
         return dataFim;
     }
 
-    public String getPublicoAlvo() {
+    public PublicoAlvo getPublicoAlvo() {
         return publicoAlvo;
     }
 

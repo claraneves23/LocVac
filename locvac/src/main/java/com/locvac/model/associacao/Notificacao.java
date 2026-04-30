@@ -1,5 +1,6 @@
 package com.locvac.model.associacao;
 
+import com.locvac.model.core.Campanha;
 import com.locvac.model.core.Pessoa;
 import com.locvac.model.core.Usuario;
 import com.locvac.model.enums.TipoNotificacao;
@@ -21,12 +22,22 @@ public class Notificacao {
         private Usuario usuario;
 
         @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "id_pessoa", nullable = false)
+        @JoinColumn(name = "id_pessoa")
         private Pessoa pessoa;
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id_agenda")
         private AgendaVacinal agenda;
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "id_campanha")
+        private Campanha campanha;
+
+        @Column(name = "dias_offset")
+        private Integer diasOffset;
+
+        @Column(name = "persistente", nullable = false)
+        private boolean persistente;
 
         @Column(nullable = false)
         private String titulo;
@@ -82,6 +93,18 @@ public class Notificacao {
                 this.tipoNotificacao = tipoNotificacao;
         }
 
+        public void setCampanha(Campanha campanha) {
+                this.campanha = campanha;
+        }
+
+        public void setDiasOffset(Integer diasOffset) {
+                this.diasOffset = diasOffset;
+        }
+
+        public void setPersistente(boolean persistente) {
+                this.persistente = persistente;
+        }
+
         public Usuario getUsuario() {
                 return usuario;
         }
@@ -116,5 +139,21 @@ public class Notificacao {
 
         public TipoNotificacao getTipoNotificacao() {
                 return tipoNotificacao;
+        }
+
+        public Long getId() {
+                return id;
+        }
+
+        public Campanha getCampanha() {
+                return campanha;
+        }
+
+        public Integer getDiasOffset() {
+                return diasOffset;
+        }
+
+        public boolean isPersistente() {
+                return persistente;
         }
 }
