@@ -72,6 +72,21 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
   }));
 }
 
+export async function updateDependent(id: string, dependent: Omit<FamilyMember, 'id' | 'userId' | 'kind'> & { cpf?: string }): Promise<void> {
+  await axios.put(`${API_URL}/pessoas/${id}`, {
+    nome: dependent.name,
+    dataNascimento: dependent.birthDate,
+    cpf: dependent.cpf || null,
+    sexoBiologico: dependent.sex === 'M' ? 'MASCULINO' : dependent.sex === 'F' ? 'FEMININO' : 'OUTRO',
+    cns: null,
+    cep: dependent.zipCode || '',
+    telefone: dependent.phone || '',
+    fotoUrl: dependent.photoUri || '',
+    nomeResponsavel: dependent.guardianName || '',
+    ativo: true,
+  });
+}
+
 // Busca o UUID do usuário titular associado a uma pessoa
 export async function getUsuarioTitularIdByPessoaId(pessoaId: number): Promise<string | null> {
   const response = await axios.get(`${API_URL}/usuarioPessoa/por-pessoa`, { params: { idPessoa: pessoaId } });

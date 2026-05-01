@@ -21,8 +21,9 @@ import * as NavigationBar from 'expo-navigation-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logout } from './service/authService';
 import { FamilyMember } from './types/vaccination';
-import { addDependentAndLink } from './service/dependentsService';
+import { addDependentAndLink, updateDependent } from './service/dependentsService';
 import { useAppContext } from './context/AppContext';
+import DependentInfoModal from '../components/modals/DependentInfoModal';
 
 const SEX_OPTIONS = ['M', 'F', 'Outro'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
@@ -47,6 +48,7 @@ export default function User() {
   const router = useRouter();
   const { mainUser, dependents, usuarioId, refreshDependents, reset } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDependent, setSelectedDependent] = useState<FamilyMember | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
   const [draft, setDraft] = useState<DraftDependent>({
@@ -116,9 +118,25 @@ export default function User() {
     setIsModalOpen(true);
   };
 
-  // Edição local desabilitada para dependentes reais do backend
-  const openEdit = (_dependent: any) => {
-    // noop
+  const openEdit = (dependent: FamilyMember) => {
+    setDraft({
+      id: dependent.id,
+      name: dependent.name,
+      birthDate: dependent.birthDate,
+      birthPlace: dependent.birthPlace || '',
+      relationship: dependent.relationship || '',
+      guardianName: dependent.guardianName || '',
+      sex: dependent.sex,
+      photoUri: dependent.photoUri,
+      address: dependent.address || '',
+      city: dependent.city || '',
+      state: dependent.state || '',
+      zipCode: dependent.zipCode || '',
+      phone: dependent.phone || '',
+    });
+    setShowDatePicker(false);
+    setShowRelationshipPicker(false);
+    setIsModalOpen(true);
   };
 
   const handlePickImage = async (fromCamera: boolean) => {
@@ -154,19 +172,20 @@ export default function User() {
     return true;
   };
 
-  // Permite adicionar dependente real via backend
   const handleSave = async () => {
-    if (!validateDraft() || !mainUser) {
-      return;
-    }
+    if (!validateDraft() || !mainUser) return;
     try {
-      await addDependentAndLink(usuarioId!, draft);
+      if (draft.id) {
+        await updateDependent(draft.id, draft);
+      } else {
+        await addDependentAndLink(usuarioId!, draft);
+      }
       setIsModalOpen(false);
       resetDraft();
       await refreshDependents();
     } catch (e: any) {
-      Alert.alert('Erro', 'Não foi possível adicionar o dependente.');
-      console.log('Erro ao cadastrar dependente:', e?.response?.data || e);
+      Alert.alert('Erro', draft.id ? 'Não foi possível atualizar o dependente.' : 'Não foi possível adicionar o dependente.');
+      console.log('Erro ao salvar dependente:', e?.response?.data || e);
     }
   };
 
@@ -213,7 +232,7 @@ export default function User() {
                 });
                 return (
                   <View key={dependent.id} style={styles.dependentCard}>
-                    <View style={styles.dependentRow}>
+                    <Pressable style={styles.dependentRow} onPress={() => setSelectedDependent(dependent)}>
                       {dependent.photoUri ? (
                         <Image source={{ uri: dependent.photoUri }} style={styles.dependentAvatar} />
                       ) : (
@@ -227,7 +246,10 @@ export default function User() {
                           {dependent.relationship || dependent.kind} • {formatDateToBR(dependent.birthDate)} • {dependent.sex}
                         </Text>
                       </View>
-                    </View>
+                    </Pressable>
+                    <Pressable style={styles.editIconButton} onPress={() => openEdit(dependent)}>
+                      <Ionicons name="create-outline" size={20} color="#09BEA5" />
+                    </Pressable>
                   </View>
                 );
               })}
@@ -493,6 +515,12 @@ export default function User() {
         </View>
       </Modal>
 
+      <DependentInfoModal
+        visible={selectedDependent !== null}
+        dependent={selectedDependent}
+        onClose={() => setSelectedDependent(null)}
+      />
+
       <StatusBar style={isModalOpen ? 'light' : 'dark'} />
     </View>
   );
@@ -649,6 +677,9 @@ const styles = StyleSheet.create({
   },
   dependentActionButton: {
     padding: 6,
+  },
+  editIconButton: {
+    padding: 8,
   },
   modalOverlay: {
     flex: 1,

@@ -62,5 +62,4 @@ public class DoseAplicadaController {
         return ResponseEntity.ok(service.atualizarOutraVacina(idDose, dto));
     }
 
-    //dúvida: precisa de um endpoint para atualizar dose por pessoa e outro para atualizar outras vacinas por pessoa?
 }

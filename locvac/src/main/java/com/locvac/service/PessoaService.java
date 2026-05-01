@@ -18,4 +18,6 @@ public interface PessoaService {
     List<PessoaResponseDTO> listarTodos();
 
     List<PessoaResponseDTO> listarDependentes(UUID usuarioId);
+
+    PessoaResponseDTO atualizar(Long id, PessoaRequestDTO dto);
 }

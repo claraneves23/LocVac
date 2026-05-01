@@ -111,4 +111,18 @@ public class PessoaServiceImpl implements PessoaService {
                 .orElseThrow(() -> new RuntimeException("Pessoa não encontrada"));
         return mapper.toResponse(pessoa);
     }
+
+    @Override
+    public PessoaResponseDTO atualizar(Long id, PessoaRequestDTO dto) {
+        Pessoa pessoa = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pessoa não encontrada com o ID: " + id));
+        pessoa.setNome(dto.nome());
+        pessoa.setDataNascimento(dto.dataNascimento());
+        pessoa.setSexoBiologico(dto.sexoBiologico());
+        pessoa.setCep(dto.cep());
+        pessoa.setTelefone(dto.telefone());
+        pessoa.setFotoUrl(dto.fotoUrl());
+        pessoa.setNomeResponsavel(dto.nomeResponsavel());
+        return mapper.toResponse(repository.save(pessoa));
+    }
 }
