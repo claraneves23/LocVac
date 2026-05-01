@@ -9,4 +9,6 @@ import java.util.List;
 public interface AgendaVacinalRepository extends JpaRepository<AgendaVacinal, Long> {
 
     List<AgendaVacinal> findByStatusNotIn(List<StatusAplicacao> status);
+
+    List<AgendaVacinal> findByPessoaId(Long pessoaId);
 }
