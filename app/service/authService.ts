@@ -97,6 +97,8 @@ export async function refreshToken(): Promise<AuthResponse> {
 export async function logout(): Promise<void> {
 	const refresh = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
 	try {
+		const { descadastrarTokenPush } = await import('../utils/pushNotifications');
+		await descadastrarTokenPush().catch(() => {});
 		await axios.post(`${API_BASE}/auth/logout`, { refreshToken: refresh });
 	} finally {
 		await clearTokens();

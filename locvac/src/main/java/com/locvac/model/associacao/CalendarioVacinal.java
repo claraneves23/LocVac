@@ -69,6 +69,10 @@ public class CalendarioVacinal {
                 this.ordemExibicao = ordemExibicao;
         }
 
+        public Long getId() {
+                return id;
+        }
+
         public Vacina getVacina() {
                 return vacina;
         }

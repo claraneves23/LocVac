@@ -7,6 +7,12 @@ import { BottomBar } from '../components/BottomBar';
 import { getNavigationDirection } from './navigation-direction';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { setAuthErrorCallback } from './service/authService';
+import {
+  configurarHandlerNotificacao,
+  registrarTokenPushSeNecessario,
+} from './utils/pushNotifications';
+
+configurarHandlerNotificacao();
 
 const MAIN_TAB_ROUTES = ['index', 'hist', 'infos', 'user'];
 const HIDE_BOTTOM_BAR_ROUTES = ['/login', '/verificar-email', '/cadastro-titular'];
@@ -53,6 +59,8 @@ function LayoutContent() {
       if (PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular') {
         router.replace('/');
       }
+
+      registrarTokenPushSeNecessario().catch(() => {});
     };
     checkAuth();
   }, [pathname]);
