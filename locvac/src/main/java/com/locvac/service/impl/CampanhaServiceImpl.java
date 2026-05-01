@@ -55,6 +55,19 @@ public class CampanhaServiceImpl implements CampanhaService {
     }
 
 
+    @Override
+    public CampanhaResponseDTO atualizarCampanha(Long id, CampanhaRequestDTO dto) {
+        Campanha campanha = campanhaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+        campanha.setNome(dto.nome());
+        campanha.setDoencaAlvo(dto.doencaAlvo());
+        campanha.setDataInicio(dto.dataInicio());
+        campanha.setDataFim(dto.dataFim());
+        campanha.setPublicoAlvo(dto.publicoAlvo());
+        campanha.setAtiva(dto.ativa());
+        return campanhaMapper.toResponse(campanhaRepository.save(campanha));
+    }
+
     private void validarCampanhaDuplicada(String doencaAlvo, LocalDate dataInicio, LocalDate dataFim) {
         boolean existe = campanhaRepository.existsByDoencaAlvoAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(doencaAlvo, dataInicio, dataFim);
 

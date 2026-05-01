@@ -28,3 +28,11 @@ export async function addParticipacaoCampanha({ idPessoa, idCampanha, dataPartic
     dataParticipacao
   });
 }
+
+export async function updateParticipacaoCampanha({ id, idPessoa, idCampanha, dataParticipacao }: { id: number, idPessoa: number, idCampanha: number, dataParticipacao: string }) {
+  return axios.put(`${API_BASE}/participacaoCampanha/${id}`, {
+    idPessoa,
+    idCampanha,
+    dataParticipacao
+  });
+}

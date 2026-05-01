@@ -53,6 +53,17 @@ public class ParticipacaoCampanhaServiceImpl implements ParticipacaoCampanhaServ
                 .toList();
     }
 
+    @Override
+    public ParticipacaoCampanhaResponseDTO atualizar(Long id, ParticipacaoCampanhaRequestDTO dto) {
+        ParticipacaoCampanha participacao = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Participação não encontrada com o ID: " + id));
+        validarCampanhaExiste(dto.idCampanha());
+        participacao.setCampanha(new com.locvac.model.core.Campanha(dto.idCampanha()));
+        participacao.setDataParticipacao(dto.dataParticipacao());
+        return mapper.toResponse(repository.save(participacao));
+    }
+
     private void validarPessoaExiste(Long idPessoa) {
         if (!pessoaRepository.existsById(idPessoa)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,

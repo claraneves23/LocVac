@@ -48,6 +48,9 @@ public class CampanhaController {
         return ResponseEntity.ok(campanhaMapper.toResponse(campanha));
     }
 
-    //falta endpoint de atualizar campanha
+    @PutMapping("/{id}")
+    public ResponseEntity<CampanhaResponseDTO> atualizarCampanha(@PathVariable Long id, @RequestBody @Valid CampanhaRequestDTO dto) {
+        return ResponseEntity.ok(campanhaService.atualizarCampanha(id, dto));
+    }
 
 }

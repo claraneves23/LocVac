@@ -7,7 +7,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Dependent, FamilyMember, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
 import { fetchMandatoryVaccines, fetchDosesPorPessoa, registrarDose, atualizarDose, deletarDose, VacinaDTO, fetchOutrasVacinasPorPessoa, registrarOutraVacina, atualizarOutraVacina } from './service/mandatoryVaccineService';
-import { fetchCampaigns, addParticipacaoCampanha, fetchParticipacoesByPessoa } from './service/campaignService';
+import { fetchCampaigns, addParticipacaoCampanha, updateParticipacaoCampanha, fetchParticipacoesByPessoa } from './service/campaignService';
 import { Campanha } from './types/vaccination';
 import { useAppContext } from './context/AppContext';
 
@@ -409,7 +409,7 @@ export default function Index() {
   };
 
   const handleSaveCampaign = async () => {
-    if (!campaignName.trim() || !campaignParticipationDate || editingCampaign) return;
+    if (!campaignName.trim() || !campaignParticipationDate) return;
 
     const campanhaSelecionada = availableCampaigns.find((c) => c.nome === campaignName);
     if (!campanhaSelecionada) {
@@ -417,13 +417,22 @@ export default function Index() {
       return;
     }
     try {
-      await addParticipacaoCampanha({
-        idPessoa: Number(selectedProfile.id),
-        idCampanha: campanhaSelecionada.id,
-        dataParticipacao: campaignParticipationDate,
-      });
+      if (editingCampaign) {
+        await updateParticipacaoCampanha({
+          id: Number(editingCampaign.id),
+          idPessoa: Number(selectedProfile.id),
+          idCampanha: campanhaSelecionada.id,
+          dataParticipacao: campaignParticipationDate,
+        });
+      } else {
+        await addParticipacaoCampanha({
+          idPessoa: Number(selectedProfile.id),
+          idCampanha: campanhaSelecionada.id,
+          dataParticipacao: campaignParticipationDate,
+        });
+      }
     } catch {
-      Alert.alert('Erro', 'Não foi possível registrar a participação na campanha.');
+      Alert.alert('Erro', 'Não foi possível salvar a participação na campanha.');
       return;
     }
 

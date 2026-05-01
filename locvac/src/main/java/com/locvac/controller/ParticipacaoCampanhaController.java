@@ -30,9 +30,10 @@ public class ParticipacaoCampanhaController {
         return ResponseEntity.ok(service.listarPorPessoa(idPessoa));
     }
 
-    // atualizar participacao por pessoa
-
-    // deletar participacao por pessoa
+    @PutMapping("/{id}")
+    public ResponseEntity<ParticipacaoCampanhaResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid ParticipacaoCampanhaRequestDTO dto) {
+        return ResponseEntity.ok(service.atualizar(id, dto));
+    }
 
     @GetMapping
     public ResponseEntity<List<ParticipacaoCampanhaResponseDTO>> listarTodos() {

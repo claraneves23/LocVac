@@ -16,4 +16,6 @@ public interface CampanhaService {
 
     void removerCampanha(Long id);
 
+    CampanhaResponseDTO atualizarCampanha(Long id, CampanhaRequestDTO dto);
+
 }
