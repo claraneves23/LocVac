@@ -16,6 +16,7 @@ import com.locvac.model.enums.TipoVinculo;
 import com.locvac.model.core.Pessoa;
 import com.locvac.repository.PessoaRepository;
 import com.locvac.service.PessoaService;
+import com.locvac.utils.ValidacaoCpfUtils;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -37,6 +38,7 @@ public class PessoaServiceImpl implements PessoaService {
     private final AgendaVacinalRepository agendaVacinalRepository;
     private final ParticipacaoCampanhaRepository participacaoCampanhaRepository;
     private final NotificacaoRepository notificacaoRepository;
+    private final ValidacaoCpfUtils validacaoCpfUtils;
 
     public PessoaServiceImpl(
             PessoaRepository repository,
@@ -46,7 +48,8 @@ public class PessoaServiceImpl implements PessoaService {
             DoseAplicadaRepository doseAplicadaRepository,
             AgendaVacinalRepository agendaVacinalRepository,
             ParticipacaoCampanhaRepository participacaoCampanhaRepository,
-            NotificacaoRepository notificacaoRepository
+            NotificacaoRepository notificacaoRepository,
+            ValidacaoCpfUtils validacaoCpfUtils
     ) {
         this.repository = repository;
         this.mapper = mapper;
@@ -56,6 +59,7 @@ public class PessoaServiceImpl implements PessoaService {
         this.agendaVacinalRepository = agendaVacinalRepository;
         this.participacaoCampanhaRepository = participacaoCampanhaRepository;
         this.notificacaoRepository = notificacaoRepository;
+        this.validacaoCpfUtils = validacaoCpfUtils;
     }
     @Override
     public List<PessoaResponseDTO> listarDependentes(java.util.UUID usuarioId) {
@@ -68,6 +72,7 @@ public class PessoaServiceImpl implements PessoaService {
 
     @Override
     public PessoaResponseDTO cadastrar(PessoaRequestDTO dto) {
+        validacaoCpfUtils.validarCpfDuplicado(dto.cpf());
         Pessoa pessoa = mapper.toEntity(dto);
         Pessoa salvo = repository.save(pessoa);
         return mapper.toResponse(salvo);
@@ -81,6 +86,7 @@ public class PessoaServiceImpl implements PessoaService {
         if (usuarioPessoaRepository.existsByUsuarioIdAndTipoVinculo(dados.usuarioId(), TipoVinculo.TITULAR)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Titular já cadastrado para este usuário.");
         }
+        validacaoCpfUtils.validarCpfDuplicado(dto.cpf());
 
         Usuario usuario = usuarioRepository.findById(dados.usuarioId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado."));

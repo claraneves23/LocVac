@@ -112,10 +112,18 @@ export default function CadastroTitular() {
       router.replace('/');
     } catch (error: any) {
       const status = error?.response?.status;
-      const message =
-        status === 409
-          ? 'Você já tem um titular cadastrado.'
-          : 'Erro ao salvar. Verifique os dados e tente novamente.';
+      const detail: string = error?.response?.data?.detail ?? '';
+
+      let message: string;
+      if (status === 400) {
+        message = 'CPF inválido. Verifique o número digitado.';
+      } else if (status === 409 && detail.includes('CPF')) {
+        message = 'Este CPF já está cadastrado.';
+      } else if (status === 409) {
+        message = 'Você já tem um titular cadastrado.';
+      } else {
+        message = 'Erro ao salvar. Verifique os dados e tente novamente.';
+      }
       Alert.alert('Erro', message);
     } finally {
       setLoading(false);
