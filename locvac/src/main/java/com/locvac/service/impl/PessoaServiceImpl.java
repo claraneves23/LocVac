@@ -6,6 +6,10 @@ import com.locvac.dto.pessoa.PessoaResponseDTO;
 import com.locvac.mapper.PessoaMapper;
 import com.locvac.model.associacao.UsuarioPessoa;
 import com.locvac.model.core.Usuario;
+import com.locvac.repository.AgendaVacinalRepository;
+import com.locvac.repository.DoseAplicadaRepository;
+import com.locvac.repository.NotificacaoRepository;
+import com.locvac.repository.ParticipacaoCampanhaRepository;
 import com.locvac.repository.UsuarioPessoaRepository;
 import com.locvac.repository.UsuarioRepository;
 import com.locvac.model.enums.TipoVinculo;
@@ -29,17 +33,29 @@ public class PessoaServiceImpl implements PessoaService {
     private final PessoaMapper mapper;
     private final UsuarioPessoaRepository usuarioPessoaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final DoseAplicadaRepository doseAplicadaRepository;
+    private final AgendaVacinalRepository agendaVacinalRepository;
+    private final ParticipacaoCampanhaRepository participacaoCampanhaRepository;
+    private final NotificacaoRepository notificacaoRepository;
 
     public PessoaServiceImpl(
             PessoaRepository repository,
             PessoaMapper mapper,
             UsuarioPessoaRepository usuarioPessoaRepository,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            DoseAplicadaRepository doseAplicadaRepository,
+            AgendaVacinalRepository agendaVacinalRepository,
+            ParticipacaoCampanhaRepository participacaoCampanhaRepository,
+            NotificacaoRepository notificacaoRepository
     ) {
         this.repository = repository;
         this.mapper = mapper;
         this.usuarioPessoaRepository = usuarioPessoaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.doseAplicadaRepository = doseAplicadaRepository;
+        this.agendaVacinalRepository = agendaVacinalRepository;
+        this.participacaoCampanhaRepository = participacaoCampanhaRepository;
+        this.notificacaoRepository = notificacaoRepository;
     }
     @Override
     public List<PessoaResponseDTO> listarDependentes(java.util.UUID usuarioId) {
@@ -117,6 +133,10 @@ public class PessoaServiceImpl implements PessoaService {
     public void deletar(Long id) {
         Pessoa pessoa = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pessoa não encontrada com o ID: " + id));
+        notificacaoRepository.deleteAll(notificacaoRepository.findByPessoaId(id));
+        doseAplicadaRepository.deleteAll(doseAplicadaRepository.findByPessoaId(id));
+        agendaVacinalRepository.deleteAll(agendaVacinalRepository.findByPessoaId(id));
+        participacaoCampanhaRepository.deleteAll(participacaoCampanhaRepository.findByPessoaId(id));
         usuarioPessoaRepository.deleteAll(usuarioPessoaRepository.findByPessoaId(id));
         repository.delete(pessoa);
     }
