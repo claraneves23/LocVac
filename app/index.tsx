@@ -377,9 +377,26 @@ export default function Index() {
     setIsOtherVaccineModalOpen(false);
   };
 
-  const handleDeleteOtherVaccine = async (vaccineId: string) => {
-    await deletarDose(Number(vaccineId));
-    await loadOtherVaccines();
+  const handleDeleteOtherVaccine = (vaccineId: string) => {
+    Alert.alert(
+      'Remover vacina',
+      'Deseja remover este registro de vacina?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletarDose(Number(vaccineId));
+              await loadOtherVaccines();
+            } catch {
+              Alert.alert('Erro', 'Não foi possível remover a vacina.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Campanhas handlers
