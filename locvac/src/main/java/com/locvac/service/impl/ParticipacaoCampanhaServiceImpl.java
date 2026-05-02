@@ -64,6 +64,14 @@ public class ParticipacaoCampanhaServiceImpl implements ParticipacaoCampanhaServ
         return mapper.toResponse(repository.save(participacao));
     }
 
+    @Override
+    public void remover(Long id) {
+        ParticipacaoCampanha participacao = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Participação não encontrada com o ID: " + id));
+        repository.delete(participacao);
+    }
+
     private void validarPessoaExiste(Long idPessoa) {
         if (!pessoaRepository.existsById(idPessoa)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,

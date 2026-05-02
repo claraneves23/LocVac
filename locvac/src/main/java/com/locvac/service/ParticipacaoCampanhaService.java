@@ -13,4 +13,6 @@ public interface ParticipacaoCampanhaService {
     List<ParticipacaoCampanhaResponseDTO> listarPorPessoa(Long idPessoa);
 
     ParticipacaoCampanhaResponseDTO atualizar(Long id, ParticipacaoCampanhaRequestDTO dto);
+
+    void remover(Long id);
 }

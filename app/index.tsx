@@ -7,7 +7,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Dependent, FamilyMember, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
 import { fetchMandatoryVaccines, fetchDosesPorPessoa, registrarDose, atualizarDose, deletarDose, VacinaDTO, fetchOutrasVacinasPorPessoa, registrarOutraVacina, atualizarOutraVacina } from './service/mandatoryVaccineService';
-import { fetchCampaigns, addParticipacaoCampanha, updateParticipacaoCampanha, fetchParticipacoesByPessoa } from './service/campaignService';
+import { fetchCampaigns, addParticipacaoCampanha, updateParticipacaoCampanha, fetchParticipacoesByPessoa, deleteParticipacaoCampanha } from './service/campaignService';
 import { Campanha } from './types/vaccination';
 import { useAppContext } from './context/AppContext';
 
@@ -443,8 +443,26 @@ export default function Index() {
     setIsCampaignModalOpen(false);
   };
 
-  const handleDeleteCampaign = async (_campaignId: string) => {
-    Alert.alert('Indisponível', 'A remoção de participações de campanha ainda não é suportada.');
+  const handleDeleteCampaign = (campaignId: string) => {
+    Alert.alert(
+      'Remover campanha',
+      'Deseja remover esta participação em campanha?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteParticipacaoCampanha(Number(campaignId));
+              await loadCampaigns();
+            } catch {
+              Alert.alert('Erro', 'Não foi possível remover a participação.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (!mainUser) return null;

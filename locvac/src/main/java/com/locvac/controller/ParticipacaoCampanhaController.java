@@ -40,4 +40,10 @@ public class ParticipacaoCampanhaController {
         return ResponseEntity.ok(service.listarTodos());
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> remover(@PathVariable Long id) {
+        service.remover(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

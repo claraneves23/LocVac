@@ -36,3 +36,7 @@ export async function updateParticipacaoCampanha({ id, idPessoa, idCampanha, dat
     dataParticipacao
   });
 }
+
+export async function deleteParticipacaoCampanha(id: number): Promise<void> {
+  await axios.delete(`${API_BASE}/participacaoCampanha/${id}`);
+}
