@@ -45,6 +45,9 @@ public class SecurityConfig {
                     "/usuarios/cadastro/iniciar",
                     "/usuarios/cadastro/confirmar",
                     "/usuarios/cadastro/reenviar",
+                    "/usuarios/senha/esqueci",
+                    "/usuarios/senha/reenviar",
+                    "/usuarios/senha/redefinir",
                     "/error"
                 ).permitAll()
 

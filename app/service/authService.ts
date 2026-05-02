@@ -64,6 +64,25 @@ export async function reenviarCodigo(email: string): Promise<void> {
 	await axios.post(`${API_BASE}/usuarios/cadastro/reenviar`, { email: email.trim().toLowerCase() });
 }
 
+export async function solicitarRecuperacaoSenha(email: string): Promise<void> {
+	await axios.post(`${API_BASE}/usuarios/senha/esqueci`, { email: email.trim().toLowerCase() });
+}
+
+export async function reenviarCodigoRecuperacaoSenha(email: string): Promise<void> {
+	await axios.post(`${API_BASE}/usuarios/senha/reenviar`, { email: email.trim().toLowerCase() });
+}
+
+export async function redefinirSenha(data: { email: string; codigo: string; novaSenha: string }): Promise<AuthResponse> {
+	const payload = {
+		email: data.email.trim().toLowerCase(),
+		codigo: data.codigo,
+		novaSenha: data.novaSenha,
+	};
+	const response = await axios.post<AuthResponse>(`${API_BASE}/usuarios/senha/redefinir`, payload);
+	await saveTokens(response.data);
+	return response.data;
+}
+
 export async function cadastrarTitular(data: CadastroTitularRequest): Promise<{ id: number }> {
 	const payload = {
 		nome: data.nome,
@@ -157,7 +176,10 @@ axios.interceptors.request.use(async (config) => {
 		config.url?.includes('/auth/refresh') ||
 		config.url?.includes('/usuarios/cadastro/iniciar') ||
 		config.url?.includes('/usuarios/cadastro/confirmar') ||
-		config.url?.includes('/usuarios/cadastro/reenviar')
+		config.url?.includes('/usuarios/cadastro/reenviar') ||
+		config.url?.includes('/usuarios/senha/esqueci') ||
+		config.url?.includes('/usuarios/senha/reenviar') ||
+		config.url?.includes('/usuarios/senha/redefinir')
 	) {
 		return config;
 	}

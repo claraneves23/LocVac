@@ -15,8 +15,14 @@ import {
 configurarHandlerNotificacao();
 
 const MAIN_TAB_ROUTES = ['index', 'hist', 'infos', 'user'];
-const HIDE_BOTTOM_BAR_ROUTES = ['/login', '/verificar-email', '/cadastro-titular'];
-const PUBLIC_ROUTES = ['/login', '/verificar-email'];
+const HIDE_BOTTOM_BAR_ROUTES = [
+  '/login',
+  '/verificar-email',
+  '/cadastro-titular',
+  '/esqueci-senha',
+  '/redefinir-senha',
+];
+const PUBLIC_ROUTES = ['/login', '/verificar-email', '/esqueci-senha', '/redefinir-senha'];
 
 export default function Layout() {
   return (

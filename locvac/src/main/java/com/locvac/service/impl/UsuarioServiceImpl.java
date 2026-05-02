@@ -3,10 +3,14 @@ package com.locvac.service.impl;
 import com.locvac.dto.auth.AuthResponse;
 import com.locvac.dto.usuario.ConfirmarCadastroDTO;
 import com.locvac.dto.usuario.IniciarCadastroDTO;
+import com.locvac.dto.usuario.RedefinirSenhaDTO;
 import com.locvac.dto.usuario.ReenviarCodigoDTO;
+import com.locvac.dto.usuario.SolicitarRecuperacaoSenhaDTO;
 import com.locvac.model.core.EmailVerificacao;
+import com.locvac.model.core.RecuperacaoSenha;
 import com.locvac.model.core.Usuario;
 import com.locvac.repository.EmailVerificacaoRepository;
+import com.locvac.repository.RecuperacaoSenhaRepository;
 import com.locvac.repository.UsuarioRepository;
 import com.locvac.service.AuthService;
 import com.locvac.service.EmailService;
@@ -20,7 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,6 +33,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final EmailVerificacaoRepository emailVerificacaoRepository;
+    private final RecuperacaoSenhaRepository recuperacaoSenhaRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AuthService authService;
@@ -40,6 +44,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioServiceImpl(
             UsuarioRepository usuarioRepository,
             EmailVerificacaoRepository emailVerificacaoRepository,
+            RecuperacaoSenhaRepository recuperacaoSenhaRepository,
             PasswordEncoder passwordEncoder,
             EmailService emailService,
             AuthService authService,
@@ -49,6 +54,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     ) {
         this.usuarioRepository = usuarioRepository;
         this.emailVerificacaoRepository = emailVerificacaoRepository;
+        this.recuperacaoSenhaRepository = recuperacaoSenhaRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.authService = authService;
@@ -146,6 +152,97 @@ public class UsuarioServiceImpl implements UsuarioService {
         emailVerificacaoRepository.save(verificacao);
 
         emailService.enviarCodigoVerificacao(email, codigo);
+    }
+
+    @Override
+    public void solicitarRecuperacaoSenha(SolicitarRecuperacaoSenhaDTO dto) {
+        String email = normalizar(dto.email());
+
+        if (!usuarioRepository.existsByEmail(email)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Email não cadastrado.");
+        }
+
+        String codigo = gerarCodigo();
+        LocalDateTime agora = LocalDateTime.now();
+
+        RecuperacaoSenha recuperacao = recuperacaoSenhaRepository.findByEmail(email)
+                .orElseGet(RecuperacaoSenha::new);
+
+        recuperacao.setEmail(email);
+        recuperacao.setCodigoHash(passwordEncoder.encode(codigo));
+        recuperacao.setTentativas(0);
+        recuperacao.setExpiraEm(agora.plusMinutes(expiracaoMinutos));
+        if (recuperacao.getCriadoEm() == null) {
+            recuperacao.setCriadoEm(agora);
+        }
+        recuperacao.setUltimoEnvioEm(agora);
+
+        recuperacaoSenhaRepository.save(recuperacao);
+        emailService.enviarCodigoRecuperacaoSenha(email, codigo);
+    }
+
+    @Override
+    public void reenviarCodigoRecuperacaoSenha(ReenviarCodigoDTO dto) {
+        String email = normalizar(dto.email());
+
+        RecuperacaoSenha recuperacao = recuperacaoSenhaRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Solicite a recuperação primeiro."));
+
+        LocalDateTime agora = LocalDateTime.now();
+        long segundosDesdeUltimoEnvio = java.time.Duration.between(recuperacao.getUltimoEnvioEm(), agora).getSeconds();
+        if (segundosDesdeUltimoEnvio < intervaloReenvioSegundos) {
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Aguarde " + (intervaloReenvioSegundos - segundosDesdeUltimoEnvio) + "s para reenviar."
+            );
+        }
+
+        String codigo = gerarCodigo();
+        recuperacao.setCodigoHash(passwordEncoder.encode(codigo));
+        recuperacao.setTentativas(0);
+        recuperacao.setExpiraEm(agora.plusMinutes(expiracaoMinutos));
+        recuperacao.setUltimoEnvioEm(agora);
+        recuperacaoSenhaRepository.save(recuperacao);
+
+        emailService.enviarCodigoRecuperacaoSenha(email, codigo);
+    }
+
+    @Override
+    public AuthResponse redefinirSenha(RedefinirSenhaDTO dto) {
+        String email = normalizar(dto.email());
+
+        RecuperacaoSenha recuperacao = recuperacaoSenhaRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.GONE, "Recuperação não solicitada ou já concluída."));
+
+        if (recuperacao.getExpiraEm().isBefore(LocalDateTime.now())) {
+            recuperacaoSenhaRepository.delete(recuperacao);
+            throw new ResponseStatusException(HttpStatus.GONE, "Código expirado. Solicite um novo.");
+        }
+
+        if (recuperacao.getTentativas() >= maxTentativas) {
+            recuperacaoSenhaRepository.delete(recuperacao);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Tentativas excedidas. Solicite um novo código.");
+        }
+
+        if (!passwordEncoder.matches(dto.codigo(), recuperacao.getCodigoHash())) {
+            recuperacao.setTentativas(recuperacao.getTentativas() + 1);
+            recuperacaoSenhaRepository.save(recuperacao);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Código inválido.");
+        }
+
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    recuperacaoSenhaRepository.delete(recuperacao);
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Email não cadastrado.");
+                });
+
+        usuario.setSenhaHash(passwordEncoder.encode(dto.novaSenha()));
+        usuario = usuarioRepository.save(usuario);
+
+        recuperacaoSenhaRepository.delete(recuperacao);
+        authService.logoutTodos(usuario.getId());
+
+        return authService.autenticarUsuario(usuario);
     }
 
     private String gerarCodigo() {
