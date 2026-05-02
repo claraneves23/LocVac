@@ -41,7 +41,6 @@ public class PessoaController {
         return ResponseEntity.ok(service.getPerfil(idPessoa));
     }
 
-  
 
     @GetMapping("/dependentes")
     public ResponseEntity<List<PessoaResponseDTO>> listarDependentes(@RequestParam UUID usuarioId) {
@@ -51,5 +50,11 @@ public class PessoaController {
     @PutMapping("/{id}")
     public ResponseEntity<PessoaResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid PessoaRequestDTO dto) {
         return ResponseEntity.ok(service.atualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        service.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -21,7 +21,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logout } from './service/authService';
 import { FamilyMember } from './types/vaccination';
-import { addDependentAndLink, updateDependent } from './service/dependentsService';
+import { addDependentAndLink, updateDependent, deleteDependent } from './service/dependentsService';
 import { useAppContext } from './context/AppContext';
 import DependentInfoModal from '../components/modals/DependentInfoModal';
 
@@ -189,9 +189,27 @@ export default function User() {
     }
   };
 
-  // Remoção local desabilitada para dependentes reais do backend
-  const handleRemove = (_dependent: any) => {
-    Alert.alert('Função indisponível', 'A remoção de dependentes reais deve ser feita pelo sistema oficial.');
+  const handleRemove = (dependent: FamilyMember) => {
+    Alert.alert(
+      'Remover dependente',
+      `Deseja remover ${dependent.name}? Esta ação não pode ser desfeita.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDependent(dependent.id);
+              await refreshDependents();
+            } catch (e) {
+              Alert.alert('Erro', 'Não foi possível remover o dependente.');
+              console.log('Erro ao remover dependente:', e);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -249,6 +267,9 @@ export default function User() {
                     </Pressable>
                     <Pressable style={styles.editIconButton} onPress={() => openEdit(dependent)}>
                       <Ionicons name="create-outline" size={20} color="#09BEA5" />
+                    </Pressable>
+                    <Pressable style={styles.editIconButton} onPress={() => handleRemove(dependent)}>
+                      <Ionicons name="trash-outline" size={20} color="#e53935" />
                     </Pressable>
                   </View>
                 );
@@ -450,6 +471,17 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
+                <Text style={styles.label}>CEP</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.zipCode}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, zipCode: value }))}
+                  placeholder="00000-000"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Endereço</Text>
                 <TextInput
                   style={styles.input}
@@ -477,17 +509,6 @@ export default function User() {
                   onChangeText={(value) => setDraft((current) => ({ ...current, state: value }))}
                   placeholder="Ex: SP"
                   maxLength={2}
-                />
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>CEP</Text>
-                <TextInput
-                  style={styles.input}
-                  value={draft.zipCode}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, zipCode: value }))}
-                  placeholder="00000-000"
-                  keyboardType="numeric"
                 />
               </View>
 

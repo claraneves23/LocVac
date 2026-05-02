@@ -113,6 +113,15 @@ public class PessoaServiceImpl implements PessoaService {
     }
 
     @Override
+    @Transactional
+    public void deletar(Long id) {
+        Pessoa pessoa = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pessoa não encontrada com o ID: " + id));
+        usuarioPessoaRepository.deleteAll(usuarioPessoaRepository.findByPessoaId(id));
+        repository.delete(pessoa);
+    }
+
+    @Override
     public PessoaResponseDTO atualizar(Long id, PessoaRequestDTO dto) {
         Pessoa pessoa = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pessoa não encontrada com o ID: " + id));

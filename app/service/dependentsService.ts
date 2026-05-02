@@ -87,6 +87,10 @@ export async function updateDependent(id: string, dependent: Omit<FamilyMember, 
   });
 }
 
+export async function deleteDependent(id: string): Promise<void> {
+  await axios.delete(`${API_URL}/pessoas/${id}`);
+}
+
 // Busca o UUID do usuário titular associado a uma pessoa
 export async function getUsuarioTitularIdByPessoaId(pessoaId: number): Promise<string | null> {
   const response = await axios.get(`${API_URL}/usuarioPessoa/por-pessoa`, { params: { idPessoa: pessoaId } });
