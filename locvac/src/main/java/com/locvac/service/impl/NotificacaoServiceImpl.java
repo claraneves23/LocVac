@@ -2,7 +2,7 @@ package com.locvac.service.impl;
 
 import com.locvac.dto.notificacao.NotificacaoResponseDTO;
 import com.locvac.dto.notificacao.RegistrarTokenDTO;
-import com.locvac.model.associacao.AgendaVacinal;
+import com.locvac.model.associacao.CalendarioVacinal;
 import com.locvac.model.associacao.ExpoPushToken;
 import com.locvac.model.associacao.Notificacao;
 import com.locvac.model.associacao.UsuarioPessoa;
@@ -53,20 +53,19 @@ public class NotificacaoServiceImpl implements NotificacaoService {
     }
 
     @Override
-    public void notificarVacinaProxima(AgendaVacinal agenda, int diasOffset) {
+    public void notificarVacinaProxima(Pessoa pessoa, CalendarioVacinal calendario, LocalDate dataPrevista, int diasOffset) {
         LocalDate hoje = LocalDate.now();
         TipoNotificacao tipo = TipoNotificacao.PROXIMA_VACINA;
 
-        if (notificacaoRepository.existsByAgendaAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
-                agenda, tipo, diasOffset, hoje)) {
+        if (notificacaoRepository.existsByPessoaAndCalendarioAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
+                pessoa, calendario, tipo, diasOffset, hoje)) {
             return;
         }
 
-        Pessoa pessoa = agenda.getPessoa();
         Usuario usuario = donoDePessoa(pessoa);
         if (usuario == null) return;
 
-        String nomeVacina = agenda.getVacina() != null ? agenda.getVacina().getNome() : "vacina";
+        String nomeVacina = calendario.getVacina() != null ? calendario.getVacina().getNome() : "vacina";
         String titulo;
         String mensagem;
 
@@ -79,31 +78,30 @@ public class NotificacaoServiceImpl implements NotificacaoService {
         }
 
         boolean persistente = diasOffset == 0;
-        Notificacao n = persistir(usuario, pessoa, agenda, null, tipo, diasOffset, titulo, mensagem, persistente);
+        Notificacao n = persistir(usuario, pessoa, calendario, null, tipo, diasOffset, titulo, mensagem, persistente);
         dispararPush(usuario, n);
     }
 
     @Override
-    public void notificarVacinaAtrasada(AgendaVacinal agenda, int diasOffset) {
+    public void notificarVacinaAtrasada(Pessoa pessoa, CalendarioVacinal calendario, LocalDate dataPrevista, int diasOffset) {
         LocalDate hoje = LocalDate.now();
         TipoNotificacao tipo = TipoNotificacao.VACINA_ATRASADA;
 
-        if (notificacaoRepository.existsByAgendaAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
-                agenda, tipo, diasOffset, hoje)) {
+        if (notificacaoRepository.existsByPessoaAndCalendarioAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
+                pessoa, calendario, tipo, diasOffset, hoje)) {
             return;
         }
 
-        Pessoa pessoa = agenda.getPessoa();
         Usuario usuario = donoDePessoa(pessoa);
         if (usuario == null) return;
 
-        String nomeVacina = agenda.getVacina() != null ? agenda.getVacina().getNome() : "vacina";
+        String nomeVacina = calendario.getVacina() != null ? calendario.getVacina().getNome() : "vacina";
         int diasAtraso = Math.abs(diasOffset);
 
         String titulo = "Vacina em atraso";
         String mensagem = nomeVacina + " de " + pessoa.getNome() + " está atrasada há " + diasAtraso + " dia(s).";
 
-        Notificacao n = persistir(usuario, pessoa, agenda, null, tipo, diasOffset, titulo, mensagem, true);
+        Notificacao n = persistir(usuario, pessoa, calendario, null, tipo, diasOffset, titulo, mensagem, true);
         dispararPush(usuario, n);
     }
 
@@ -187,13 +185,13 @@ public class NotificacaoServiceImpl implements NotificacaoService {
     }
 
     private Notificacao persistir(
-            Usuario usuario, Pessoa pessoa, AgendaVacinal agenda, Campanha campanha,
+            Usuario usuario, Pessoa pessoa, CalendarioVacinal calendario, Campanha campanha,
             TipoNotificacao tipo, int diasOffset, String titulo, String mensagem, boolean persistente
     ) {
         Notificacao n = new Notificacao();
         n.setUsuario(usuario);
         n.setPessoa(pessoa);
-        n.setAgenda(agenda);
+        n.setCalendario(calendario);
         n.setCampanha(campanha);
         n.setTipoNotificacao(tipo);
         n.setDiasOffset(diasOffset);
@@ -215,7 +213,7 @@ public class NotificacaoServiceImpl implements NotificacaoService {
         Map<String, Object> dados = new HashMap<>();
         dados.put("notificacaoId", n.getId());
         dados.put("tipo", n.getTipoNotificacao().name());
-        if (n.getAgenda() != null) dados.put("agendaId", n.getAgenda().getId());
+        if (n.getCalendario() != null) dados.put("calendarioId", n.getCalendario().getId());
         if (n.getCampanha() != null) dados.put("campanhaId", n.getCampanha().getId());
         if (n.getPessoa() != null) dados.put("pessoaId", n.getPessoa().getId());
 
@@ -239,7 +237,7 @@ public class NotificacaoServiceImpl implements NotificacaoService {
                 n.isLida(),
                 n.isPersistente(),
                 n.getDataCriacao(),
-                n.getAgenda() != null ? n.getAgenda().getId() : null,
+                n.getCalendario() != null ? n.getCalendario().getId() : null,
                 n.getPessoa() != null ? n.getPessoa().getId() : null,
                 n.getCampanha() != null ? n.getCampanha().getId() : null
         );

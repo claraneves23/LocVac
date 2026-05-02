@@ -13,7 +13,7 @@ public record NotificacaoResponseDTO(
         boolean lida,
         boolean persistente,
         LocalDate dataCriacao,
-        Long agendaId,
+        Long calendarioId,
         Long pessoaId,
         Long campanhaId
 ) {}

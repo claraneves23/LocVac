@@ -1,17 +1,18 @@
 package com.locvac.config;
 
-import com.locvac.model.associacao.AgendaVacinal;
+import com.locvac.model.associacao.CalendarioVacinal;
 import com.locvac.model.associacao.Notificacao;
 import com.locvac.model.associacao.UsuarioPessoa;
 import com.locvac.model.core.Campanha;
 import com.locvac.model.core.Pessoa;
 import com.locvac.model.core.Usuario;
 import com.locvac.model.enums.PublicoAlvo;
-import com.locvac.model.enums.StatusAplicacao;
 import com.locvac.model.enums.TipoNotificacao;
-import com.locvac.repository.AgendaVacinalRepository;
+import com.locvac.repository.CalendarioVacinalRepository;
 import com.locvac.repository.CampanhaRepository;
+import com.locvac.repository.DoseAplicadaRepository;
 import com.locvac.repository.NotificacaoRepository;
+import com.locvac.repository.PessoaRepository;
 import com.locvac.repository.UsuarioPessoaRepository;
 import com.locvac.repository.UsuarioRepository;
 import com.locvac.service.NotificacaoService;
@@ -34,7 +35,9 @@ public class NotificacaoScheduler {
     private static final Set<Integer> OFFSETS_VACINA_PROXIMA = Set.of(30, 14, 7, 0);
     private static final Set<Integer> OFFSETS_CAMPANHA = Set.of(7, 3, 1, 0);
 
-    private final AgendaVacinalRepository agendaRepository;
+    private final PessoaRepository pessoaRepository;
+    private final CalendarioVacinalRepository calendarioRepository;
+    private final DoseAplicadaRepository doseAplicadaRepository;
     private final CampanhaRepository campanhaRepository;
     private final UsuarioRepository usuarioRepository;
     private final UsuarioPessoaRepository usuarioPessoaRepository;
@@ -42,14 +45,18 @@ public class NotificacaoScheduler {
     private final NotificacaoService notificacaoService;
 
     public NotificacaoScheduler(
-            AgendaVacinalRepository agendaRepository,
+            PessoaRepository pessoaRepository,
+            CalendarioVacinalRepository calendarioRepository,
+            DoseAplicadaRepository doseAplicadaRepository,
             CampanhaRepository campanhaRepository,
             UsuarioRepository usuarioRepository,
             UsuarioPessoaRepository usuarioPessoaRepository,
             NotificacaoRepository notificacaoRepository,
             NotificacaoService notificacaoService
     ) {
-        this.agendaRepository = agendaRepository;
+        this.pessoaRepository = pessoaRepository;
+        this.calendarioRepository = calendarioRepository;
+        this.doseAplicadaRepository = doseAplicadaRepository;
         this.campanhaRepository = campanhaRepository;
         this.usuarioRepository = usuarioRepository;
         this.usuarioPessoaRepository = usuarioPessoaRepository;
@@ -64,27 +71,43 @@ public class NotificacaoScheduler {
         log.info("Iniciando varredura diária de notificações");
         LocalDate hoje = LocalDate.now();
 
-        processarAgendas(hoje);
+        processarVacinas(hoje);
         processarCampanhas(hoje);
         cleanupPersistentes(hoje);
 
         log.info("Varredura de notificações finalizada");
     }
 
-    private void processarAgendas(LocalDate hoje) {
-        List<AgendaVacinal> pendentes = agendaRepository.findByStatusNotIn(
-                List.of(StatusAplicacao.APLICADA, StatusAplicacao.CANCELADA)
-        );
+    private void processarVacinas(LocalDate hoje) {
+        List<Pessoa> pessoas = pessoaRepository.findAll();
+        List<CalendarioVacinal> calendario = calendarioRepository.findAll();
 
-        for (AgendaVacinal a : pendentes) {
-            if (a.getDataPrevista() == null) continue;
+        for (Pessoa p : pessoas) {
+            if (!p.isAtivo() || p.getDataNascimento() == null) continue;
 
-            long dias = ChronoUnit.DAYS.between(hoje, a.getDataPrevista());
+            for (CalendarioVacinal c : calendario) {
+                if (c.getVacina() == null) continue;
+                if (c.getFaixaEtariaMinMeses() == null) continue;
 
-            if (dias >= 0 && OFFSETS_VACINA_PROXIMA.contains((int) dias)) {
-                notificacaoService.notificarVacinaProxima(a, (int) dias);
-            } else if (dias < 0 && Math.abs(dias) % 7 == 0) {
-                notificacaoService.notificarVacinaAtrasada(a, (int) dias);
+                LocalDate dataPrevista = p.getDataNascimento().plusMonths(c.getFaixaEtariaMinMeses());
+                LocalDate limiteAplicacao = c.getFaixaEtariaMaxMeses() != null
+                        ? p.getDataNascimento().plusMonths(c.getFaixaEtariaMaxMeses())
+                        : null;
+
+                // ainda fora da janela de notificação (mais de 30 dias antes da data ideal)
+                if (hoje.isBefore(dataPrevista.minusDays(30))) continue;
+                // já passou da janela de aplicação
+                if (limiteAplicacao != null && hoje.isAfter(limiteAplicacao)) continue;
+                // dose já registrada na carteira
+                if (doseJaAplicada(p, c)) continue;
+
+                long dias = ChronoUnit.DAYS.between(hoje, dataPrevista);
+
+                if (dias >= 0 && OFFSETS_VACINA_PROXIMA.contains((int) dias)) {
+                    notificacaoService.notificarVacinaProxima(p, c, dataPrevista, (int) dias);
+                } else if (dias < 0 && Math.abs(dias) % 7 == 0) {
+                    notificacaoService.notificarVacinaAtrasada(p, c, dataPrevista, (int) dias);
+                }
             }
         }
     }
@@ -129,14 +152,31 @@ public class NotificacaoScheduler {
                     apagar = true;
                 }
             } else if ((tipo == TipoNotificacao.PROXIMA_VACINA || tipo == TipoNotificacao.VACINA_ATRASADA)
-                    && n.getAgenda() != null) {
-                StatusAplicacao status = n.getAgenda().getStatus();
-                if (status == StatusAplicacao.APLICADA || status == StatusAplicacao.CANCELADA) {
+                    && n.getCalendario() != null && n.getPessoa() != null) {
+                if (doseJaAplicada(n.getPessoa(), n.getCalendario())) {
                     apagar = true;
                 }
             }
 
             if (apagar) notificacaoRepository.delete(n);
+        }
+    }
+
+    private boolean doseJaAplicada(Pessoa pessoa, CalendarioVacinal calendario) {
+        if (calendario.getVacina() == null) return false;
+        Integer numeroDose = parseDose(calendario.getNumeroDose());
+        if (numeroDose == null) return false;
+        return doseAplicadaRepository.existsByPessoaIdAndVacinaIdAndDoseNumero(
+                pessoa.getId(), calendario.getVacina().getId(), numeroDose
+        );
+    }
+
+    private Integer parseDose(String s) {
+        if (s == null) return null;
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

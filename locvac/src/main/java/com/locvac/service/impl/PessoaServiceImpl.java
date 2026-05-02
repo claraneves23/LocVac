@@ -6,7 +6,6 @@ import com.locvac.dto.pessoa.PessoaResponseDTO;
 import com.locvac.mapper.PessoaMapper;
 import com.locvac.model.associacao.UsuarioPessoa;
 import com.locvac.model.core.Usuario;
-import com.locvac.repository.AgendaVacinalRepository;
 import com.locvac.repository.DoseAplicadaRepository;
 import com.locvac.repository.NotificacaoRepository;
 import com.locvac.repository.ParticipacaoCampanhaRepository;
@@ -34,7 +33,6 @@ public class PessoaServiceImpl implements PessoaService {
     private final UsuarioPessoaRepository usuarioPessoaRepository;
     private final UsuarioRepository usuarioRepository;
     private final DoseAplicadaRepository doseAplicadaRepository;
-    private final AgendaVacinalRepository agendaVacinalRepository;
     private final ParticipacaoCampanhaRepository participacaoCampanhaRepository;
     private final NotificacaoRepository notificacaoRepository;
 
@@ -44,7 +42,6 @@ public class PessoaServiceImpl implements PessoaService {
             UsuarioPessoaRepository usuarioPessoaRepository,
             UsuarioRepository usuarioRepository,
             DoseAplicadaRepository doseAplicadaRepository,
-            AgendaVacinalRepository agendaVacinalRepository,
             ParticipacaoCampanhaRepository participacaoCampanhaRepository,
             NotificacaoRepository notificacaoRepository
     ) {
@@ -53,7 +50,6 @@ public class PessoaServiceImpl implements PessoaService {
         this.usuarioPessoaRepository = usuarioPessoaRepository;
         this.usuarioRepository = usuarioRepository;
         this.doseAplicadaRepository = doseAplicadaRepository;
-        this.agendaVacinalRepository = agendaVacinalRepository;
         this.participacaoCampanhaRepository = participacaoCampanhaRepository;
         this.notificacaoRepository = notificacaoRepository;
     }
@@ -135,7 +131,6 @@ public class PessoaServiceImpl implements PessoaService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pessoa não encontrada com o ID: " + id));
         notificacaoRepository.deleteAll(notificacaoRepository.findByPessoaId(id));
         doseAplicadaRepository.deleteAll(doseAplicadaRepository.findByPessoaId(id));
-        agendaVacinalRepository.deleteAll(agendaVacinalRepository.findByPessoaId(id));
         participacaoCampanhaRepository.deleteAll(participacaoCampanhaRepository.findByPessoaId(id));
         usuarioPessoaRepository.deleteAll(usuarioPessoaRepository.findByPessoaId(id));
         repository.delete(pessoa);
