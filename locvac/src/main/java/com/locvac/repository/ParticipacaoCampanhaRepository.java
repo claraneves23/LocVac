@@ -12,4 +12,6 @@ public interface ParticipacaoCampanhaRepository extends JpaRepository<Participac
 
 	List<ParticipacaoCampanha> findByPessoaId(Long idPessoa);
 
+	List<ParticipacaoCampanha> findByCampanhaId(Long idCampanha);
+
 }

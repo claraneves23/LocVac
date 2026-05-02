@@ -265,12 +265,14 @@ export default function User() {
                         </Text>
                       </View>
                     </Pressable>
-                    <Pressable style={styles.editIconButton} onPress={() => openEdit(dependent)}>
-                      <Ionicons name="create-outline" size={20} color="#09BEA5" />
-                    </Pressable>
-                    <Pressable style={styles.editIconButton} onPress={() => handleRemove(dependent)}>
-                      <Ionicons name="trash-outline" size={20} color="#e53935" />
-                    </Pressable>
+                    <View style={styles.dependentActions}>
+                      <Pressable style={styles.dependentActionButton} onPress={() => openEdit(dependent)}>
+                        <Ionicons name="create-outline" size={20} color="#09BEA5" />
+                      </Pressable>
+                      <Pressable style={styles.dependentActionButton} onPress={() => handleRemove(dependent)}>
+                        <Ionicons name="trash-outline" size={20} color="#e53935" />
+                      </Pressable>
+                    </View>
                   </View>
                 );
               })}

@@ -11,4 +11,6 @@ public interface AgendaVacinalRepository extends JpaRepository<AgendaVacinal, Lo
     List<AgendaVacinal> findByStatusNotIn(List<StatusAplicacao> status);
 
     List<AgendaVacinal> findByPessoaId(Long pessoaId);
+
+    List<AgendaVacinal> findByCampanhaId(Long campanhaId);
 }

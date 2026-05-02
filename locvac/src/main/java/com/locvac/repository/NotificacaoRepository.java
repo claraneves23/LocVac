@@ -34,4 +34,6 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, Long> 
     List<Notificacao> findByPersistenteTrue();
 
     List<Notificacao> findByPessoaId(Long idPessoa);
+
+    List<Notificacao> findByCampanhaId(Long idCampanha);
 }

@@ -4,7 +4,10 @@ import com.locvac.dto.campanha.CampanhaRequestDTO;
 import com.locvac.dto.campanha.CampanhaResponseDTO;
 import com.locvac.mapper.CampanhaMapper;
 import com.locvac.model.core.Campanha;
+import com.locvac.repository.AgendaVacinalRepository;
 import com.locvac.repository.CampanhaRepository;
+import com.locvac.repository.NotificacaoRepository;
+import com.locvac.repository.ParticipacaoCampanhaRepository;
 import com.locvac.service.CampanhaService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -18,10 +21,22 @@ public class CampanhaServiceImpl implements CampanhaService {
 
     private final CampanhaMapper campanhaMapper;
     private final CampanhaRepository campanhaRepository;
+    private final NotificacaoRepository notificacaoRepository;
+    private final AgendaVacinalRepository agendaVacinalRepository;
+    private final ParticipacaoCampanhaRepository participacaoCampanhaRepository;
 
-    public CampanhaServiceImpl(CampanhaMapper campanhaMapper, CampanhaRepository campanhaRepository) {
+    public CampanhaServiceImpl(
+            CampanhaMapper campanhaMapper,
+            CampanhaRepository campanhaRepository,
+            NotificacaoRepository notificacaoRepository,
+            AgendaVacinalRepository agendaVacinalRepository,
+            ParticipacaoCampanhaRepository participacaoCampanhaRepository
+    ) {
         this.campanhaMapper = campanhaMapper;
         this.campanhaRepository = campanhaRepository;
+        this.notificacaoRepository = notificacaoRepository;
+        this.agendaVacinalRepository = agendaVacinalRepository;
+        this.participacaoCampanhaRepository = participacaoCampanhaRepository;
     }
 
     @Override
@@ -51,6 +66,9 @@ public class CampanhaServiceImpl implements CampanhaService {
         Campanha campanha = campanhaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campanha não existe"));
 
+        notificacaoRepository.deleteAll(notificacaoRepository.findByCampanhaId(id));
+        agendaVacinalRepository.deleteAll(agendaVacinalRepository.findByCampanhaId(id));
+        participacaoCampanhaRepository.deleteAll(participacaoCampanhaRepository.findByCampanhaId(id));
         campanhaRepository.delete(campanha);
     }
 
