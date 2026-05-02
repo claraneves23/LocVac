@@ -1,8 +1,9 @@
 package com.locvac.repository;
 
-import com.locvac.model.associacao.AgendaVacinal;
+import com.locvac.model.associacao.CalendarioVacinal;
 import com.locvac.model.associacao.Notificacao;
 import com.locvac.model.core.Campanha;
+import com.locvac.model.core.Pessoa;
 import com.locvac.model.core.Usuario;
 import com.locvac.model.enums.TipoNotificacao;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,8 +13,9 @@ import java.util.List;
 
 public interface NotificacaoRepository extends JpaRepository<Notificacao, Long> {
 
-    boolean existsByAgendaAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
-            AgendaVacinal agenda,
+    boolean existsByPessoaAndCalendarioAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
+            Pessoa pessoa,
+            CalendarioVacinal calendario,
             TipoNotificacao tipo,
             Integer diasOffset,
             LocalDate dataCriacao

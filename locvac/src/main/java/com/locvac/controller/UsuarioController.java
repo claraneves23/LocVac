@@ -3,7 +3,9 @@ package com.locvac.controller;
 import com.locvac.dto.auth.AuthResponse;
 import com.locvac.dto.usuario.ConfirmarCadastroDTO;
 import com.locvac.dto.usuario.IniciarCadastroDTO;
+import com.locvac.dto.usuario.RedefinirSenhaDTO;
 import com.locvac.dto.usuario.ReenviarCodigoDTO;
+import com.locvac.dto.usuario.SolicitarRecuperacaoSenhaDTO;
 import com.locvac.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -35,5 +37,23 @@ public class UsuarioController {
     public ResponseEntity<Void> reenviar(@RequestBody @Valid ReenviarCodigoDTO dto) {
         usuarioService.reenviarCodigo(dto);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @PostMapping("/senha/esqueci")
+    public ResponseEntity<Void> esqueciSenha(@RequestBody @Valid SolicitarRecuperacaoSenhaDTO dto) {
+        usuarioService.solicitarRecuperacaoSenha(dto);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @PostMapping("/senha/reenviar")
+    public ResponseEntity<Void> reenviarRecuperacao(@RequestBody @Valid ReenviarCodigoDTO dto) {
+        usuarioService.reenviarCodigoRecuperacaoSenha(dto);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @PostMapping("/senha/redefinir")
+    public ResponseEntity<Void> redefinirSenha(@RequestBody @Valid RedefinirSenhaDTO dto) {
+        usuarioService.redefinirSenha(dto);
+        return ResponseEntity.noContent().build();
     }
 }

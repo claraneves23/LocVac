@@ -26,8 +26,8 @@ public class Notificacao {
         private Pessoa pessoa;
 
         @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "id_agenda")
-        private AgendaVacinal agenda;
+        @JoinColumn(name = "id_calendario")
+        private CalendarioVacinal calendario;
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "id_campanha")
@@ -65,8 +65,8 @@ public class Notificacao {
                 this.pessoa = pessoa;
         }
 
-        public void setAgenda(AgendaVacinal agenda) {
-                this.agenda = agenda;
+        public void setCalendario(CalendarioVacinal calendario) {
+                this.calendario = calendario;
         }
 
         public void setTitulo(String titulo) {
@@ -113,8 +113,8 @@ public class Notificacao {
                 return pessoa;
         }
 
-        public AgendaVacinal getAgenda() {
-                return agenda;
+        public CalendarioVacinal getCalendario() {
+                return calendario;
         }
 
         public String getTitulo() {

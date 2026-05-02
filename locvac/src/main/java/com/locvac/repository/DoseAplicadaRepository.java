@@ -14,4 +14,6 @@ public interface DoseAplicadaRepository extends JpaRepository<DoseAplicada, Long
     List<DoseAplicada> findByPessoaId(Long idPessoa);
     List<DoseAplicada> findByPessoaIdAndVacinaTipoSecaoVacinacao(Long idPessoa, TipoSecaoVacinacao tipo);
     List<DoseAplicada> findByPessoaIdAndNomeCustomIsNotNull(Long idPessoa);
+
+    boolean existsByPessoaIdAndVacinaIdAndDoseNumero(Long idPessoa, Long idVacina, Integer doseNumero);
 }

@@ -13,7 +13,7 @@ export interface NotificacaoDTO {
   lida: boolean;
   persistente: boolean;
   dataCriacao: string;
-  agendaId: number | null;
+  calendarioId: number | null;
   pessoaId: number | null;
   campanhaId: number | null;
 }

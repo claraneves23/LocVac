@@ -280,7 +280,7 @@ export default function Login() {
             </Pressable>
 
             {mode === 'login' && (
-              <Pressable style={styles.forgotButton}>
+              <Pressable style={styles.forgotButton} onPress={() => router.push('/esqueci-senha')}>
                 <Text style={styles.forgotText}>Esqueci minha senha</Text>
               </Pressable>
             )}
