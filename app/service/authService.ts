@@ -72,15 +72,13 @@ export async function reenviarCodigoRecuperacaoSenha(email: string): Promise<voi
 	await axios.post(`${API_BASE}/usuarios/senha/reenviar`, { email: email.trim().toLowerCase() });
 }
 
-export async function redefinirSenha(data: { email: string; codigo: string; novaSenha: string }): Promise<AuthResponse> {
+export async function redefinirSenha(data: { email: string; codigo: string; novaSenha: string }): Promise<void> {
 	const payload = {
 		email: data.email.trim().toLowerCase(),
 		codigo: data.codigo,
 		novaSenha: data.novaSenha,
 	};
-	const response = await axios.post<AuthResponse>(`${API_BASE}/usuarios/senha/redefinir`, payload);
-	await saveTokens(response.data);
-	return response.data;
+	await axios.post(`${API_BASE}/usuarios/senha/redefinir`, payload);
 }
 
 export async function cadastrarTitular(data: CadastroTitularRequest): Promise<{ id: number }> {

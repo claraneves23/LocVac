@@ -52,7 +52,8 @@ public class UsuarioController {
     }
 
     @PostMapping("/senha/redefinir")
-    public ResponseEntity<AuthResponse> redefinirSenha(@RequestBody @Valid RedefinirSenhaDTO dto) {
-        return ResponseEntity.ok(usuarioService.redefinirSenha(dto));
+    public ResponseEntity<Void> redefinirSenha(@RequestBody @Valid RedefinirSenhaDTO dto) {
+        usuarioService.redefinirSenha(dto);
+        return ResponseEntity.noContent().build();
     }
 }

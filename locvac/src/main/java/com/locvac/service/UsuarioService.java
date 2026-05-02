@@ -19,6 +19,6 @@ public interface UsuarioService {
 
     void reenviarCodigoRecuperacaoSenha(ReenviarCodigoDTO dto);
 
-    AuthResponse redefinirSenha(RedefinirSenhaDTO dto);
+    void redefinirSenha(RedefinirSenhaDTO dto);
 
 }

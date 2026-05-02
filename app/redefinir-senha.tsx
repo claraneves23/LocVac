@@ -16,7 +16,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from './service/authService';
-import { useAppContext } from './context/AppContext';
 
 const RESEND_COOLDOWN = 60;
 
@@ -24,7 +23,6 @@ export default function RedefinirSenha() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email: string }>();
   const email = (params.email as string) || '';
-  const { loadAll } = useAppContext();
 
   const [codigo, setCodigo] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -61,8 +59,9 @@ export default function RedefinirSenha() {
     setLoading(true);
     try {
       await redefinirSenha({ email, codigo, novaSenha });
-      await loadAll();
-      router.replace('/');
+      Alert.alert('Senha redefinida', 'Use a nova senha para entrar.', [
+        { text: 'OK', onPress: () => router.replace('/login') },
+      ]);
     } catch (error: any) {
       const status = error?.response?.status;
       const message =

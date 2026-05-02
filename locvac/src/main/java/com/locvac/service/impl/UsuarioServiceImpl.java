@@ -208,7 +208,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public AuthResponse redefinirSenha(RedefinirSenhaDTO dto) {
+    public void redefinirSenha(RedefinirSenhaDTO dto) {
         String email = normalizar(dto.email());
 
         RecuperacaoSenha recuperacao = recuperacaoSenhaRepository.findByEmail(email)
@@ -237,12 +237,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 });
 
         usuario.setSenhaHash(passwordEncoder.encode(dto.novaSenha()));
-        usuario = usuarioRepository.save(usuario);
+        usuarioRepository.save(usuario);
 
         recuperacaoSenhaRepository.delete(recuperacao);
         authService.logoutTodos(usuario.getId());
-
-        return authService.autenticarUsuario(usuario);
     }
 
     private String gerarCodigo() {
