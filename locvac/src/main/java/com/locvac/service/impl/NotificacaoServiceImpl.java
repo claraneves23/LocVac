@@ -71,10 +71,10 @@ public class NotificacaoServiceImpl implements NotificacaoService {
 
         if (diasOffset == 0) {
             titulo = "Hoje é o dia da vacina!";
-            mensagem = nomeVacina + " de " + pessoa.getNome() + " deve ser aplicada hoje.";
+            mensagem = "A vacina \"" + nomeVacina + "\" de " + pessoa.getNome() + " deve ser aplicada hoje.";
         } else {
             titulo = "Vacina se aproximando";
-            mensagem = nomeVacina + " de " + pessoa.getNome() + " em " + diasOffset + " dia(s).";
+            mensagem = "A vacina \"" + nomeVacina + "\" de " + pessoa.getNome() + " deve ser aplicada em " + diasOffset + " dia(s).";
         }
 
         boolean persistente = diasOffset == 0;
@@ -99,7 +99,7 @@ public class NotificacaoServiceImpl implements NotificacaoService {
         int diasAtraso = Math.abs(diasOffset);
 
         String titulo = "Vacina em atraso";
-        String mensagem = nomeVacina + " de " + pessoa.getNome() + " está atrasada há " + diasAtraso + " dia(s).";
+        String mensagem = "A vacina \"" + nomeVacina + "\" de " + pessoa.getNome() + " está atrasada há " + diasAtraso + " dia(s).";
 
         Notificacao n = persistir(usuario, pessoa, calendario, null, tipo, diasOffset, titulo, mensagem, true);
         dispararPush(usuario, n);
