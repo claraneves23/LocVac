@@ -9,6 +9,7 @@ import com.locvac.repository.CampanhaRepository;
 import com.locvac.repository.NotificacaoRepository;
 import com.locvac.repository.ParticipacaoCampanhaRepository;
 import com.locvac.service.CampanhaService;
+import com.locvac.utils.ValidacaoPeriodoUtils;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -41,6 +42,7 @@ public class CampanhaServiceImpl implements CampanhaService {
 
     @Override
     public void cadastrarCampanha(CampanhaRequestDTO dto) {
+        ValidacaoPeriodoUtils.validarDataFinalPosterior(dto.dataInicio(), dto.dataFim());
         validarCampanhaDuplicada(dto.doencaAlvo(), dto.dataInicio(), dto.dataFim());
         Campanha campanha = campanhaMapper.toEntity(dto);
         campanhaRepository.save(campanha);
@@ -75,6 +77,7 @@ public class CampanhaServiceImpl implements CampanhaService {
 
     @Override
     public CampanhaResponseDTO atualizarCampanha(Long id, CampanhaRequestDTO dto) {
+        ValidacaoPeriodoUtils.validarDataFinalPosterior(dto.dataInicio(), dto.dataFim());
         Campanha campanha = campanhaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
         campanha.setNome(dto.nome());
