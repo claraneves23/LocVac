@@ -77,6 +77,14 @@ export default function CadastroTitular() {
     focusedInputRef.current = ref.current;
   };
 
+  const formatCpf = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
+
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 11);
     if (digits.length <= 2) return digits;
@@ -184,9 +192,9 @@ export default function CadastroTitular() {
                 ref={cpfRef}
                 style={styles.input}
                 value={cpf}
-                onChangeText={setCpf}
+                onChangeText={(v) => setCpf(formatCpf(v))}
                 onFocus={focusFor(cpfRef)}
-                placeholder="Digite seu CPF"
+                placeholder="000.000.000-00"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
                 maxLength={14}

@@ -16,4 +16,15 @@ public final class ValidacaoPeriodoUtils {
             throw new IllegalArgumentException( "A data de fim deve ser posterior à data de início");
         }
     }
+
+    public static void validarIdadeMinimaMenorQueMaxima(Integer idadeMinimaMeses, Integer idadeMaximaMeses) {
+
+        if (idadeMinimaMeses == null || idadeMaximaMeses == null) {
+            return;
+        }
+
+        if (idadeMinimaMeses >= idadeMaximaMeses) {
+            throw new IllegalArgumentException("A idade mínima em meses deve ser menor que a idade máxima em meses");
+        }
+    }
 }
