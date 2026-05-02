@@ -58,6 +58,7 @@ public class NotificacaoScheduler {
     }
 
     @Scheduled(cron = "0 0 7 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 0 11 * * *", zone = "America/Sao_Paulo")
     @Transactional
     public void executar() {
         log.info("Iniciando varredura diária de notificações");
