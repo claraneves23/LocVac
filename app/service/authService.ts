@@ -33,6 +33,7 @@ export interface CadastroTitularRequest {
 	nome: string;
 	dataNascimento: string;
 	cpf: string;
+	cns?: string;
 	sexoBiologico: 'MASCULINO' | 'FEMININO';
 	cep: string;
 	rua?: string;
@@ -91,7 +92,7 @@ export async function cadastrarTitular(data: CadastroTitularRequest): Promise<{ 
 		dataNascimento: data.dataNascimento,
 		cpf: data.cpf,
 		sexoBiologico: data.sexoBiologico,
-		cns: null,
+		cns: data.cns || null,
 		cep: data.cep,
 		rua: data.rua || '',
 		complemento: data.complemento || '',

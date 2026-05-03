@@ -78,6 +78,7 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
             <InfoRow label="Sexo" value={formatSex(dependent.sex)} />
             <InfoRow label="Local de Nascimento" value={dependent.birthPlace} />
             <InfoRow label="Responsável" value={dependent.guardianName} />
+            <InfoRow label="CNS" value={dependent.cns} />
             <InfoRow label="Telefone" value={dependent.phone} />
             <InfoRow label="CEP" value={dependent.zipCode} />
             <InfoRow label="Rua" value={dependent.address} />

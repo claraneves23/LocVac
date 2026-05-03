@@ -40,6 +40,7 @@ export interface FamilyMember {
   relationship?: string;
   guardianName?: string;
   photoUri?: string;
+  cns?: string;
   zipCode?: string;
   address?: string;
   complement?: string;

@@ -32,6 +32,7 @@ export default function CadastroTitular() {
   const [telefone, setTelefone] = useState('');
   const [dataNascimento, setDataNascimento] = useState<Date | undefined>(undefined);
   const [cpf, setCpf] = useState('');
+  const [cns, setCns] = useState('');
   const [sexoBiologico, setSexoBiologico] = useState<'MASCULINO' | 'FEMININO' | ''>('');
   const [cep, setCep] = useState('');
   const [rua, setRua] = useState('');
@@ -149,6 +150,7 @@ export default function CadastroTitular() {
         telefone: telefone.replace(/\D/g, ''),
         dataNascimento: dataNascimento.toISOString().split('T')[0],
         cpf: cpf.replace(/\D/g, ''),
+        cns: cns.trim() || undefined,
         sexoBiologico,
         cep: cep.replace(/\D/g, ''),
         rua: rua.trim(),
@@ -254,6 +256,19 @@ export default function CadastroTitular() {
                 placeholderTextColor="#999"
                 keyboardType="numeric"
                 maxLength={14}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>CNS</Text>
+              <TextInput
+                style={styles.input}
+                value={cns}
+                onChangeText={setCns}
+                placeholder="000 0000 0000 0000"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                maxLength={15}
               />
             </View>
 

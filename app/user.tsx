@@ -40,6 +40,7 @@ type DraftDependent = {
   guardianName?: string;
   sex: 'M' | 'F' | 'Outro';
   photoUri?: string;
+  cns?: string;
   zipCode?: string;
   address?: string;
   complement?: string;
@@ -109,6 +110,7 @@ export default function User() {
       guardianName: '',
       sex: 'M',
       photoUri: undefined,
+      cns: '',
       zipCode: '',
       address: '',
       complement: '',
@@ -136,6 +138,7 @@ export default function User() {
       guardianName: dependent.guardianName || '',
       sex: dependent.sex,
       photoUri: dependent.photoUri,
+      cns: dependent.cns || '',
       zipCode: dependent.zipCode || '',
       address: dependent.address || '',
       complement: dependent.complement || '',
@@ -490,6 +493,18 @@ export default function User() {
                   value={draft.birthPlace}
                   onChangeText={(value) => setDraft((current) => ({ ...current, birthPlace: value }))}
                   placeholder="Ex: São Paulo - SP"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>CNS</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.cns}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, cns: value }))}
+                  placeholder="000 0000 0000 0000"
+                  keyboardType="numeric"
+                  maxLength={15}
                 />
               </View>
 

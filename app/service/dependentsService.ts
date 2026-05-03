@@ -10,7 +10,7 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
     dataNascimento: dependent.birthDate,
     cpf: dependent.cpf || null,
     sexoBiologico: dependent.sex === 'M' ? 'MASCULINO' : dependent.sex === 'F' ? 'FEMININO' : 'OUTRO',
-    cns: null,
+    cns: dependent.cns || null,
     cep: dependent.zipCode || '',
     rua: dependent.address || '',
     complemento: dependent.complement || '',
@@ -42,6 +42,7 @@ type PessoaResponseDTO = {
   nome: string;
   dataNascimento: string;
   sexoBiologico: 'MASCULINO' | 'FEMININO' | 'OUTRO';
+  cns?: string;
   cep?: string;
   rua?: string;
   complemento?: string;
@@ -73,6 +74,7 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
     sex: mapSexo(d.sexoBiologico),
     kind: 'dependent',
     relationship: d.dscParentesco ?? '',
+    cns: d.cns,
     zipCode: d.cep,
     address: d.rua,
     complement: d.complemento,
@@ -90,7 +92,7 @@ export async function updateDependent(id: string, dependent: Omit<FamilyMember, 
     dataNascimento: dependent.birthDate,
     cpf: dependent.cpf || null,
     sexoBiologico: dependent.sex === 'M' ? 'MASCULINO' : dependent.sex === 'F' ? 'FEMININO' : 'OUTRO',
-    cns: null,
+    cns: dependent.cns || null,
     cep: dependent.zipCode || '',
     rua: dependent.address || '',
     complemento: dependent.complement || '',
