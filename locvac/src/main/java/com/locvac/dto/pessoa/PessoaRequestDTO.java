@@ -2,8 +2,8 @@ package com.locvac.dto.pessoa;
 
 import com.locvac.model.enums.Estado;
 import com.locvac.model.enums.Sexo;
-import com.locvac.validation.ValidCns;
-import com.locvac.validation.ValidCpf;
+import com.locvac.validation.annotation.ValidCns;
+import com.locvac.validation.annotation.ValidCpf;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

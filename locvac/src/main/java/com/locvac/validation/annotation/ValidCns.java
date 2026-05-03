@@ -1,5 +1,6 @@
-package com.locvac.validation;
+package com.locvac.validation.annotation;
 
+import com.locvac.validation.CnsValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
