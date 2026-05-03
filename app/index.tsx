@@ -64,6 +64,7 @@ export default function Index() {
   const [editingMandatoryVaccine, setEditingMandatoryVaccine] = useState<{ vaccineId: string; record?: MandatoryVaccineRecord } | null>(null);
   const [showMandatoryDatePicker, setShowMandatoryDatePicker] = useState(false);
   const [mandatoryVaccineDate, setMandatoryVaccineDate] = useState(new Date());
+  const [savingMandatoryVaccine, setSavingMandatoryVaccine] = useState(false);
 
   // Estados para o formulário de vacina obrigatória
   const [mandatoryIsApplied, setMandatoryIsApplied] = useState(false);
@@ -85,6 +86,7 @@ export default function Index() {
   const [otherVaccineCode, setOtherVaccineCode] = useState('');
   const [otherVaccineProfName, setOtherVaccineProfName] = useState('');
   const [otherVaccineProfId, setOtherVaccineProfId] = useState('');
+  const [savingOtherVaccine, setSavingOtherVaccine] = useState(false);
 
   // Estados para campanhas
   const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
@@ -114,6 +116,7 @@ export default function Index() {
   const [campaignDate, setCampaignDate] = useState(new Date());
   const [campaignName, setCampaignName] = useState('');
   const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
+  const [savingCampaign, setSavingCampaign] = useState(false);
 
   const loadMandatoryVaccineRecords = useCallback(async () => {
     if (!selectedProfileId) return;
@@ -280,7 +283,7 @@ export default function Index() {
   };
 
   const handleSaveMandatoryVaccine = async () => {
-    if (!editingMandatoryVaccine) return;
+    if (!editingMandatoryVaccine || savingMandatoryVaccine) return;
 
     const { vaccineId, record } = editingMandatoryVaccine;
     const payload = {
@@ -293,23 +296,30 @@ export default function Index() {
       registroProfissional: mandatoryProfId.trim() || undefined,
     };
 
-    if (!mandatoryIsApplied && record?.id) {
-      await deletarDose(Number(record.id));
-    } else if (mandatoryIsApplied && record?.id) {
-      await atualizarDose(Number(record.id), payload);
-    } else if (mandatoryIsApplied) {
-      await registrarDose(payload);
-    }
+    setSavingMandatoryVaccine(true);
+    try {
+      if (!mandatoryIsApplied && record?.id) {
+        await deletarDose(Number(record.id));
+      } else if (mandatoryIsApplied && record?.id) {
+        await atualizarDose(Number(record.id), payload);
+      } else if (mandatoryIsApplied) {
+        await registrarDose(payload);
+      }
 
-    await loadMandatoryVaccineRecords();
-    setMandatoryIsApplied(false);
-    setMandatoryDate('');
-    setMandatoryLot('');
-    setMandatoryCode('');
-    setMandatoryProfName('');
-    setMandatoryProfId('');
-    setEditingMandatoryVaccine(null);
-    setIsMandatoryVaccineModalOpen(false);
+      await loadMandatoryVaccineRecords();
+      setMandatoryIsApplied(false);
+      setMandatoryDate('');
+      setMandatoryLot('');
+      setMandatoryCode('');
+      setMandatoryProfName('');
+      setMandatoryProfId('');
+      setEditingMandatoryVaccine(null);
+      setIsMandatoryVaccineModalOpen(false);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível salvar a vacina.');
+    } finally {
+      setSavingMandatoryVaccine(false);
+    }
   };
 
   // Outras Vacinas handlers
@@ -348,7 +358,7 @@ export default function Index() {
   };
 
   const handleSaveOtherVaccine = async () => {
-    if (!otherVaccineName.trim()) return;
+    if (!otherVaccineName.trim() || savingOtherVaccine) return;
 
     const payload = {
       idPessoa: Number(selectedProfile.id),
@@ -360,21 +370,28 @@ export default function Index() {
       registroProfissional: otherVaccineProfId.trim() || undefined,
     };
 
-    if (editingOtherVaccine) {
-      await atualizarOutraVacina(Number(editingOtherVaccine.id), payload);
-    } else {
-      await registrarOutraVacina(payload);
-    }
+    setSavingOtherVaccine(true);
+    try {
+      if (editingOtherVaccine) {
+        await atualizarOutraVacina(Number(editingOtherVaccine.id), payload);
+      } else {
+        await registrarOutraVacina(payload);
+      }
 
-    await loadOtherVaccines();
-    setOtherVaccineName('');
-    setOtherVaccineAppDate('');
-    setOtherVaccineLot('');
-    setOtherVaccineCode('');
-    setOtherVaccineProfName('');
-    setOtherVaccineProfId('');
-    setEditingOtherVaccine(null);
-    setIsOtherVaccineModalOpen(false);
+      await loadOtherVaccines();
+      setOtherVaccineName('');
+      setOtherVaccineAppDate('');
+      setOtherVaccineLot('');
+      setOtherVaccineCode('');
+      setOtherVaccineProfName('');
+      setOtherVaccineProfId('');
+      setEditingOtherVaccine(null);
+      setIsOtherVaccineModalOpen(false);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível salvar a vacina.');
+    } finally {
+      setSavingOtherVaccine(false);
+    }
   };
 
   const handleDeleteOtherVaccine = (vaccineId: string) => {
@@ -426,13 +443,14 @@ export default function Index() {
   };
 
   const handleSaveCampaign = async () => {
-    if (!campaignName.trim() || !campaignParticipationDate) return;
+    if (!campaignName.trim() || !campaignParticipationDate || savingCampaign) return;
 
     const campanhaSelecionada = availableCampaigns.find((c) => c.nome === campaignName);
     if (!campanhaSelecionada) {
       Alert.alert('Erro', 'Selecione uma campanha válida.');
       return;
     }
+    setSavingCampaign(true);
     try {
       if (editingCampaign) {
         await updateParticipacaoCampanha({
@@ -448,16 +466,17 @@ export default function Index() {
           dataParticipacao: campaignParticipationDate,
         });
       }
+
+      await loadCampaigns();
+      setCampaignName('');
+      setCampaignParticipationDate('');
+      setEditingCampaign(null);
+      setIsCampaignModalOpen(false);
     } catch {
       Alert.alert('Erro', 'Não foi possível salvar a participação na campanha.');
-      return;
+    } finally {
+      setSavingCampaign(false);
     }
-
-    await loadCampaigns();
-    setCampaignName('');
-    setCampaignParticipationDate('');
-    setEditingCampaign(null);
-    setIsCampaignModalOpen(false);
   };
 
   const handleDeleteCampaign = (campaignId: string) => {
@@ -559,6 +578,7 @@ export default function Index() {
         onChangeProfId={setMandatoryProfId}
         onSave={handleSaveMandatoryVaccine}
         onClose={() => setIsMandatoryVaccineModalOpen(false)}
+        saving={savingMandatoryVaccine}
       />
 
       {/* Componente do Modal de Outras Vacinas 
@@ -583,6 +603,7 @@ export default function Index() {
         onChangeProfId={setOtherVaccineProfId}
         onSave={handleSaveOtherVaccine}
         onClose={() => setIsOtherVaccineModalOpen(false)}
+        saving={savingOtherVaccine}
       />
 
       {/* Componente do Modal de Campanhas 
@@ -605,6 +626,7 @@ export default function Index() {
         onDateChange={handleCampaignDateChange}
         onSave={handleSaveCampaign}
         onClose={() => setIsCampaignModalOpen(false)}
+        saving={savingCampaign}
       />
 
       {/* Componente do Modal de Preview de Imagem */}

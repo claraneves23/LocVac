@@ -11,6 +11,7 @@ import {
   Platform,
   Pressable,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
@@ -51,6 +52,7 @@ export default function User() {
   const [selectedDependent, setSelectedDependent] = useState<FamilyMember | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
+  const [savingDependent, setSavingDependent] = useState(false);
   const [draft, setDraft] = useState<DraftDependent>({
     name: '',
     birthDate: '',
@@ -173,7 +175,9 @@ export default function User() {
   };
 
   const handleSave = async () => {
+    if (savingDependent) return;
     if (!validateDraft() || !mainUser) return;
+    setSavingDependent(true);
     try {
       if (draft.id) {
         await updateDependent(draft.id, draft);
@@ -186,6 +190,8 @@ export default function User() {
     } catch (e: any) {
       Alert.alert('Erro', draft.id ? 'Não foi possível atualizar o dependente.' : 'Não foi possível adicionar o dependente.');
       console.log('Erro ao salvar dependente:', e?.response?.data || e);
+    } finally {
+      setSavingDependent(false);
     }
   };
 
@@ -527,11 +533,23 @@ export default function User() {
             </ScrollView>
 
             <View style={styles.modalActions}>
-              <Pressable style={styles.cancelButton} onPress={() => setIsModalOpen(false)}>
+              <Pressable
+                style={[styles.cancelButton, savingDependent && styles.buttonDisabled]}
+                onPress={() => setIsModalOpen(false)}
+                disabled={savingDependent}
+              >
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </Pressable>
-              <Pressable style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Salvar</Text>
+              <Pressable
+                style={[styles.saveButton, savingDependent && styles.buttonDisabled]}
+                onPress={handleSave}
+                disabled={savingDependent}
+              >
+                {savingDependent ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Salvar</Text>
+                )}
               </Pressable>
             </View>
           </View>
@@ -885,5 +903,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#fff',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

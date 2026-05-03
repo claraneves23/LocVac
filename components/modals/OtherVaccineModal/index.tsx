@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Modal, ScrollView, TextInput, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, TextInput, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -29,6 +29,7 @@ type OtherVaccineModalProps = {
   onChangeProfId: (value: string) => void;
   onSave: () => void;
   onClose: () => void;
+  saving?: boolean;
 };
 
 export default function OtherVaccineModal({
@@ -51,6 +52,7 @@ export default function OtherVaccineModal({
   onChangeProfId,
   onSave,
   onClose,
+  saving = false,
 }: OtherVaccineModalProps) {
   return (
     <Modal
@@ -152,11 +154,23 @@ export default function OtherVaccineModal({
           </ScrollView>
 
           <View style={styles.formActions}>
-            <Pressable style={styles.cancelButton} onPress={onClose}>
+            <Pressable
+              style={[styles.cancelButton, saving && styles.buttonDisabled]}
+              onPress={onClose}
+              disabled={saving}
+            >
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </Pressable>
-            <Pressable style={styles.saveButton} onPress={onSave}>
-              <Text style={styles.saveButtonText}>Salvar</Text>
+            <Pressable
+              style={[styles.saveButton, saving && styles.buttonDisabled]}
+              onPress={onSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.saveButtonText}>Salvar</Text>
+              )}
             </Pressable>
           </View>
         </View>
@@ -256,6 +270,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     fontSize: 14,
