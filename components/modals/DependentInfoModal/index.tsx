@@ -79,10 +79,11 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
             <InfoRow label="Local de Nascimento" value={dependent.birthPlace} />
             <InfoRow label="Responsável" value={dependent.guardianName} />
             <InfoRow label="Telefone" value={dependent.phone} />
-            <InfoRow label="Endereço" value={dependent.address} />
+            <InfoRow label="CEP" value={dependent.zipCode} />
+            <InfoRow label="Rua" value={dependent.address} />
+            <InfoRow label="Complemento" value={dependent.complement} />
             <InfoRow label="Município" value={dependent.city} />
             <InfoRow label="Estado" value={dependent.state} />
-            <InfoRow label="CEP" value={dependent.zipCode} />
           </ScrollView>
 
           <Pressable style={styles.closeButton} onPress={onClose}>

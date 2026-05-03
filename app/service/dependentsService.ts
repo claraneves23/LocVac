@@ -8,10 +8,14 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
   const pessoaResponse = await axios.post(`${API_URL}/pessoas`, {
     nome: dependent.name,
     dataNascimento: dependent.birthDate,
-    cpf: dependent.cpf || null, // ou gere um fake/placeholder se não for obrigatório
+    cpf: dependent.cpf || null,
     sexoBiologico: dependent.sex === 'M' ? 'MASCULINO' : dependent.sex === 'F' ? 'FEMININO' : 'OUTRO',
     cns: null,
     cep: dependent.zipCode || '',
+    rua: dependent.address || '',
+    complemento: dependent.complement || '',
+    municipio: dependent.city || '',
+    estado: dependent.state || null,
     telefone: dependent.phone || '',
     fotoUrl: dependent.photoUri || '',
     nomeResponsavel: dependent.guardianName || '',
@@ -39,6 +43,10 @@ type PessoaResponseDTO = {
   dataNascimento: string;
   sexoBiologico: 'MASCULINO' | 'FEMININO' | 'OUTRO';
   cep?: string;
+  rua?: string;
+  complemento?: string;
+  municipio?: string;
+  estado?: string;
   telefone?: string;
   fotoUrl?: string;
   nomeResponsavel?: string;
@@ -66,6 +74,10 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
     kind: 'dependent',
     relationship: d.dscParentesco ?? '',
     zipCode: d.cep,
+    address: d.rua,
+    complement: d.complemento,
+    city: d.municipio,
+    state: d.estado,
     phone: d.telefone,
     photoUri: d.fotoUrl || undefined,
     guardianName: d.nomeResponsavel,
@@ -80,6 +92,10 @@ export async function updateDependent(id: string, dependent: Omit<FamilyMember, 
     sexoBiologico: dependent.sex === 'M' ? 'MASCULINO' : dependent.sex === 'F' ? 'FEMININO' : 'OUTRO',
     cns: null,
     cep: dependent.zipCode || '',
+    rua: dependent.address || '',
+    complemento: dependent.complement || '',
+    municipio: dependent.city || '',
+    estado: dependent.state || null,
     telefone: dependent.phone || '',
     fotoUrl: dependent.photoUri || '',
     nomeResponsavel: dependent.guardianName || '',

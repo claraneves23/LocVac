@@ -16,6 +16,10 @@ public class PessoaMapper {
         pessoa.setSexoBiologico(dto.sexoBiologico());
         pessoa.setCns(dto.cns());
         pessoa.setCep(dto.cep());
+        pessoa.setRua(dto.rua());
+        pessoa.setComplemento(dto.complemento());
+        pessoa.setMunicipio(dto.municipio());
+        pessoa.setEstado(dto.estado());
         pessoa.setTelefone(dto.telefone());
         pessoa.setFotoUrl(dto.fotoUrl());
         pessoa.setNomeResponsavel(dto.nomeResponsavel());
@@ -33,6 +37,10 @@ public class PessoaMapper {
                 pessoa.getSexoBiologico(),
                 pessoa.getCns(),
                 pessoa.getCep(),
+                pessoa.getRua(),
+                pessoa.getComplemento(),
+                pessoa.getMunicipio(),
+                pessoa.getEstado(),
                 pessoa.getTelefone(),
                 pessoa.getFotoUrl(),
                 pessoa.getNomeResponsavel(),

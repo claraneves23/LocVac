@@ -1,5 +1,6 @@
 package com.locvac.dto.pessoa;
 
+import com.locvac.model.enums.Estado;
 import com.locvac.model.enums.Sexo;
 import com.locvac.validation.ValidCns;
 import com.locvac.validation.ValidCpf;
@@ -25,12 +26,17 @@ public record PessoaRequestDTO(
         @ValidCns
         String cns,
 
-        // validar formato de cep
         @NotBlank(message = "O CEP é obrigatório")
         String cep,
 
+        String rua,
 
-        // validar formato de telefone
+        String complemento,
+
+        String municipio,
+
+        Estado estado,
+
         @NotBlank(message = "O telefone é obrigatório")
         String telefone,
 

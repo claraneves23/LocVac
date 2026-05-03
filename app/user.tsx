@@ -27,6 +27,8 @@ import DependentInfoModal from '../components/modals/DependentInfoModal';
 
 const SEX_OPTIONS = ['M', 'F', 'Outro'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
+const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
+type EstadoUF = typeof ESTADO_OPTIONS[number];
 
 type DraftDependent = {
   id?: string;
@@ -37,10 +39,11 @@ type DraftDependent = {
   guardianName?: string;
   sex: 'M' | 'F' | 'Outro';
   photoUri?: string;
-  address?: string;
-  city?: string;
-  state?: string;
   zipCode?: string;
+  address?: string;
+  complement?: string;
+  city?: string;
+  state?: EstadoUF | '';
   phone?: string;
 };
 
@@ -51,6 +54,7 @@ export default function User() {
   const [selectedDependent, setSelectedDependent] = useState<FamilyMember | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
+  const [showStatePicker, setShowStatePicker] = useState(false);
   const [draft, setDraft] = useState<DraftDependent>({
     name: '',
     birthDate: '',
@@ -103,14 +107,16 @@ export default function User() {
       guardianName: '',
       sex: 'M',
       photoUri: undefined,
+      zipCode: '',
       address: '',
+      complement: '',
       city: '',
       state: '',
-      zipCode: '',
       phone: '',
     });
     setShowDatePicker(false);
     setShowRelationshipPicker(false);
+    setShowStatePicker(false);
   };
 
   const openCreate = () => {
@@ -128,10 +134,11 @@ export default function User() {
       guardianName: dependent.guardianName || '',
       sex: dependent.sex,
       photoUri: dependent.photoUri,
-      address: dependent.address || '',
-      city: dependent.city || '',
-      state: dependent.state || '',
       zipCode: dependent.zipCode || '',
+      address: dependent.address || '',
+      complement: dependent.complement || '',
+      city: dependent.city || '',
+      state: (dependent.state as EstadoUF) || '',
       phone: dependent.phone || '',
     });
     setShowDatePicker(false);
@@ -484,12 +491,22 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Endereço</Text>
+                <Text style={styles.label}>Rua</Text>
                 <TextInput
                   style={styles.input}
                   value={draft.address}
                   onChangeText={(value) => setDraft((current) => ({ ...current, address: value }))}
-                  placeholder="Rua, número, complemento"
+                  placeholder="Rua e número"
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Complemento</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.complement}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, complement: value }))}
+                  placeholder="Apto, bloco, etc."
                 />
               </View>
 
@@ -505,13 +522,36 @@ export default function User() {
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Estado</Text>
-                <TextInput
-                  style={styles.input}
-                  value={draft.state}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, state: value }))}
-                  placeholder="Ex: SP"
-                  maxLength={2}
-                />
+                <Pressable
+                  style={styles.dateButton}
+                  onPress={() => setShowStatePicker(!showStatePicker)}
+                >
+                  <Text style={draft.state ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                    {draft.state || 'Selecionar estado'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#29442dff" />
+                </Pressable>
+                {showStatePicker && (
+                  <View style={styles.pickerDropdown}>
+                    <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+                      {ESTADO_OPTIONS.map((uf) => (
+                        <Pressable
+                          key={uf}
+                          style={[styles.pickerOption, draft.state === uf && styles.pickerOptionActive]}
+                          onPress={() => {
+                            setDraft((current) => ({ ...current, state: uf }));
+                            setShowStatePicker(false);
+                          }}
+                        >
+                          <Text style={[styles.pickerOptionText, draft.state === uf && styles.pickerOptionTextActive]}>
+                            {uf}
+                          </Text>
+                          {draft.state === uf && <Ionicons name="checkmark" size={18} color="#29442dff" />}
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
               <View style={styles.fieldGroup}>

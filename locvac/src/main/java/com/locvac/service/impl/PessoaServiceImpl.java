@@ -156,6 +156,10 @@ public class PessoaServiceImpl implements PessoaService {
         pessoa.setDataNascimento(dto.dataNascimento());
         pessoa.setSexoBiologico(dto.sexoBiologico());
         pessoa.setCep(dto.cep());
+        pessoa.setRua(dto.rua());
+        pessoa.setComplemento(dto.complemento());
+        pessoa.setMunicipio(dto.municipio());
+        pessoa.setEstado(dto.estado());
         pessoa.setTelefone(dto.telefone());
         pessoa.setFotoUrl(dto.fotoUrl());
         pessoa.setNomeResponsavel(dto.nomeResponsavel());

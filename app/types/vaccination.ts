@@ -40,12 +40,13 @@ export interface FamilyMember {
   relationship?: string;
   guardianName?: string;
   photoUri?: string;
+  zipCode?: string;
   address?: string;
+  complement?: string;
   city?: string;
   state?: string;
-  zipCode?: string;
   phone?: string;
-  email?: string; // Adicionado para uso na tela de usuário
+  email?: string;
 }
 
 export interface Vaccine {

@@ -1,5 +1,6 @@
 package com.locvac.dto.pessoa;
 
+import com.locvac.model.enums.Estado;
 import com.locvac.model.enums.Sexo;
 
 import java.time.LocalDate;
@@ -12,6 +13,10 @@ public record PessoaResponseDTO(
         Sexo sexoBiologico,
         String cns,
         String cep,
+        String rua,
+        String complemento,
+        String municipio,
+        Estado estado,
         String telefone,
         String fotoUrl,
         String nomeResponsavel,

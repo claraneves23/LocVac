@@ -1,6 +1,7 @@
 package com.locvac.model.core;
 
 import com.locvac.model.associacao.UsuarioPessoa;
+import com.locvac.model.enums.Estado;
 import com.locvac.model.enums.Sexo;
 import jakarta.persistence.*;
 
@@ -43,6 +44,19 @@ public class Pessoa {
 
     @Column(name = "nome_responsavel")
     private String nomeResponsavel;
+
+    @Column
+    private String rua;
+
+    @Column
+    private String complemento;
+
+    @Column
+    private String municipio;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private Estado estado;
 
     @Column(nullable = false)
     private  boolean ativo;
@@ -92,6 +106,11 @@ public class Pessoa {
         this.nomeResponsavel = nomeResponsavel;
     }
 
+    public void setRua(String rua) { this.rua = rua; }
+    public void setComplemento(String complemento) { this.complemento = complemento; }
+    public void setMunicipio(String municipio) { this.municipio = municipio; }
+    public void setEstado(Estado estado) { this.estado = estado; }
+
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
     }
@@ -139,6 +158,11 @@ public class Pessoa {
     public String getNomeResponsavel() {
         return nomeResponsavel;
     }
+
+    public String getRua() { return rua; }
+    public String getComplemento() { return complemento; }
+    public String getMunicipio() { return municipio; }
+    public Estado getEstado() { return estado; }
 
     public boolean isAtivo() {
         return ativo;
