@@ -40,6 +40,7 @@ public record PessoaRequestDTO(
         Estado estado,
 
         @NotBlank(message = "O telefone é obrigatório")
+        @Pattern(regexp = "\\d{10,11}", message = "Telefone inválido")
         String telefone,
 
         String fotoUrl,
