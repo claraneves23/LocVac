@@ -114,6 +114,36 @@ export default function CadastroTitular() {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
+  const isCnsValido = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 15) return false;
+    const primeiro = digits.charAt(0);
+    if ('789'.includes(primeiro)) {
+      let soma = 0;
+      for (let i = 0; i < 15; i++) soma += Number(digits.charAt(i)) * (15 - i);
+      return soma % 11 === 0;
+    }
+    if ('12'.includes(primeiro)) {
+      const pis = digits.substring(0, 11);
+      let soma = 0;
+      for (let i = 0; i < 11; i++) soma += Number(pis.charAt(i)) * (15 - i);
+      const resto = soma % 11;
+      let dv = 11 - resto;
+      let esperado: string;
+      if (dv === 11) {
+        esperado = pis + '0000';
+      } else if (dv === 10) {
+        const soma2 = soma + 2;
+        const dv2 = 11 - (soma2 % 11);
+        esperado = pis + '001' + dv2;
+      } else {
+        esperado = pis + '000' + dv;
+      }
+      return digits === esperado;
+    }
+    return false;
+  };
+
   const handleVoltarLogin = () => {
     if (loading || loggingOut) return;
     Alert.alert(
@@ -143,6 +173,12 @@ export default function CadastroTitular() {
       return;
     }
 
+    const cnsTrim = cns.trim();
+    if (cnsTrim && !isCnsValido(cnsTrim)) {
+      Alert.alert('Erro', 'CNS inválido. Verifique o número digitado.');
+      return;
+    }
+
     setLoading(true);
     try {
       await cadastrarTitular({
@@ -150,7 +186,7 @@ export default function CadastroTitular() {
         telefone: telefone.replace(/\D/g, ''),
         dataNascimento: dataNascimento.toISOString().split('T')[0],
         cpf: cpf.replace(/\D/g, ''),
-        cns: cns.trim() || undefined,
+        cns: cnsTrim || undefined,
         sexoBiologico,
         cep: cep.replace(/\D/g, ''),
         rua: rua.trim(),
@@ -169,6 +205,8 @@ export default function CadastroTitular() {
         message = 'CPF inválido. Verifique o número digitado.';
       } else if (status === 409 && detail.includes('CPF')) {
         message = 'Este CPF já está cadastrado.';
+      } else if (status === 409 && detail.includes('CNS')) {
+        message = 'Este CNS já está cadastrado.';
       } else if (status === 409) {
         message = 'Você já tem um titular cadastrado.';
       } else {

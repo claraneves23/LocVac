@@ -23,6 +23,13 @@ export function configurarHandlerNotificacao() {
 }
 
 export async function registrarTokenPushSeNecessario(): Promise<string | null> {
+  console.log('[push] env:', {
+    appOwnership: Constants.appOwnership,
+    executionEnvironment: Constants.executionEnvironment,
+    isDevice: Device.isDevice,
+    platform: Platform.OS,
+  });
+
   if (!Device.isDevice) {
     console.warn('[push] dispositivo não é físico (emulador/web) — push token não disponível');
     return null;

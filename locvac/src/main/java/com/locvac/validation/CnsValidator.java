@@ -37,15 +37,15 @@ public class CnsValidator implements ConstraintValidator<ValidCns, String> {
         for (int i = 0; i < 11; i++) {
             soma += Character.getNumericValue(pis.charAt(i)) * (15 - i);
         }
-        int dsc = soma % 11;
+        int dv = 11 - (soma % 11);
         String esperado;
-        if (dsc == 0) {
-            esperado = pis + "0001";
-        } else if (dsc == 1) {
-            int dsc2 = (soma + 2) % 11;
-            esperado = pis + "001" + (11 - dsc2);
+        if (dv == 11) {
+            esperado = pis + "0000";
+        } else if (dv == 10) {
+            int dv2 = 11 - ((soma + 2) % 11);
+            esperado = pis + "001" + dv2;
         } else {
-            esperado = pis + "000" + (11 - dsc);
+            esperado = pis + "000" + dv;
         }
         return digits.equals(esperado);
     }
