@@ -6,6 +6,7 @@ import com.locvac.validation.ValidCns;
 import com.locvac.validation.ValidCpf;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
 
@@ -27,6 +28,7 @@ public record PessoaRequestDTO(
         String cns,
 
         @NotBlank(message = "O CEP é obrigatório")
+        @Pattern(regexp = "\\d{8}", message = "CEP inválido")
         String cep,
 
         String rua,

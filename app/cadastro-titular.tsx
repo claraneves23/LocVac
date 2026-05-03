@@ -19,6 +19,9 @@ import { useRouter } from 'expo-router';
 import { cadastrarTitular, logout } from './service/authService';
 import { useAppContext } from './context/AppContext';
 
+const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
+type EstadoUF = typeof ESTADO_OPTIONS[number];
+
 export default function CadastroTitular() {
   const router = useRouter();
   const { loadAll, reset } = useAppContext();
@@ -31,7 +34,12 @@ export default function CadastroTitular() {
   const [cpf, setCpf] = useState('');
   const [sexoBiologico, setSexoBiologico] = useState<'MASCULINO' | 'FEMININO' | ''>('');
   const [cep, setCep] = useState('');
+  const [rua, setRua] = useState('');
+  const [complemento, setComplemento] = useState('');
+  const [municipio, setMunicipio] = useState('');
+  const [estado, setEstado] = useState<EstadoUF | ''>('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStatePicker, setShowStatePicker] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
   const focusedInputRef = useRef<TextInput | null>(null);
@@ -76,6 +84,18 @@ export default function CadastroTitular() {
 
   const focusFor = (ref: React.RefObject<TextInput | null>) => () => {
     focusedInputRef.current = ref.current;
+  };
+
+  const fetchCep = async (cep: string) => {
+    const digits = cep.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`).catch(() => null);
+    if (!response?.ok) return;
+    const data = await response.json().catch(() => null);
+    if (!data || data.erro) return;
+    if (data.logradouro) setRua(data.logradouro);
+    if (data.localidade) setMunicipio(data.localidade);
+    if (data.uf) setEstado(data.uf as EstadoUF);
   };
 
   const formatCpf = (value: string) => {
@@ -131,6 +151,10 @@ export default function CadastroTitular() {
         cpf: cpf.replace(/\D/g, ''),
         sexoBiologico,
         cep: cep.replace(/\D/g, ''),
+        rua: rua.trim(),
+        complemento: complemento.trim(),
+        municipio: municipio.trim(),
+        estado: estado || undefined,
       });
       await loadAll();
       router.replace('/');
@@ -259,11 +283,73 @@ export default function CadastroTitular() {
                 value={cep}
                 onChangeText={setCep}
                 onFocus={focusFor(cepRef)}
+                onBlur={() => fetchCep(cep)}
                 placeholder="Digite seu CEP"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
-                maxLength={9}
+                maxLength={8}
               />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Rua</Text>
+              <TextInput
+                style={styles.input}
+                value={rua}
+                onChangeText={setRua}
+                placeholder="Rua e número"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Complemento</Text>
+              <TextInput
+                style={styles.input}
+                value={complemento}
+                onChangeText={setComplemento}
+                placeholder="Apto, bloco, etc."
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Município</Text>
+              <TextInput
+                style={styles.input}
+                value={municipio}
+                onChangeText={setMunicipio}
+                placeholder="Nome da cidade"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Estado</Text>
+              <Pressable
+                style={[styles.input, styles.pickerButton]}
+                onPress={() => setShowStatePicker(!showStatePicker)}
+              >
+                <Text style={{ color: estado ? '#1f3322' : '#999', fontSize: 14 }}>
+                  {estado || 'Selecione o estado'}
+                </Text>
+                <Text style={{ color: '#1f3322' }}>▾</Text>
+              </Pressable>
+              {showStatePicker && (
+                <ScrollView style={styles.pickerDropdown} nestedScrollEnabled>
+                  {ESTADO_OPTIONS.map((uf) => (
+                    <Pressable
+                      key={uf}
+                      style={[styles.pickerOption, estado === uf && styles.pickerOptionActive]}
+                      onPress={() => { setEstado(uf); setShowStatePicker(false); }}
+                    >
+                      <Text style={[styles.pickerOptionText, estado === uf && styles.pickerOptionTextActive]}>
+                        {uf}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              )}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -345,4 +431,31 @@ const styles = StyleSheet.create({
   submitButtonText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   backButton: { alignItems: 'center', marginTop: 14, paddingVertical: 4 },
   backText: { fontSize: 12, color: '#607367' },
+  pickerButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pickerDropdown: {
+    maxHeight: 160,
+    backgroundColor: '#F2F7F6',
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  pickerOption: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EEE8',
+  },
+  pickerOptionActive: {
+    backgroundColor: '#CAE3E2',
+  },
+  pickerOptionText: {
+    fontSize: 14,
+    color: '#1f3322',
+  },
+  pickerOptionTextActive: {
+    fontWeight: '700',
+  },
 });

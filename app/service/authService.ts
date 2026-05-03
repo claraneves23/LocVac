@@ -35,6 +35,10 @@ export interface CadastroTitularRequest {
 	cpf: string;
 	sexoBiologico: 'MASCULINO' | 'FEMININO';
 	cep: string;
+	rua?: string;
+	complemento?: string;
+	municipio?: string;
+	estado?: string;
 	telefone: string;
 }
 
@@ -89,6 +93,10 @@ export async function cadastrarTitular(data: CadastroTitularRequest): Promise<{ 
 		sexoBiologico: data.sexoBiologico,
 		cns: null,
 		cep: data.cep,
+		rua: data.rua || '',
+		complemento: data.complemento || '',
+		municipio: data.municipio || '',
+		estado: data.estado || null,
 		telefone: data.telefone,
 		fotoUrl: null,
 		nomeResponsavel: null,

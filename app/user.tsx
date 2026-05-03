@@ -16,7 +16,7 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+
 import * as ImagePicker from 'expo-image-picker';
 import * as NavigationBar from 'expo-navigation-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -160,17 +160,35 @@ export default function User() {
 
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           quality: 0.7,
         })
       : await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ['images'],
           quality: 0.7,
         });
 
     if (!result.canceled && result.assets.length > 0) {
       setDraft((current) => ({ ...current, photoUri: result.assets[0].uri }));
     }
+  };
+
+  const fetchCep = async (cep: string) => {
+    const digits = cep.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+
+    const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`).catch(() => null);
+    if (!response?.ok) return;
+
+    const data = await response.json().catch(() => null);
+    if (!data || data.erro) return;
+
+    setDraft((current) => ({
+      ...current,
+      ...(data.logradouro && { address: data.logradouro }),
+      ...(data.localidade && { city: data.localidade }),
+      ...(data.uf && { state: data.uf as EstadoUF }),
+    }));
   };
 
   const validateDraft = () => {
@@ -491,8 +509,10 @@ export default function User() {
                   style={styles.input}
                   value={draft.zipCode}
                   onChangeText={(value) => setDraft((current) => ({ ...current, zipCode: value }))}
+                  onBlur={() => fetchCep(draft.zipCode || '')}
                   placeholder="00000-000"
                   keyboardType="numeric"
+                  maxLength={8}
                 />
               </View>
 
