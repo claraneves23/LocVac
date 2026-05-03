@@ -144,7 +144,7 @@ export default function User() {
       complement: dependent.complement || '',
       city: dependent.city || '',
       state: (dependent.state as EstadoUF) || '',
-      phone: dependent.phone || '',
+      phone: formatPhone(dependent.phone || ''),
     });
     setShowDatePicker(false);
     setShowRelationshipPicker(false);
@@ -174,6 +174,13 @@ export default function User() {
     if (!result.canceled && result.assets.length > 0) {
       setDraft((current) => ({ ...current, photoUri: result.assets[0].uri }));
     }
+  };
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
   const fetchCep = async (cep: string) => {
@@ -600,7 +607,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.phone}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, phone: value }))}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, phone: formatPhone(value) }))}
                   placeholder="(00) 00000-0000"
                   keyboardType="phone-pad"
                 />
