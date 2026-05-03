@@ -1,6 +1,7 @@
 package com.locvac.dto.pessoa;
 
 import com.locvac.model.enums.Sexo;
+import com.locvac.validation.ValidCns;
 import com.locvac.validation.ValidCpf;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,7 +22,7 @@ public record PessoaRequestDTO(
         @NotNull(message = "O sexo biológico é obrigatório")
         Sexo sexoBiologico,
 
-        // validar formato do CNS e se existe cns duplicado cadastrado
+        @ValidCns
         String cns,
 
         // validar formato de cep

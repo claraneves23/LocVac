@@ -156,7 +156,7 @@ export default function CadastroTitular() {
           <View style={styles.card}>
             <Text style={styles.title}>Seus dados</Text>
             <Text style={styles.subtitle}>
-              Pra finalizar o cadastro, preencha as informações do titular da conta.
+              Para finalizar o cadastro, preencha as informações do titular da conta.
             </Text>
 
             <View style={styles.fieldGroup}>
