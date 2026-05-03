@@ -16,13 +16,14 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import { cadastrarTitular } from './service/authService';
+import { cadastrarTitular, logout } from './service/authService';
 import { useAppContext } from './context/AppContext';
 
 export default function CadastroTitular() {
   const router = useRouter();
-  const { loadAll } = useAppContext();
+  const { loadAll, reset } = useAppContext();
   const [loading, setLoading] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -90,6 +91,29 @@ export default function CadastroTitular() {
     if (digits.length <= 2) return digits;
     if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
+  const handleVoltarLogin = () => {
+    if (loading || loggingOut) return;
+    Alert.alert(
+      'Voltar para o login?',
+      'Seu e-mail já está confirmado. Você pode terminar este cadastro depois — basta entrar novamente com o mesmo e-mail.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Voltar',
+          style: 'destructive',
+          onPress: async () => {
+            setLoggingOut(true);
+            try {
+              await logout();
+            } catch {}
+            reset();
+            router.replace('/login');
+          },
+        },
+      ],
+    );
   };
 
   const handleSalvar = async () => {
@@ -257,14 +281,26 @@ export default function CadastroTitular() {
             </View>
 
             <Pressable
-              style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+              style={[styles.submitButton, (loading || loggingOut) && styles.submitButtonDisabled]}
               onPress={handleSalvar}
-              disabled={loading}
+              disabled={loading || loggingOut}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text style={styles.submitButtonText}>Concluir cadastro</Text>
+              )}
+            </Pressable>
+
+            <Pressable
+              onPress={handleVoltarLogin}
+              disabled={loading || loggingOut}
+              style={styles.backButton}
+            >
+              {loggingOut ? (
+                <ActivityIndicator color="#607367" size="small" />
+              ) : (
+                <Text style={styles.backText}>Voltar para o login</Text>
               )}
             </Pressable>
           </View>
@@ -307,4 +343,6 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: { opacity: 0.7 },
   submitButtonText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  backButton: { alignItems: 'center', marginTop: 14, paddingVertical: 4 },
+  backText: { fontSize: 12, color: '#607367' },
 });
