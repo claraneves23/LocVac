@@ -33,6 +33,16 @@ export default function Login() {
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
 
+  type LoginFieldKey = 'email' | 'senha' | 'confirmarSenha';
+  const [errors, setErrors] = useState<Partial<Record<LoginFieldKey, string>>>({});
+  const clearError = (field: LoginFieldKey) =>
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+
   const scrollRef = useRef<ScrollView>(null);
   const focusedInputRef = useRef<TextInput | null>(null);
   const currentScrollY = useRef(0);
@@ -85,6 +95,7 @@ export default function Login() {
     setConfirmarSenha('');
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setErrors({});
   };
 
   const switchMode = (newMode: Mode) => {
@@ -93,10 +104,14 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
-    if (!email.trim() || !senha.trim()) {
-      Alert.alert('Campos obrigatórios', 'Preencha e-mail e senha.');
+    const novoErros: Partial<Record<LoginFieldKey, string>> = {};
+    if (!email.trim()) novoErros.email = 'Campo obrigatório!';
+    if (!senha.trim()) novoErros.senha = 'Campo obrigatório!';
+    if (Object.keys(novoErros).length > 0) {
+      setErrors(novoErros);
       return;
     }
+    setErrors({});
 
     setLoading(true);
     try {
@@ -117,10 +132,15 @@ export default function Login() {
   };
 
   const handleCadastro = async () => {
-    if (!email.trim() || !senha.trim() || !confirmarSenha.trim()) {
-      Alert.alert('Campos obrigatórios', 'Preencha todos os campos.');
+    const novoErros: Partial<Record<LoginFieldKey, string>> = {};
+    if (!email.trim()) novoErros.email = 'Campo obrigatório!';
+    if (!senha.trim()) novoErros.senha = 'Campo obrigatório!';
+    if (!confirmarSenha.trim()) novoErros.confirmarSenha = 'Campo obrigatório!';
+    if (Object.keys(novoErros).length > 0) {
+      setErrors(novoErros);
       return;
     }
+    setErrors({});
 
     if (senha.length < 6) {
       Alert.alert('Senha fraca', 'A senha deve ter pelo menos 6 caracteres.');
@@ -197,9 +217,9 @@ export default function Login() {
               <Text style={styles.label}>E-mail</Text>
               <TextInput
                 ref={emailRef}
-                style={styles.input}
+                style={[styles.input, errors.email && styles.inputError]}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(v) => { setEmail(v); clearError('email'); }}
                 onFocus={focusFor(emailRef)}
                 placeholder="Digite seu e-mail"
                 placeholderTextColor="#999"
@@ -207,16 +227,17 @@ export default function Login() {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Senha</Text>
-              <View style={styles.passwordContainer}>
+              <View style={[styles.passwordContainer, errors.senha && styles.inputError]}>
                 <TextInput
                   ref={senhaRef}
                   style={styles.passwordInput}
                   value={senha}
-                  onChangeText={setSenha}
+                  onChangeText={(v) => { setSenha(v); clearError('senha'); }}
                   onFocus={focusFor(senhaRef)}
                   placeholder="Digite sua senha"
                   placeholderTextColor="#999"
@@ -234,17 +255,18 @@ export default function Login() {
                   />
                 </Pressable>
               </View>
+              {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
             </View>
 
             {mode === 'cadastro' && (
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Confirmar senha</Text>
-                <View style={styles.passwordContainer}>
+                <View style={[styles.passwordContainer, errors.confirmarSenha && styles.inputError]}>
                   <TextInput
                     ref={confirmarSenhaRef}
                     style={styles.passwordInput}
                     value={confirmarSenha}
-                    onChangeText={setConfirmarSenha}
+                    onChangeText={(v) => { setConfirmarSenha(v); clearError('confirmarSenha'); }}
                     onFocus={focusFor(confirmarSenhaRef)}
                     placeholder="Repita a senha"
                     placeholderTextColor="#999"
@@ -262,6 +284,7 @@ export default function Login() {
                     />
                   </Pressable>
                 </View>
+                {errors.confirmarSenha && <Text style={styles.errorText}>{errors.confirmarSenha}</Text>}
               </View>
             )}
 
@@ -361,6 +384,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f3322',
     marginBottom: 6,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#e53935',
+    backgroundColor: '#fdecea',
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginTop: 4,
+    fontWeight: '500',
   },
   input: {
     backgroundColor: '#F2F7F6',

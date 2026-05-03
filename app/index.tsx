@@ -87,6 +87,7 @@ export default function Index() {
   const [otherVaccineProfName, setOtherVaccineProfName] = useState('');
   const [otherVaccineProfId, setOtherVaccineProfId] = useState('');
   const [savingOtherVaccine, setSavingOtherVaccine] = useState(false);
+  const [otherVaccineNameError, setOtherVaccineNameError] = useState<string | null>(null);
 
   // Estados para campanhas
   const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
@@ -117,6 +118,8 @@ export default function Index() {
   const [campaignName, setCampaignName] = useState('');
   const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
   const [savingCampaign, setSavingCampaign] = useState(false);
+  const [campaignNameError, setCampaignNameError] = useState<string | null>(null);
+  const [campaignDateError, setCampaignDateError] = useState<string | null>(null);
 
   const loadMandatoryVaccineRecords = useCallback(async () => {
     if (!selectedProfileId) return;
@@ -324,6 +327,7 @@ export default function Index() {
 
   // Outras Vacinas handlers
   const openOtherVaccineModal = (vaccine?: OtherVaccine) => {
+    setOtherVaccineNameError(null);
     if (vaccine) {
       setEditingOtherVaccine(vaccine);
       setOtherVaccineName(vaccine.vaccineName);
@@ -358,7 +362,12 @@ export default function Index() {
   };
 
   const handleSaveOtherVaccine = async () => {
-    if (!otherVaccineName.trim() || savingOtherVaccine) return;
+    if (savingOtherVaccine) return;
+    if (!otherVaccineName.trim()) {
+      setOtherVaccineNameError('Campo obrigatório!');
+      return;
+    }
+    setOtherVaccineNameError(null);
 
     const payload = {
       idPessoa: Number(selectedProfile.id),
@@ -419,6 +428,8 @@ export default function Index() {
   // Campanhas handlers
   const openCampaignModal = (campaign?: ParticipatingCampaign) => {
     setShowCampaignPicker(false); // sempre fecha o select ao abrir
+    setCampaignNameError(null);
+    setCampaignDateError(null);
     if (campaign) {
       setEditingCampaign(campaign);
       setCampaignName(campaign.campaignName);
@@ -439,11 +450,16 @@ export default function Index() {
       setCampaignDate(date);
       const isoDate = date.toISOString().split('T')[0];
       setCampaignParticipationDate(isoDate);
+      setCampaignDateError(null);
     }
   };
 
   const handleSaveCampaign = async () => {
-    if (!campaignName.trim() || !campaignParticipationDate || savingCampaign) return;
+    if (savingCampaign) return;
+    let temErro = false;
+    if (!campaignName.trim()) { setCampaignNameError('Campo obrigatório!'); temErro = true; } else { setCampaignNameError(null); }
+    if (!campaignParticipationDate) { setCampaignDateError('Campo obrigatório!'); temErro = true; } else { setCampaignDateError(null); }
+    if (temErro) return;
 
     const campanhaSelecionada = availableCampaigns.find((c) => c.nome === campaignName);
     if (!campanhaSelecionada) {
@@ -594,7 +610,7 @@ export default function Index() {
         profId={otherVaccineProfId}
         pickerDate={otherVaccineDate}
         showDatePicker={showOtherVaccineDatePicker}
-        onChangeName={setOtherVaccineName}
+        onChangeName={(v) => { setOtherVaccineName(v); if (otherVaccineNameError) setOtherVaccineNameError(null); }}
         onShowDatePicker={() => setShowOtherVaccineDatePicker(true)}
         onDateChange={handleOtherVaccineDateChange}
         onChangeLot={setOtherVaccineLot}
@@ -604,6 +620,7 @@ export default function Index() {
         onSave={handleSaveOtherVaccine}
         onClose={() => setIsOtherVaccineModalOpen(false)}
         saving={savingOtherVaccine}
+        nameError={otherVaccineNameError ?? undefined}
       />
 
       {/* Componente do Modal de Campanhas 
@@ -620,6 +637,7 @@ export default function Index() {
         onSelectCampaign={(name) => {
           setCampaignName(name);
           setShowCampaignPicker(false);
+          if (campaignNameError) setCampaignNameError(null);
         }}
         onToggleCampaignPicker={() => setShowCampaignPicker((prev) => !prev)}
         onShowDatePicker={() => setShowCampaignDatePicker(true)}
@@ -627,6 +645,8 @@ export default function Index() {
         onSave={handleSaveCampaign}
         onClose={() => setIsCampaignModalOpen(false)}
         saving={savingCampaign}
+        campaignNameError={campaignNameError ?? undefined}
+        participationDateError={campaignDateError ?? undefined}
       />
 
       {/* Componente do Modal de Preview de Imagem */}

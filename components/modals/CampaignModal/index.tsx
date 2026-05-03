@@ -26,6 +26,8 @@ type CampaignModalProps = {
   onSave: () => void;
   onClose: () => void;
   saving?: boolean;
+  campaignNameError?: string;
+  participationDateError?: string;
 };
 
 export default function CampaignModal({
@@ -44,6 +46,8 @@ export default function CampaignModal({
   onSave,
   onClose,
   saving = false,
+  campaignNameError,
+  participationDateError,
 }: CampaignModalProps) {
   return (
     <Modal
@@ -68,10 +72,15 @@ export default function CampaignModal({
           </View>
 
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.legend}>
+              Campos com <Text style={styles.required}>*</Text> são obrigatórios
+            </Text>
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Nome da Campanha *</Text>
+              <Text style={styles.formLabel}>
+                Nome da Campanha <Text style={styles.required}>*</Text>
+              </Text>
               <Pressable
-                style={styles.datePickerButton}
+                style={[styles.datePickerButton, campaignNameError && styles.inputError]}
                 onPress={onToggleCampaignPicker}
               >
                 <Text style={[styles.datePickerText, !campaignName && styles.placeholderText]}>
@@ -79,6 +88,7 @@ export default function CampaignModal({
                 </Text>
                 <Ionicons name="chevron-down" size={18} color="#1f3322" />
               </Pressable>
+              {campaignNameError && <Text style={styles.errorText}>{campaignNameError}</Text>}
 
               {showCampaignPicker && (
                 <View style={styles.pickerDropdown}>
@@ -111,13 +121,19 @@ export default function CampaignModal({
             </View>
 
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Data de Participação *</Text>
-              <Pressable style={styles.datePickerButton} onPress={onShowDatePicker}>
+              <Text style={styles.formLabel}>
+                Data de Participação <Text style={styles.required}>*</Text>
+              </Text>
+              <Pressable
+                style={[styles.datePickerButton, participationDateError && styles.inputError]}
+                onPress={onShowDatePicker}
+              >
                 <Ionicons name="calendar-outline" size={18} color="#1f3322" />
                 <Text style={styles.datePickerText}>
                   {participationDate ? formatDateToBR(participationDate) : 'Selecione a data'}
                 </Text>
               </Pressable>
+              {participationDateError && <Text style={styles.errorText}>{participationDateError}</Text>}
               {showDatePicker && (
                 <DateTimePicker
                   value={pickerDate}
@@ -216,6 +232,26 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#9CA3AF',
+  },
+  legend: {
+    fontSize: 11,
+    color: '#607367',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  required: {
+    color: '#e53935',
+    fontWeight: '700',
+  },
+  inputError: {
+    borderColor: '#e53935',
+    backgroundColor: '#fdecea',
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginTop: 4,
+    fontWeight: '500',
   },
   pickerDropdown: {
     marginTop: 6,

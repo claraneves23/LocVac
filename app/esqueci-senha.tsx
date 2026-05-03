@@ -19,12 +19,14 @@ export default function EsqueciSenha() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleEnviar = async () => {
     if (!email.trim()) {
-      Alert.alert('Campo obrigatório', 'Informe o e-mail.');
+      setEmailError('Campo obrigatório!');
       return;
     }
+    setEmailError(null);
 
     setLoading(true);
     try {
@@ -70,15 +72,16 @@ export default function EsqueciSenha() {
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>E-mail</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, emailError && styles.inputError]}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(null); }}
                 placeholder="Digite seu e-mail"
                 placeholderTextColor="#999"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              {emailError && <Text style={styles.errorText}>{emailError}</Text>}
             </View>
 
             <Pressable
@@ -151,6 +154,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f3322',
     marginBottom: 6,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#e53935',
+    backgroundColor: '#fdecea',
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginTop: 4,
+    fontWeight: '500',
   },
   input: {
     backgroundColor: '#F2F7F6',

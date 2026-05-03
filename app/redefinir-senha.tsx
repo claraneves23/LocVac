@@ -34,6 +34,16 @@ export default function RedefinirSenha() {
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
   const codigoInputRef = useRef<TextInput>(null);
 
+  type RedefinirFieldKey = 'novaSenha' | 'confirmarSenha';
+  const [errors, setErrors] = useState<Partial<Record<RedefinirFieldKey, string>>>({});
+  const clearError = (field: RedefinirFieldKey) =>
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+
   useEffect(() => {
     if (cooldown <= 0) return;
     const id = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
@@ -45,6 +55,15 @@ export default function RedefinirSenha() {
       Alert.alert('Código inválido', 'Digite os 6 dígitos enviados por e-mail.');
       return;
     }
+
+    const novoErros: Partial<Record<RedefinirFieldKey, string>> = {};
+    if (!novaSenha.trim()) novoErros.novaSenha = 'Campo obrigatório!';
+    if (!confirmarSenha.trim()) novoErros.confirmarSenha = 'Campo obrigatório!';
+    if (Object.keys(novoErros).length > 0) {
+      setErrors(novoErros);
+      return;
+    }
+    setErrors({});
 
     if (novaSenha.length < 6) {
       Alert.alert('Senha fraca', 'A senha deve ter pelo menos 6 caracteres.');
@@ -148,11 +167,11 @@ export default function RedefinirSenha() {
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Nova senha</Text>
-              <View style={styles.passwordContainer}>
+              <View style={[styles.passwordContainer, errors.novaSenha && styles.inputError]}>
                 <TextInput
                   style={styles.passwordInput}
                   value={novaSenha}
-                  onChangeText={setNovaSenha}
+                  onChangeText={(v) => { setNovaSenha(v); clearError('novaSenha'); }}
                   placeholder="Mínimo 6 caracteres"
                   placeholderTextColor="#999"
                   secureTextEntry={!showPassword}
@@ -169,15 +188,16 @@ export default function RedefinirSenha() {
                   />
                 </Pressable>
               </View>
+              {errors.novaSenha && <Text style={styles.errorText}>{errors.novaSenha}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Confirmar nova senha</Text>
-              <View style={styles.passwordContainer}>
+              <View style={[styles.passwordContainer, errors.confirmarSenha && styles.inputError]}>
                 <TextInput
                   style={styles.passwordInput}
                   value={confirmarSenha}
-                  onChangeText={setConfirmarSenha}
+                  onChangeText={(v) => { setConfirmarSenha(v); clearError('confirmarSenha'); }}
                   placeholder="Repita a senha"
                   placeholderTextColor="#999"
                   secureTextEntry={!showConfirmPassword}
@@ -194,6 +214,7 @@ export default function RedefinirSenha() {
                   />
                 </Pressable>
               </View>
+              {errors.confirmarSenha && <Text style={styles.errorText}>{errors.confirmarSenha}</Text>}
             </View>
 
             <Pressable
@@ -288,6 +309,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f3322',
     marginBottom: 6,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#e53935',
+    backgroundColor: '#fdecea',
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginTop: 4,
+    fontWeight: '500',
   },
   codeBox: {
     backgroundColor: '#F2F7F6',

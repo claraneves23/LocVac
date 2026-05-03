@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Image,
   Keyboard,
+  Dimensions,
 } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -42,6 +43,16 @@ export default function CadastroTitular() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
 
+  type FieldKey = 'nome' | 'dataNascimento' | 'cpf' | 'sexoBiologico' | 'cep' | 'telefone';
+  const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const clearError = (field: FieldKey) =>
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+
   const scrollRef = useRef<ScrollView>(null);
   const focusedInputRef = useRef<TextInput | null>(null);
   const currentScrollY = useRef(0);
@@ -51,6 +62,42 @@ export default function CadastroTitular() {
   const cpfRef = useRef<TextInput>(null);
   const cepRef = useRef<TextInput>(null);
   const telefoneRef = useRef<TextInput>(null);
+  const dataNascimentoRef = useRef<View>(null);
+  const sexoBiologicoRef = useRef<View>(null);
+
+  const FIELD_ORDER: FieldKey[] = ['nome', 'dataNascimento', 'cpf', 'sexoBiologico', 'cep', 'telefone'];
+
+  const scrollToFirstError = (currentErrors: Partial<Record<FieldKey, string>>) => {
+    const firstField = FIELD_ORDER.find((f) => currentErrors[f]);
+    if (!firstField) return;
+    const refMap: Record<FieldKey, React.RefObject<any>> = {
+      nome: nomeRef,
+      dataNascimento: dataNascimentoRef,
+      cpf: cpfRef,
+      sexoBiologico: sexoBiologicoRef,
+      cep: cepRef,
+      telefone: telefoneRef,
+    };
+    const ref = refMap[firstField];
+    const scroll = scrollRef.current;
+    if (!ref?.current || !scroll) return;
+    setTimeout(() => {
+      try {
+        (ref.current as any).measure?.(
+          (_x: number, _y: number, _w: number, h: number, _pageX: number, pageY: number) => {
+            const screenHeight = Dimensions.get('window').height;
+            const inputCenter = pageY + h / 2;
+            const targetCenter = screenHeight / 2;
+            const delta = inputCenter - targetCenter;
+            scroll.scrollTo({
+              y: Math.max(0, currentScrollY.current + delta),
+              animated: true,
+            });
+          },
+        );
+      } catch {}
+    }, 80);
+  };
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -114,6 +161,20 @@ export default function CadastroTitular() {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
+  const formatCep = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
+  const formatCns = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 15);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+    if (digits.length <= 11) return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)} ${digits.slice(11)}`;
+  };
+
   const isCnsValido = (value: string) => {
     const digits = value.replace(/\D/g, '');
     if (digits.length !== 15) return false;
@@ -168,13 +229,23 @@ export default function CadastroTitular() {
   };
 
   const handleSalvar = async () => {
-    if (!nome.trim() || !telefone.trim() || !dataNascimento || !cpf.trim() || !sexoBiologico || !cep.trim()) {
-      Alert.alert('Campos obrigatórios', 'Preencha todos os campos.');
+    const novoErros: Partial<Record<FieldKey, string>> = {};
+    if (!nome.trim()) novoErros.nome = 'Campo obrigatório!';
+    if (!dataNascimento) novoErros.dataNascimento = 'Campo obrigatório!';
+    if (!cpf.trim()) novoErros.cpf = 'Campo obrigatório!';
+    if (!sexoBiologico) novoErros.sexoBiologico = 'Campo obrigatório!';
+    if (cep.replace(/\D/g, '').length !== 8) novoErros.cep = 'Campo obrigatório!';
+    if (!telefone.trim()) novoErros.telefone = 'Campo obrigatório!';
+
+    if (Object.keys(novoErros).length > 0) {
+      setErrors(novoErros);
+      scrollToFirstError(novoErros);
       return;
     }
+    setErrors({});
 
-    const cnsTrim = cns.trim();
-    if (cnsTrim && !isCnsValido(cnsTrim)) {
+    const cnsDigits = cns.replace(/\D/g, '');
+    if (cnsDigits && !isCnsValido(cnsDigits)) {
       Alert.alert('Erro', 'CNS inválido. Verifique o número digitado.');
       return;
     }
@@ -184,10 +255,10 @@ export default function CadastroTitular() {
       await cadastrarTitular({
         nome: nome.trim(),
         telefone: telefone.replace(/\D/g, ''),
-        dataNascimento: dataNascimento.toISOString().split('T')[0],
+        dataNascimento: dataNascimento!.toISOString().split('T')[0],
         cpf: cpf.replace(/\D/g, ''),
-        cns: cnsTrim || undefined,
-        sexoBiologico,
+        cns: cnsDigits || undefined,
+        sexoBiologico: sexoBiologico as 'MASCULINO' | 'FEMININO',
         cep: cep.replace(/\D/g, ''),
         rua: rua.trim(),
         complemento: complemento.trim(),
@@ -246,28 +317,41 @@ export default function CadastroTitular() {
             <Text style={styles.subtitle}>
               Para finalizar o cadastro, preencha as informações do titular da conta.
             </Text>
+            <Text style={styles.legend}>
+              Campos com <Text style={styles.required}>*</Text> são obrigatórios
+            </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Nome completo</Text>
+              <Text style={styles.label}>
+                Nome completo <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 ref={nomeRef}
-                style={styles.input}
+                style={[styles.input, errors.nome && styles.inputError]}
                 value={nome}
-                onChangeText={setNome}
+                onChangeText={(v) => { setNome(v); clearError('nome'); }}
                 onFocus={focusFor(nomeRef)}
                 placeholder="Digite seu nome"
                 placeholderTextColor="#999"
                 autoCapitalize="words"
               />
+              {errors.nome && <Text style={styles.errorText}>{errors.nome}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Data de nascimento</Text>
-              <Pressable onPress={() => setShowDatePicker(true)} style={styles.input}>
+              <Text style={styles.label}>
+                Data de nascimento <Text style={styles.required}>*</Text>
+              </Text>
+              <Pressable
+                ref={dataNascimentoRef}
+                onPress={() => setShowDatePicker(true)}
+                style={[styles.input, errors.dataNascimento && styles.inputError]}
+              >
                 <Text style={{ color: dataNascimento ? '#1f3322' : '#999' }}>
                   {dataNascimento ? dataNascimento.toLocaleDateString() : 'Selecione a data'}
                 </Text>
               </Pressable>
+              {errors.dataNascimento && <Text style={styles.errorText}>{errors.dataNascimento}</Text>}
               {showDatePicker && (
                 <DateTimePicker
                   value={dataNascimento || new Date(2000, 0, 1)}
@@ -275,7 +359,7 @@ export default function CadastroTitular() {
                   display="default"
                   onChange={(_, date) => {
                     setShowDatePicker(false);
-                    if (date) setDataNascimento(date);
+                    if (date) { setDataNascimento(date); clearError('dataNascimento'); }
                   }}
                   maximumDate={new Date()}
                 />
@@ -283,18 +367,21 @@ export default function CadastroTitular() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CPF</Text>
+              <Text style={styles.label}>
+                CPF <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 ref={cpfRef}
-                style={styles.input}
+                style={[styles.input, errors.cpf && styles.inputError]}
                 value={cpf}
-                onChangeText={(v) => setCpf(formatCpf(v))}
+                onChangeText={(v) => { setCpf(formatCpf(v)); clearError('cpf'); }}
                 onFocus={focusFor(cpfRef)}
                 placeholder="000.000.000-00"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
                 maxLength={14}
               />
+              {errors.cpf && <Text style={styles.errorText}>{errors.cpf}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -302,46 +389,60 @@ export default function CadastroTitular() {
               <TextInput
                 style={styles.input}
                 value={cns}
-                onChangeText={setCns}
+                onChangeText={(v) => setCns(formatCns(v))}
                 placeholder="000 0000 0000 0000"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
-                maxLength={15}
+                maxLength={18}
               />
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Sexo biológico</Text>
-              <View style={{ flexDirection: 'row', gap: 16 }}>
+              <Text style={styles.label}>
+                Sexo biológico <Text style={styles.required}>*</Text>
+              </Text>
+              <View ref={sexoBiologicoRef} style={{ flexDirection: 'row', gap: 16 }}>
                 <Pressable
-                  style={[styles.input, { flex: 1, backgroundColor: sexoBiologico === 'MASCULINO' ? '#CAE3E2' : '#F2F7F6' }]}
-                  onPress={() => setSexoBiologico('MASCULINO')}
+                  style={[
+                    styles.input,
+                    { flex: 1, backgroundColor: sexoBiologico === 'MASCULINO' ? '#CAE3E2' : '#F2F7F6' },
+                    errors.sexoBiologico && styles.inputError,
+                  ]}
+                  onPress={() => { setSexoBiologico('MASCULINO'); clearError('sexoBiologico'); }}
                 >
                   <Text style={{ color: '#1f3322', textAlign: 'center' }}>Masculino</Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.input, { flex: 1, backgroundColor: sexoBiologico === 'FEMININO' ? '#CAE3E2' : '#F2F7F6' }]}
-                  onPress={() => setSexoBiologico('FEMININO')}
+                  style={[
+                    styles.input,
+                    { flex: 1, backgroundColor: sexoBiologico === 'FEMININO' ? '#CAE3E2' : '#F2F7F6' },
+                    errors.sexoBiologico && styles.inputError,
+                  ]}
+                  onPress={() => { setSexoBiologico('FEMININO'); clearError('sexoBiologico'); }}
                 >
                   <Text style={{ color: '#1f3322', textAlign: 'center' }}>Feminino</Text>
                 </Pressable>
               </View>
+              {errors.sexoBiologico && <Text style={styles.errorText}>{errors.sexoBiologico}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CEP</Text>
+              <Text style={styles.label}>
+                CEP <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 ref={cepRef}
-                style={styles.input}
+                style={[styles.input, errors.cep && styles.inputError]}
                 value={cep}
-                onChangeText={setCep}
+                onChangeText={(v) => { setCep(formatCep(v)); clearError('cep'); }}
                 onFocus={focusFor(cepRef)}
                 onBlur={() => fetchCep(cep)}
-                placeholder="Digite seu CEP"
+                placeholder="00000-000"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
-                maxLength={8}
+                maxLength={9}
               />
+              {errors.cep && <Text style={styles.errorText}>{errors.cep}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -406,17 +507,20 @@ export default function CadastroTitular() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Telefone</Text>
+              <Text style={styles.label}>
+                Telefone <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 ref={telefoneRef}
-                style={styles.input}
+                style={[styles.input, errors.telefone && styles.inputError]}
                 value={telefone}
-                onChangeText={(v) => setTelefone(formatPhone(v))}
+                onChangeText={(v) => { setTelefone(formatPhone(v)); clearError('telefone'); }}
                 onFocus={focusFor(telefoneRef)}
                 placeholder="(00) 00000-0000"
                 placeholderTextColor="#999"
                 keyboardType="phone-pad"
               />
+              {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
             </View>
 
             <Pressable
@@ -462,9 +566,22 @@ const styles = StyleSheet.create({
   logo: { width: 180, height: 80 },
   card: { backgroundColor: '#ffffffcc', borderRadius: 16, padding: 20 },
   title: { fontSize: 18, fontWeight: '700', color: '#1f3322', marginBottom: 6 },
-  subtitle: { fontSize: 13, color: '#4d5c53', marginBottom: 18 },
+  subtitle: { fontSize: 13, color: '#4d5c53', marginBottom: 8 },
+  legend: { fontSize: 11, color: '#607367', marginBottom: 14, fontStyle: 'italic' },
+  required: { color: '#e53935', fontWeight: '700' },
   fieldGroup: { marginBottom: 14 },
   label: { fontSize: 12, fontWeight: '600', color: '#1f3322', marginBottom: 6 },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#e53935',
+    backgroundColor: '#fdecea',
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginTop: 4,
+    fontWeight: '500',
+  },
   input: {
     backgroundColor: '#F2F7F6',
     borderRadius: 10,

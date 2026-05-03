@@ -12,9 +12,10 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 
 import * as ImagePicker from 'expo-image-picker';
@@ -26,7 +27,7 @@ import { addDependentAndLink, updateDependent, deleteDependent } from './service
 import { useAppContext } from './context/AppContext';
 import DependentInfoModal from '../components/modals/DependentInfoModal';
 
-const SEX_OPTIONS = ['M', 'F', 'Outro'] as const;
+const SEX_OPTIONS = ['M', 'F'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
 const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
 type EstadoUF = typeof ESTADO_OPTIONS[number];
@@ -38,7 +39,7 @@ type DraftDependent = {
   birthPlace?: string;
   relationship: string;
   guardianName?: string;
-  sex: 'M' | 'F' | 'Outro';
+  sex: 'M' | 'F' | '';
   photoUri?: string;
   cns?: string;
   zipCode?: string;
@@ -64,7 +65,7 @@ export default function User() {
     birthPlace: '',
     relationship: '',
     guardianName: '',
-    sex: 'M',
+    sex: '',
     photoUri: undefined,
     address: '',
     city: '',
@@ -108,7 +109,7 @@ export default function User() {
       birthPlace: '',
       relationship: '',
       guardianName: '',
-      sex: 'M',
+      sex: '',
       photoUri: undefined,
       cns: '',
       zipCode: '',
@@ -121,10 +122,12 @@ export default function User() {
     setShowDatePicker(false);
     setShowRelationshipPicker(false);
     setShowStatePicker(false);
+    setErrors({});
   };
 
   const openCreate = () => {
     resetDraft();
+    modalScrollY.current = 0;
     setIsModalOpen(true);
   };
 
@@ -136,10 +139,10 @@ export default function User() {
       birthPlace: dependent.birthPlace || '',
       relationship: dependent.relationship || '',
       guardianName: dependent.guardianName || '',
-      sex: dependent.sex,
+      sex: dependent.sex === 'M' || dependent.sex === 'F' ? dependent.sex : '',
       photoUri: dependent.photoUri,
-      cns: dependent.cns || '',
-      zipCode: dependent.zipCode || '',
+      cns: dependent.cns ? formatCns(dependent.cns) : '',
+      zipCode: dependent.zipCode ? formatCep(dependent.zipCode) : '',
       address: dependent.address || '',
       complement: dependent.complement || '',
       city: dependent.city || '',
@@ -148,6 +151,8 @@ export default function User() {
     });
     setShowDatePicker(false);
     setShowRelationshipPicker(false);
+    setErrors({});
+    modalScrollY.current = 0;
     setIsModalOpen(true);
   };
 
@@ -183,6 +188,20 @@ export default function User() {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
+  const formatCep = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
+  const formatCns = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 15);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+    if (digits.length <= 11) return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)} ${digits.slice(11)}`;
+  };
+
   const fetchCep = async (cep: string) => {
     const digits = cep.replace(/\D/g, '');
     if (digits.length !== 8) return;
@@ -201,11 +220,75 @@ export default function User() {
     }));
   };
 
+  type DepFieldKey = 'name' | 'birthDate' | 'relationship' | 'sex' | 'zipCode' | 'phone';
+  const [errors, setErrors] = useState<Partial<Record<DepFieldKey, string>>>({});
+  const clearError = (field: DepFieldKey) =>
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+
+  const modalScrollRef = useRef<ScrollView>(null);
+  const modalScrollY = useRef(0);
+  const nameInputRef = useRef<TextInput>(null);
+  const birthDateRef = useRef<View>(null);
+  const relationshipRef = useRef<View>(null);
+  const sexRef = useRef<View>(null);
+  const zipCodeRef = useRef<TextInput>(null);
+  const phoneRef = useRef<TextInput>(null);
+
+  const DEP_FIELD_ORDER: DepFieldKey[] = ['name', 'birthDate', 'relationship', 'sex', 'zipCode', 'phone'];
+
+  const scrollDepToFirstError = (currentErrors: Partial<Record<DepFieldKey, string>>) => {
+    const firstField = DEP_FIELD_ORDER.find((f) => currentErrors[f]);
+    if (!firstField) return;
+    const refMap: Record<DepFieldKey, React.RefObject<any>> = {
+      name: nameInputRef,
+      birthDate: birthDateRef,
+      relationship: relationshipRef,
+      sex: sexRef,
+      zipCode: zipCodeRef,
+      phone: phoneRef,
+    };
+    const ref = refMap[firstField];
+    const scroll = modalScrollRef.current;
+    if (!ref?.current || !scroll) return;
+    setTimeout(() => {
+      try {
+        (ref.current as any).measure?.(
+          (_x: number, _y: number, _w: number, h: number, _pageX: number, pageY: number) => {
+            const screenHeight = Dimensions.get('window').height;
+            const inputCenter = pageY + h / 2;
+            const targetCenter = screenHeight / 2;
+            const delta = inputCenter - targetCenter;
+            scroll.scrollTo({
+              y: Math.max(0, modalScrollY.current + delta),
+              animated: true,
+            });
+          },
+        );
+      } catch {}
+    }, 80);
+  };
+
   const validateDraft = () => {
-    if (!draft.name.trim() || !draft.birthDate.trim() || !draft.relationship.trim()) {
-      Alert.alert('Campos obrigatorios', 'Preencha nome, nascimento e parentesco.');
+    const novoErros: Partial<Record<DepFieldKey, string>> = {};
+    if (!draft.name.trim()) novoErros.name = 'Campo obrigatório!';
+    if (!draft.birthDate.trim()) novoErros.birthDate = 'Campo obrigatório!';
+    if (!draft.relationship.trim()) novoErros.relationship = 'Campo obrigatório!';
+    if (!draft.sex) novoErros.sex = 'Campo obrigatório!';
+    if (!draft.zipCode || draft.zipCode.replace(/\D/g, '').length !== 8) {
+      novoErros.zipCode = 'Campo obrigatório!';
+    }
+    if (!draft.phone || !draft.phone.trim()) novoErros.phone = 'Campo obrigatório!';
+    if (Object.keys(novoErros).length > 0) {
+      setErrors(novoErros);
+      scrollDepToFirstError(novoErros);
       return false;
     }
+    setErrors({});
     return true;
   };
 
@@ -214,10 +297,16 @@ export default function User() {
     if (!validateDraft() || !mainUser) return;
     setSavingDependent(true);
     try {
+      const payload = {
+        ...draft,
+        sex: draft.sex as 'M' | 'F',
+        cns: draft.cns?.replace(/\D/g, '') || undefined,
+        zipCode: draft.zipCode?.replace(/\D/g, '') || undefined,
+      };
       if (draft.id) {
-        await updateDependent(draft.id, draft);
+        await updateDependent(draft.id, payload);
       } else {
-        await addDependentAndLink(usuarioId!, draft);
+        await addDependentAndLink(usuarioId!, payload);
       }
       setIsModalOpen(false);
       resetDraft();
@@ -363,8 +452,17 @@ export default function User() {
             <Text style={styles.modalTitle}>
               {draft.id ? 'Editar dependente' : 'Novo dependente'}
             </Text>
+            <Text style={styles.legend}>
+              Campos com <Text style={styles.required}>*</Text> são obrigatórios
+            </Text>
 
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              ref={modalScrollRef}
+              style={styles.modalScroll}
+              showsVerticalScrollIndicator={false}
+              onScroll={(e) => { modalScrollY.current = e.nativeEvent.contentOffset.y; }}
+              scrollEventThrottle={16}
+            >
               <View style={styles.photoRow}>
                 {draft.photoUri ? (
                   <Image source={{ uri: draft.photoUri }} style={styles.photoPreview} />
@@ -392,19 +490,26 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Nome</Text>
+                <Text style={styles.label}>
+                  Nome <Text style={styles.required}>*</Text>
+                </Text>
                 <TextInput
-                  style={styles.input}
+                  ref={nameInputRef}
+                  style={[styles.input, errors.name && styles.inputError]}
                   value={draft.name}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, name: value }))}
+                  onChangeText={(value) => { setDraft((current) => ({ ...current, name: value })); clearError('name'); }}
                   placeholder="Nome completo"
                 />
+                {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Nascimento</Text>
+                <Text style={styles.label}>
+                  Nascimento <Text style={styles.required}>*</Text>
+                </Text>
                 <Pressable
-                  style={styles.dateButton}
+                  ref={birthDateRef}
+                  style={[styles.dateButton, errors.birthDate && styles.inputError]}
                   onPress={() => setShowDatePicker(true)}
                 >
                   <Text style={draft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
@@ -412,6 +517,7 @@ export default function User() {
                   </Text>
                   <Ionicons name="calendar-outline" size={18} color="#29442dff" />
                 </Pressable>
+                {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate}</Text>}
                 {showDatePicker && (
                   <DateTimePicker
                     value={draft.birthDate ? new Date(draft.birthDate) : new Date()}
@@ -422,6 +528,7 @@ export default function User() {
                       if (selectedDate) {
                         const dateStr = selectedDate.toISOString().split('T')[0];
                         setDraft((current) => ({ ...current, birthDate: dateStr }));
+                        clearError('birthDate');
                       }
                     }}
                     maximumDate={new Date()}
@@ -430,9 +537,12 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Parentesco</Text>
+                <Text style={styles.label}>
+                  Parentesco <Text style={styles.required}>*</Text>
+                </Text>
                 <Pressable
-                  style={styles.dateButton}
+                  ref={relationshipRef}
+                  style={[styles.dateButton, errors.relationship && styles.inputError]}
                   onPress={() => setShowRelationshipPicker(!showRelationshipPicker)}
                 >
                   <Text style={draft.relationship ? styles.dateButtonTextFilled : styles.dateButtonText}>
@@ -440,6 +550,7 @@ export default function User() {
                   </Text>
                   <Ionicons name="chevron-down" size={18} color="#29442dff" />
                 </Pressable>
+                {errors.relationship && <Text style={styles.errorText}>{errors.relationship}</Text>}
                 {showRelationshipPicker && (
                   <View style={styles.pickerDropdown}>
                     <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
@@ -453,6 +564,7 @@ export default function User() {
                           onPress={() => {
                             setDraft((current) => ({ ...current, relationship: option }));
                             setShowRelationshipPicker(false);
+                            clearError('relationship');
                           }}
                         >
                           <Text
@@ -474,15 +586,24 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Sexo</Text>
-                <View style={styles.sexRow}>
+                <Text style={styles.label}>
+                  Sexo <Text style={styles.required}>*</Text>
+                </Text>
+                <View ref={sexRef} style={styles.sexRow}>
                   {SEX_OPTIONS.map((option) => {
                     const isActive = draft.sex === option;
                     return (
                       <Pressable
                         key={option}
-                        style={[styles.sexChip, isActive && styles.sexChipActive]}
-                        onPress={() => setDraft((current) => ({ ...current, sex: option }))}
+                        style={[
+                          styles.sexChip,
+                          isActive && styles.sexChipActive,
+                          errors.sex && !isActive && styles.inputError,
+                        ]}
+                        onPress={() => {
+                          setDraft((current) => ({ ...current, sex: option }));
+                          clearError('sex');
+                        }}
                       >
                         <Text style={[styles.sexChipText, isActive && styles.sexChipTextActive]}>
                           {option}
@@ -491,6 +612,7 @@ export default function User() {
                     );
                   })}
                 </View>
+                {errors.sex && <Text style={styles.errorText}>{errors.sex}</Text>}
               </View>
 
               <View style={styles.fieldGroup}>
@@ -508,10 +630,10 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.cns}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, cns: value }))}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, cns: formatCns(value) }))}
                   placeholder="000 0000 0000 0000"
                   keyboardType="numeric"
-                  maxLength={15}
+                  maxLength={18}
                 />
               </View>
 
@@ -526,16 +648,23 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>CEP</Text>
+                <Text style={styles.label}>
+                  CEP <Text style={styles.required}>*</Text>
+                </Text>
                 <TextInput
-                  style={styles.input}
+                  ref={zipCodeRef}
+                  style={[styles.input, errors.zipCode && styles.inputError]}
                   value={draft.zipCode}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, zipCode: value }))}
+                  onChangeText={(value) => {
+                    setDraft((current) => ({ ...current, zipCode: formatCep(value) }));
+                    clearError('zipCode');
+                  }}
                   onBlur={() => fetchCep(draft.zipCode || '')}
                   placeholder="00000-000"
                   keyboardType="numeric"
-                  maxLength={8}
+                  maxLength={9}
                 />
+                {errors.zipCode && <Text style={styles.errorText}>{errors.zipCode}</Text>}
               </View>
 
               <View style={styles.fieldGroup}>
@@ -603,14 +732,21 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Telefone</Text>
+                <Text style={styles.label}>
+                  Telefone <Text style={styles.required}>*</Text>
+                </Text>
                 <TextInput
-                  style={styles.input}
+                  ref={phoneRef}
+                  style={[styles.input, errors.phone && styles.inputError]}
                   value={draft.phone}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, phone: formatPhone(value) }))}
+                  onChangeText={(value) => {
+                    setDraft((current) => ({ ...current, phone: formatPhone(value) }));
+                    clearError('phone');
+                  }}
                   placeholder="(00) 00000-0000"
                   keyboardType="phone-pad"
                 />
+                {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
               </View>
             </ScrollView>
 
@@ -829,6 +965,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1f3322',
     marginBottom: 4,
+  },
+  legend: {
+    fontSize: 11,
+    color: '#607367',
+    marginBottom: 6,
+    fontStyle: 'italic',
+  },
+  required: {
+    color: '#e53935',
+    fontWeight: '700',
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#e53935',
+    backgroundColor: '#fdecea',
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginTop: 4,
+    fontWeight: '500',
   },
   photoRow: {
     flexDirection: 'row',

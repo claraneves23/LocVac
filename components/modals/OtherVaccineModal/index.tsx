@@ -30,6 +30,7 @@ type OtherVaccineModalProps = {
   onSave: () => void;
   onClose: () => void;
   saving?: boolean;
+  nameError?: string;
 };
 
 export default function OtherVaccineModal({
@@ -53,6 +54,7 @@ export default function OtherVaccineModal({
   onSave,
   onClose,
   saving = false,
+  nameError,
 }: OtherVaccineModalProps) {
   return (
     <Modal
@@ -77,15 +79,21 @@ export default function OtherVaccineModal({
           </View>
 
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.legend}>
+              Campos com <Text style={styles.required}>*</Text> são obrigatórios
+            </Text>
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Nome da Vacina *</Text>
+              <Text style={styles.formLabel}>
+                Nome da Vacina <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
-                style={styles.formInput}
+                style={[styles.formInput, nameError && styles.inputError]}
                 placeholder="Ex: Vacina da Gripe"
                 placeholderTextColor="#9CA3AF"
                 value={name}
                 onChangeText={onChangeName}
               />
+              {nameError && <Text style={styles.errorText}>{nameError}</Text>}
             </View>
 
             <View style={styles.formField}>
@@ -229,6 +237,26 @@ const styles = StyleSheet.create({
     color: '#1f3322',
     borderWidth: 1,
     borderColor: '#E8EEE8',
+  },
+  legend: {
+    fontSize: 11,
+    color: '#607367',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  required: {
+    color: '#e53935',
+    fontWeight: '700',
+  },
+  inputError: {
+    borderColor: '#e53935',
+    backgroundColor: '#fdecea',
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#e53935',
+    marginTop: 4,
+    fontWeight: '500',
   },
   datePickerButton: {
     backgroundColor: '#F2F7F6',
