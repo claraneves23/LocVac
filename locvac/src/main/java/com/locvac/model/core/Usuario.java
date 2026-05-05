@@ -17,15 +17,16 @@ public class Usuario {
     @Column(name = "id_usuario")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String nome;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 254)
     private String email;
 
-    @Column(name = "senha_hash", nullable = false)
+    @Column(name = "senha_hash", nullable = false, length = 255)
     private String senhaHash;
 
+    @Column(length = 11)
     private String telefone;
 
     @Column(nullable = false)
@@ -40,7 +41,7 @@ public class Usuario {
     @Column(name = "mfa_enabled", nullable = false)
     private boolean mfaEnabled = false;
 
-    @Column(name = "mfa_secret")
+    @Column(name = "mfa_secret", length = 64)
     private String mfaSecret;
 
     @Column(name = "tentativas_falhas", nullable = false)

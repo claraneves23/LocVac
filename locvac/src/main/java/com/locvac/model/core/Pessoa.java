@@ -17,41 +17,41 @@ public class Pessoa {
     @Column(name = "id_pessoa")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String nome;
 
     @Column(name = "data_nascimento", nullable = false)
     private LocalDate dataNascimento;
 
-    @Column(nullable = true, unique = true)
+    @Column(nullable = true, unique = true, length = 11)
     private String cpf;
 
     @Enumerated(EnumType.STRING)
     @Column(name="sexo_biologico", nullable = false)
     private Sexo sexoBiologico;
 
-    @Column(unique = true)
+    @Column(unique = true, length = 15)
     private String cns;
 
-    @Column(name = "cep", nullable = false)
+    @Column(name = "cep", nullable = false, length = 8)
     private String cep;
 
-    @Column(name="telefone", nullable = false)
+    @Column(name = "telefone", nullable = false, length = 11)
     private String telefone;
 
-    @Column(name = "foto_url")
+    @Column(name = "foto_url", length = 500)
     private String fotoUrl;
 
-    @Column(name = "nome_responsavel")
+    @Column(name = "nome_responsavel", length = 100)
     private String nomeResponsavel;
 
-    @Column
+    @Column(length = 200)
     private String rua;
 
-    @Column
+    @Column(length = 100)
     private String complemento;
 
-    @Column
+    @Column(length = 100)
     private String municipio;
 
     @Enumerated(EnumType.STRING)

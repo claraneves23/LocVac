@@ -1,11 +1,14 @@
 package com.locvac.dto.vacinaEfeitoColateral;
 
 import com.locvac.model.enums.Severidade;
+import jakarta.validation.constraints.Size;
 
 public class VacinaEfeitoColateralRequestDTO {
     private Long idVacina;
+    @Size(max = 500)
     private String descricao;
     private Severidade severidade;
+    @Size(max = 500)
     private String orientacao;
 
     // Getters and Setters

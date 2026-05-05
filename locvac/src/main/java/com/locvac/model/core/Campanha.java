@@ -13,10 +13,10 @@ public class Campanha {
     @Column(name = "id_campanha")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String nome;
 
-    @Column(name = "doenca_alvo", nullable = false)
+    @Column(name = "doenca_alvo", nullable = false, length = 100)
     private String doencaAlvo;
 
     @Column(name = "data_inicio", nullable = false)

@@ -4,7 +4,7 @@
     "slug": "LocVac",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon_solid_dark.png",
+    "icon": "./assets/images/iconLocVac.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#CAE3E2",
     "newArchEnabled": true,
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon_solid_dark.png",
+        "foregroundImage": "./assets/images/iconLocVac.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -48,7 +48,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon_solid_dark.png",
+          "icon": "./assets/images/iconLocVac.png",
           "color": "#29442d"
         }
       ]

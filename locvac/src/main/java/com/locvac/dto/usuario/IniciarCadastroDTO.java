@@ -8,9 +8,10 @@ public record IniciarCadastroDTO(
 
         @NotBlank(message = "O email é obrigatório")
         @Email(message = "Email inválido")
+        @Size(max = 254)
         String email,
 
         @NotBlank(message = "A senha é obrigatória")
-        @Size(min = 6, message = "A senha deve ter pelo menos 6 caracteres")
+        @Size(min = 6, max = 72)
         String senha
 ) {}

@@ -1,12 +1,18 @@
 package com.locvac.dto.vacina;
 
 import com.locvac.model.enums.TipoSecaoVacinacao;
+import jakarta.validation.constraints.Size;
 
 public class VacinaRequestDTO {
+    @Size(max = 150)
     private String nome;
+    @Size(max = 500)
     private String descricao;
+    @Size(max = 50)
     private String dose;
+    @Size(max = 50)
     private String viaAdministracao;
+    @Size(max = 20)
     private String codigoPNI;
     private TipoSecaoVacinacao tipoSecaoVacinacao;
     private Integer idadeMinimaMeses;

@@ -9,6 +9,7 @@ public record RedefinirSenhaDTO(
 
         @NotBlank(message = "O email é obrigatório")
         @Email(message = "Email inválido")
+        @Size(max = 254)
         String email,
 
         @NotBlank(message = "O código é obrigatório")
@@ -16,6 +17,6 @@ public record RedefinirSenhaDTO(
         String codigo,
 
         @NotBlank(message = "A nova senha é obrigatória")
-        @Size(min = 6, message = "A senha deve ter pelo menos 6 caracteres")
+        @Size(min = 6, max = 72)
         String novaSenha
 ) {}

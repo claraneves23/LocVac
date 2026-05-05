@@ -15,10 +15,10 @@ public class VacinaSecaoInformativa {
         @JoinColumn(name = "id_informativo", nullable = false)
         private VacinaInformativo informativo;
 
-        @Column(name = "titulo_secao")
+        @Column(name = "titulo_secao", length = 150)
         private String tituloSecao;
 
-        @Column(name = "conteudo")
+        @Column(name = "conteudo", columnDefinition = "TEXT")
         private String conteudo;
 
         @Column(name = "ordem_exibicao")

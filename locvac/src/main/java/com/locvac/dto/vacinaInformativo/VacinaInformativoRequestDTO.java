@@ -1,12 +1,15 @@
 package com.locvac.dto.vacinaInformativo;
 
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public class VacinaInformativoRequestDTO {
     private Long idVacina;
     private Integer versao;
     private LocalDate dataPublicacao;
+    @Size(max = 100)
     private String orgaoEmissor;
+    @Size(max = 500)
     private String fonteReferencia;
 
     // Getters and Setters

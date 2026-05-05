@@ -22,19 +22,19 @@ public class CalendarioVacinal {
         @Column(name = "faixa_etaria_max_meses", nullable = false)
         private Integer faixaEtariaMaxMeses;
 
-        @Column(name = "publico_alvo")
+        @Column(name = "publico_alvo", length = 200)
         private String publicoAlvo;
 
         @Column(name = "obrigatoria", nullable = false)
         private boolean obrigatoria;
 
-        @Column(name = "numero_dose", nullable = false)
+        @Column(name = "numero_dose", nullable = false, length = 20)
         private String numeroDose;
 
-        @Column(name = "descricao_dose")
+        @Column(name = "descricao_dose", length = 200)
         private String descricaoDose;
 
-        @Column(name = "ordem_exibicao")
+        @Column(name = "ordem_exibicao", length = 20)
         private String ordemExibicao;
 
         public void setVacina(Vacina vacina) {

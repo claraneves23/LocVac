@@ -15,13 +15,13 @@ public class CarrosselItem {
     @Column(name = "id_item")
     private Long id;
 
-    @Column(name = "titulo", nullable = false)
+    @Column(name = "titulo", nullable = false, length = 150)
     private String titulo;
 
-    @Column(name = "descricao", nullable = false)
+    @Column(name = "descricao", nullable = false, length = 500)
     private String descricao;
 
-    @Column(name = "imagem_url", nullable = false)
+    @Column(name = "imagem_url", nullable = false, length = 500)
     private String imagemUrl;
 
     @Column(name = "ordem_exibicao", nullable = false)

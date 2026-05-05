@@ -39,10 +39,10 @@ public class Notificacao {
         @Column(name = "persistente", nullable = false)
         private boolean persistente;
 
-        @Column(nullable = false)
+        @Column(nullable = false, length = 150)
         private String titulo;
 
-        @Column(nullable = false)
+        @Column(nullable = false, length = 500)
         private String mensagem;
 
         @Column(name = "data_criacao", nullable = false)

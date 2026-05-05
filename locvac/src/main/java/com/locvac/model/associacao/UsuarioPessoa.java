@@ -37,7 +37,7 @@ public class UsuarioPessoa {
     @Column(name = "data_vinculo")
     private LocalDate dataVinculo;
     
-    @Column(name = "dsc_parentesco")
+    @Column(name = "dsc_parentesco", length = 100)
     private String dscParentesco;
 
     public void setUsuario(Usuario usuario) {

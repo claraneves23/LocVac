@@ -25,7 +25,7 @@ public class DoseAplicada {
         @JoinColumn(name = "id_vacina", nullable = true)
         private Vacina vacina;
 
-        @Column(name = "nome_custom")
+        @Column(name = "nome_custom", length = 150)
         private String nomeCustom;
 
         @ManyToOne(fetch = FetchType.LAZY)
@@ -35,19 +35,19 @@ public class DoseAplicada {
         @Column(name = "dose_numero", nullable = false)
         private Integer doseNumero;
 
-        @Column(name = "nome_profissional")
+        @Column(name = "nome_profissional", length = 100)
         private String nomeProfissional;
 
-        @Column(name = "registro_profissional")
+        @Column(name = "registro_profissional", length = 30)
         private String registroProfissional;
 
         @Column(name = "data_aplicacao", nullable = false)
         private LocalDate dataAplicacao;
 
-        @Column(name = "lote")
+        @Column(name = "lote", length = 30)
         private String lote;
 
-        @Column(name = "observacao")
+        @Column(name = "observacao", length = 500)
         private String observacao;
 
         @Enumerated(EnumType.STRING)
@@ -57,7 +57,7 @@ public class DoseAplicada {
         @Column(name = "data_registro")
         private LocalDate dataRegistro;
 
-        @Column(name = "unidade_saude")
+        @Column(name = "unidade_saude", length = 150)
         private String unidadeSaude;
 
         public void setPessoa(Pessoa pessoa) {

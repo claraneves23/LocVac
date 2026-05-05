@@ -11,8 +11,10 @@ public class GrupoRisco {
     @Column(name = "id_grupo_risco")
     private Long id;
 
+    @Column(length = 100)
     private String nome;
 
+    @Column(length = 500)
     private String descricao;
 
     public void setId(Long id) {

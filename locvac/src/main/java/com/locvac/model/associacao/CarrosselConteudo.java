@@ -19,7 +19,7 @@ public class CarrosselConteudo {
     @JoinColumn(name = "id_item", nullable = false)
     private CarrosselItem carrosselItem;
 
-    @Column(name = "titulo_secao", nullable = false)
+    @Column(name = "titulo_secao", nullable = false, length = 150)
     private String tituloSecao;
 
     @Column(name = "conteudo", columnDefinition = "TEXT")

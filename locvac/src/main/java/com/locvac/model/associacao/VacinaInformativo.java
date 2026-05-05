@@ -24,10 +24,10 @@ public class VacinaInformativo {
         @Column(name = "data_publicacao", nullable = false)
         private LocalDate dataPublicacao;
 
-        @Column(name = "orgao_emissor", nullable = false)
+        @Column(name = "orgao_emissor", nullable = false, length = 100)
         private String orgaoEmissor;
 
-        @Column(name = "fonte_referencia", nullable = false)
+        @Column(name = "fonte_referencia", nullable = false, length = 500)
         private String fonteReferencia;
 
         @OneToMany(mappedBy = "informativo", fetch = FetchType.LAZY)

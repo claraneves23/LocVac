@@ -17,14 +17,14 @@ public class VacinaEfeitoColateral {
     @JoinColumn(name = "id_vacina", nullable = false)
     private Vacina vacina;
 
-    @Column(name = "descricao", nullable = false)
+    @Column(name = "descricao", nullable = false, length = 500)
     private String descricao;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "severidade", nullable = false)
     private Severidade severidade;
 
-    @Column(name = "orientacao", nullable = false)
+    @Column(name = "orientacao", nullable = false, length = 500)
     private String orientacao;
 
     public void setOrientacao(String orientacao) {

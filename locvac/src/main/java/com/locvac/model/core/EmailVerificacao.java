@@ -13,13 +13,13 @@ public class EmailVerificacao {
     @Column(name = "id_email_verificacao")
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 254)
     private String email;
 
-    @Column(name = "senha_hash", nullable = false)
+    @Column(name = "senha_hash", nullable = false, length = 255)
     private String senhaHash;
 
-    @Column(name = "codigo_hash", nullable = false)
+    @Column(name = "codigo_hash", nullable = false, length = 64)
     private String codigoHash;
 
     @Column(nullable = false)

@@ -12,19 +12,19 @@ public class Vacina {
     @Column(name = "id_vacina")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String nome;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String descricao;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String dose;
 
-    @Column(name = "via_administracao")
+    @Column(name = "via_administracao", length = 50)
     private String viaAdministracao;
 
-    @Column(name = "codigo_pni", unique = true)
+    @Column(name = "codigo_pni", unique = true, length = 20)
     private String codigoPNI;
 
     @Column(nullable = false)
