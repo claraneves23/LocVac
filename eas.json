@@ -7,8 +7,8 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": {
-        "applicationId": "com.devvale.LocVac.dev"
+      "env": {
+        "APP_VARIANT": "development"
       }
     },
     "preview": {
