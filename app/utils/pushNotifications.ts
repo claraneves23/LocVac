@@ -8,6 +8,9 @@ import { registrarPushToken, removerPushToken } from '../service/notificationSer
 const STORED_TOKEN_KEY = 'locvac:push:token';
 
 let handlerConfigured = false;
+let registrationInFlight: Promise<string | null> | null = null;
+let registrationDoneToken: string | null = null;
+let registrationFailedReason: string | null = null;
 
 export function configurarHandlerNotificacao() {
   if (handlerConfigured) return;
@@ -23,6 +26,20 @@ export function configurarHandlerNotificacao() {
 }
 
 export async function registrarTokenPushSeNecessario(): Promise<string | null> {
+  if (registrationDoneToken) return registrationDoneToken;
+  if (registrationFailedReason) return null;
+  if (registrationInFlight) return registrationInFlight;
+
+  registrationInFlight = (async () => {
+    const result = await runRegistration();
+    if (result) registrationDoneToken = result;
+    registrationInFlight = null;
+    return result;
+  })();
+  return registrationInFlight;
+}
+
+async function runRegistration(): Promise<string | null> {
   console.log('[push] env:', {
     appOwnership: Constants.appOwnership,
     executionEnvironment: Constants.executionEnvironment,
@@ -31,6 +48,7 @@ export async function registrarTokenPushSeNecessario(): Promise<string | null> {
   });
 
   if (!Device.isDevice) {
+    registrationFailedReason = 'not-physical-device';
     console.warn('[push] dispositivo não é físico (emulador/web) — push token não disponível');
     return null;
   }
@@ -49,6 +67,7 @@ export async function registrarTokenPushSeNecessario(): Promise<string | null> {
   }
 
   if (status !== 'granted') {
+    registrationFailedReason = 'permission-denied';
     console.warn('[push] permissão de notificação não concedida (status=' + status + ')');
     return null;
   }
@@ -59,7 +78,7 @@ export async function registrarTokenPushSeNecessario(): Promise<string | null> {
         name: 'default',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#29442d',
+        lightColor: '#03394A',
       });
     } catch (e) {
       console.warn('[push] falha ao configurar canal Android:', e);
@@ -71,6 +90,7 @@ export async function registrarTokenPushSeNecessario(): Promise<string | null> {
     (Constants.easConfig as any)?.projectId;
 
   if (!projectId) {
+    registrationFailedReason = 'no-project-id';
     console.error('[push] projectId do EAS ausente em app.json (extra.eas.projectId)');
     return null;
   }
@@ -80,8 +100,15 @@ export async function registrarTokenPushSeNecessario(): Promise<string | null> {
     const tokenResp = await Notifications.getExpoPushTokenAsync({ projectId });
     token = tokenResp.data;
     console.log('[push] expo push token obtido:', token);
-  } catch (e) {
-    console.error('[push] falha em getExpoPushTokenAsync (rodando em Expo Go? precisa de dev build):', e);
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    if (msg.includes('FirebaseApp is not initialized') || msg.includes('fcm-credentials')) {
+      registrationFailedReason = 'fcm-not-configured';
+      console.warn('[push] FCM não configurado nesta build — push remoto desativado (configure google-services.json para habilitar)');
+    } else {
+      registrationFailedReason = 'token-error';
+      console.warn('[push] falha em getExpoPushTokenAsync:', msg);
+    }
     return null;
   }
 
@@ -91,6 +118,7 @@ export async function registrarTokenPushSeNecessario(): Promise<string | null> {
     console.log('[push] token registrado no backend com sucesso');
     return token;
   } catch (e: any) {
+    registrationFailedReason = 'backend-error';
     const httpStatus = e?.response?.status;
     const data = e?.response?.data;
     console.error('[push] falha ao registrar token no backend:', httpStatus, data, e?.message);
@@ -108,5 +136,7 @@ export async function descadastrarTokenPush(): Promise<void> {
     }
   } finally {
     await AsyncStorage.removeItem(STORED_TOKEN_KEY);
+    registrationDoneToken = null;
+    registrationFailedReason = null;
   }
 }

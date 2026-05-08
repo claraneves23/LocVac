@@ -1,12 +1,13 @@
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as NavigationBar from 'expo-navigation-bar';
-import { Platform, StyleSheet, View, Text, ActivityIndicator } from 'react-native';
-import { BottomBar } from '../components/BottomBar';
+import { Animated, Image, Platform, StyleSheet, View } from 'react-native';
+import BottomTabs from '../components/redesign/BottomTabs';
 import { getNavigationDirection } from './navigation-direction';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { setAuthErrorCallback } from './service/authService';
+import { colors } from './theme/tokens';
 import {
   configurarHandlerNotificacao,
   registrarTokenPushSeNecessario,
@@ -14,7 +15,7 @@ import {
 
 configurarHandlerNotificacao();
 
-const MAIN_TAB_ROUTES = ['index', 'hist', 'infos', 'user'];
+const MAIN_TAB_ROUTES = ['index', 'hist', 'infos', 'user', 'carteira-completa'];
 const HIDE_BOTTOM_BAR_ROUTES = [
   '/login',
   '/verificar-email',
@@ -37,6 +38,18 @@ function LayoutContent() {
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const { isLoading: appLoading } = useAppContext();
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 0.25, duration: 850, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 850, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
 
   useEffect(() => {
     setAuthErrorCallback(() => router.replace('/login'));
@@ -89,8 +102,11 @@ function LayoutContent() {
   if ((checkingAuth || appLoading) && !isOnPublicOrSetup) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#29442d" />
-        <Text style={styles.loadingText}>Carregando...</Text>
+        <Animated.Image
+          source={require('../assets/images/logo.png')}
+          style={[styles.loadingLogo, { opacity: pulseAnim }]}
+          resizeMode="contain"
+        />
       </View>
     );
   }
@@ -108,12 +124,12 @@ function LayoutContent() {
             headerShown: false,
             freezeOnBlur: true,
             contentStyle: {
-              backgroundColor: '#CAE3E2',
+              backgroundColor: colors.bg,
             },
           })}
         />
       </View>
-      {!hideBottomBar && <BottomBar />}
+      {!hideBottomBar && <BottomTabs />}
     </View>
   );
 }
@@ -121,21 +137,19 @@ function LayoutContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
+    backgroundColor: colors.bg,
   },
   contentContainer: {
     flex: 1,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
+    backgroundColor: colors.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
   },
-  loadingText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#29442d',
+  loadingLogo: {
+    width: 110,
+    height: 110,
   },
 });
