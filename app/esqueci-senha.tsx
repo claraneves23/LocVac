@@ -9,11 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ScrollView,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { solicitarRecuperacaoSenha } from './service/authService';
+import { colors, radii, shadows, typography, spacing } from './theme/tokens';
 
 export default function EsqueciSenha() {
   const router = useRouter();
@@ -47,40 +51,48 @@ export default function EsqueciSenha() {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.brandSoft, colors.bgMuted]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/images/locvaclogo-trim.png')}
-              style={styles.logo}
+              source={require('../assets/images/logo.png')}
+              style={styles.logoImage}
               resizeMode="contain"
             />
+            <Text style={styles.brandTitle}>LocVac</Text>
+            <Text style={styles.brandSub}>Recuperação de acesso</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.title}>Esqueci minha senha</Text>
-            <Text style={styles.subtitle}>
-              Informe o e-mail cadastrado.{'\n'}
-              Vamos enviar um código de 6 dígitos.
-            </Text>
-
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>E-mail</Text>
-              <TextInput
-                style={[styles.input, emailError && styles.inputError]}
-                value={email}
-                onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(null); }}
-                placeholder="Digite seu e-mail"
-                placeholderTextColor="#999"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              <View style={[styles.inputWrap, emailError && styles.inputError]}>
+                <Ionicons name="mail-outline" size={18} color={colors.ink3} style={styles.leadingIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(null); }}
+                  placeholder="seu@email.com"
+                  placeholderTextColor={colors.ink3}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
               {emailError && <Text style={styles.errorText}>{emailError}</Text>}
             </View>
 
@@ -90,93 +102,107 @@ export default function EsqueciSenha() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <Text style={styles.submitButtonText}>Enviar código</Text>
               )}
             </Pressable>
 
             <Pressable onPress={() => router.replace('/login')} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={14} color={colors.brand} />
               <Text style={styles.backText}>Voltar para o login</Text>
             </Pressable>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
+    paddingVertical: 40,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
-  logo: {
-    width: 180,
+  logoImage: {
+    width: 80,
     height: 80,
+    marginBottom: 14,
+  },
+  brandTitle: {
+    ...typography.h2,
+    fontSize: 28,
+    color: colors.ink,
+    textAlign: 'center',
+  },
+  brandSub: {
+    fontSize: 12,
+    color: colors.ink3,
+    marginTop: 4,
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
   card: {
-    backgroundColor: '#ffffffcc',
-    borderRadius: 16,
-    padding: 24,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f3322',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#4d5c53',
-    textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: 24,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 22,
+    ...shadows.md,
   },
   fieldGroup: {
-    marginBottom: 14,
+    marginBottom: spacing.md,
   },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1f3322',
+    color: colors.ink2,
     marginBottom: 6,
   },
-  inputError: {
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.md - 1,
     borderWidth: 1,
-    borderColor: '#e53935',
-    backgroundColor: '#fdecea',
+    borderColor: colors.line,
+  },
+  leadingIcon: {
+    marginLeft: 12,
+    marginRight: 6,
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: colors.ink,
+  },
+  inputError: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
   },
   errorText: {
     fontSize: 11,
-    color: '#e53935',
+    color: colors.danger,
     marginTop: 4,
     fontWeight: '500',
   },
-  input: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#1f3322',
-  },
   submitButton: {
-    backgroundColor: '#29442dff',
-    borderRadius: 12,
+    backgroundColor: colors.brand,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 6,
@@ -187,14 +213,18 @@ const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.white,
   },
   backButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
     marginTop: 16,
   },
   backText: {
-    fontSize: 12,
-    color: '#607367',
+    fontSize: 13,
+    color: colors.brand,
+    fontWeight: '600',
   },
 });

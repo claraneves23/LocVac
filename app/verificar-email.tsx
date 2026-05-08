@@ -11,11 +11,14 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { confirmarCadastro, reenviarCodigo } from './service/authService';
+import { colors, radii, shadows, typography } from './theme/tokens';
 
 const RESEND_COOLDOWN = 60;
+const CELLS = [0, 1, 2, 3, 4, 5];
 
 export default function VerificarEmail() {
   const router = useRouter();
@@ -27,6 +30,7 @@ export default function VerificarEmail() {
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
   const inputRef = useRef<TextInput>(null);
+  const isFocused = useRef(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -82,8 +86,24 @@ export default function VerificarEmail() {
     }
   };
 
+  const focusInput = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    if (isFocused.current) return;
+    // No Android o teclado não reabre em .focus() se o campo ainda tem "foco fantasma".
+    // Forçar blur antes garante que o OS trate como nova ativação do teclado.
+    input.blur();
+    setTimeout(() => input.focus(), 50);
+  };
+  const canSubmit = codigo.length === 6 && !loading;
+
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.brandSoft, colors.bgMuted]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -92,10 +112,12 @@ export default function VerificarEmail() {
         <View style={styles.scrollContent}>
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/images/locvaclogo-trim.png')}
-              style={styles.logo}
+              source={require('../assets/images/logo.png')}
+              style={styles.logoImage}
               resizeMode="contain"
             />
+            <Text style={styles.brandTitle}>LocVac</Text>
+            <Text style={styles.brandSub}>Sua carteira de vacinação digital</Text>
           </View>
 
           <View style={styles.card}>
@@ -105,10 +127,23 @@ export default function VerificarEmail() {
               <Text style={styles.email}>{email}</Text>
             </Text>
 
-            <Pressable onPress={() => inputRef.current?.focus()} style={styles.codeBox}>
-              <Text style={styles.codeText}>
-                {codigo.padEnd(6, '•').split('').join(' ')}
-              </Text>
+            <Pressable onPress={focusInput} style={styles.cellsRow}>
+              {CELLS.map((i) => {
+                const ch = codigo[i];
+                const focused = codigo.length === i;
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.cell,
+                      focused && styles.cellFocused,
+                      ch !== undefined && styles.cellFilled,
+                    ]}
+                  >
+                    <Text style={styles.cellText}>{ch ?? ''}</Text>
+                  </View>
+                );
+              })}
             </Pressable>
 
             <TextInput
@@ -116,15 +151,18 @@ export default function VerificarEmail() {
               style={styles.hiddenInput}
               value={codigo}
               onChangeText={(v) => setCodigo(v.replace(/\D/g, '').slice(0, 6))}
+              onFocus={() => { isFocused.current = true; }}
+              onBlur={() => { isFocused.current = false; }}
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
+              caretHidden
             />
 
             <Pressable
-              style={[styles.submitButton, (loading || codigo.length !== 6) && styles.submitButtonDisabled]}
+              style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
               onPress={handleVerificar}
-              disabled={loading || codigo.length !== 6}
+              disabled={!canSubmit}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
@@ -153,14 +191,13 @@ export default function VerificarEmail() {
           </View>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
   },
   keyboardView: {
     flex: 1,
@@ -168,51 +205,81 @@ const styles = StyleSheet.create({
   scrollContent: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 22,
   },
-  logo: {
-    width: 180,
+  logoImage: {
+    width: 80,
     height: 80,
+    marginBottom: 14,
+  },
+  brandTitle: {
+    ...typography.h2,
+    fontSize: 28,
+    color: colors.ink,
+  },
+  brandSub: {
+    fontSize: 12,
+    color: colors.ink3,
+    marginTop: 4,
+    letterSpacing: 0.2,
+    marginBottom: 0,
   },
   card: {
-    backgroundColor: '#ffffffcc',
-    borderRadius: 16,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
     padding: 24,
+    ...shadows.md,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f3322',
+    ...typography.h2,
+    color: colors.ink,
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 13,
-    color: '#4d5c53',
+    color: colors.ink2,
     textAlign: 'center',
     lineHeight: 19,
-    marginBottom: 24,
+    marginBottom: 22,
   },
   email: {
     fontWeight: '700',
-    color: '#29442d',
+    color: colors.brand,
   },
-  codeBox: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 12,
-    paddingVertical: 18,
+  cellsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 22,
+  },
+  cell: {
+    flex: 1,
+    height: 52,
+    borderRadius: radii.md,
+    backgroundColor: colors.bgMuted,
+    borderWidth: 1.5,
+    borderColor: colors.line,
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
   },
-  codeText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#29442d',
-    letterSpacing: 4,
+  cellFocused: {
+    borderColor: colors.brand,
+    backgroundColor: colors.bgElev,
+  },
+  cellFilled: {
+    borderColor: colors.lineStrong,
+    backgroundColor: colors.bgElev,
+  },
+  cellText: {
+    ...typography.h2,
+    fontSize: 22,
+    color: colors.ink,
   },
   hiddenInput: {
     position: 'absolute',
@@ -221,13 +288,13 @@ const styles = StyleSheet.create({
     width: 1,
   },
   submitButton: {
-    backgroundColor: '#29442dff',
-    borderRadius: 12,
+    backgroundColor: colors.brand,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    opacity: 0.5,
+    backgroundColor: colors.lineStrong,
   },
   submitButtonText: {
     fontSize: 15,
@@ -241,10 +308,10 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#29442dff',
+    color: colors.brand,
   },
   resendTextDisabled: {
-    color: '#8a9a90',
+    color: colors.ink3,
   },
   backButton: {
     alignItems: 'center',
@@ -252,6 +319,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 12,
-    color: '#607367',
+    color: colors.ink3,
   },
 });

@@ -9,15 +9,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
   ScrollView,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from './service/authService';
+import LVMark from '../components/redesign/LVMark';
+import { colors, radii, shadows, typography, spacing } from './theme/tokens';
 
 const RESEND_COOLDOWN = 60;
+const CELLS = [0, 1, 2, 3, 4, 5];
 
 export default function RedefinirSenha() {
   const router = useRouter();
@@ -121,8 +124,16 @@ export default function RedefinirSenha() {
     }
   };
 
+  const focusCodigo = () => codigoInputRef.current?.focus();
+  const canSubmit = codigo.length === 6 && !loading;
+
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.brandSoft, colors.bgMuted]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -134,46 +145,56 @@ export default function RedefinirSenha() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoContainer}>
-            <Image
-              source={require('../assets/images/locvaclogo-trim.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <View style={styles.logoCard}>
+              <LVMark size={36} color={colors.brand} />
+            </View>
+            <Text style={styles.brandTitle}>Redefinir senha</Text>
+            <Text style={styles.brandSub}>
+              Código enviado para <Text style={styles.email}>{email}</Text>
+            </Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.title}>Redefinir senha</Text>
-            <Text style={styles.subtitle}>
-              Enviamos um código de 6 dígitos para{'\n'}
-              <Text style={styles.email}>{email}</Text>
-            </Text>
+            <Text style={styles.label}>Código de 6 dígitos</Text>
+            <Pressable onPress={focusCodigo} style={styles.cellsRow}>
+              {CELLS.map((i) => {
+                const ch = codigo[i];
+                const focused = codigo.length === i;
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.cell,
+                      focused && styles.cellFocused,
+                      ch !== undefined && styles.cellFilled,
+                    ]}
+                  >
+                    <Text style={styles.cellText}>{ch ?? ''}</Text>
+                  </View>
+                );
+              })}
+            </Pressable>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Código</Text>
-              <Pressable onPress={() => codigoInputRef.current?.focus()} style={styles.codeBox}>
-                <Text style={styles.codeText}>
-                  {codigo.padEnd(6, '•').split('').join(' ')}
-                </Text>
-              </Pressable>
-              <TextInput
-                ref={codigoInputRef}
-                style={styles.hiddenInput}
-                value={codigo}
-                onChangeText={(v) => setCodigo(v.replace(/\D/g, '').slice(0, 6))}
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-            </View>
+            <TextInput
+              ref={codigoInputRef}
+              style={styles.hiddenInput}
+              value={codigo}
+              onChangeText={(v) => setCodigo(v.replace(/\D/g, '').slice(0, 6))}
+              keyboardType="number-pad"
+              maxLength={6}
+              caretHidden
+            />
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Nova senha</Text>
-              <View style={[styles.passwordContainer, errors.novaSenha && styles.inputError]}>
+              <View style={[styles.inputWrap, errors.novaSenha && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={18} color={colors.ink3} style={styles.leadingIcon} />
                 <TextInput
-                  style={styles.passwordInput}
+                  style={styles.input}
                   value={novaSenha}
                   onChangeText={(v) => { setNovaSenha(v); clearError('novaSenha'); }}
                   placeholder="Mínimo 6 caracteres"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.ink3}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
@@ -183,8 +204,8 @@ export default function RedefinirSenha() {
                 >
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#607367"
+                    size={18}
+                    color={colors.ink3}
                   />
                 </Pressable>
               </View>
@@ -192,14 +213,15 @@ export default function RedefinirSenha() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Confirmar nova senha</Text>
-              <View style={[styles.passwordContainer, errors.confirmarSenha && styles.inputError]}>
+              <Text style={styles.label}>Confirmar senha</Text>
+              <View style={[styles.inputWrap, errors.confirmarSenha && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={18} color={colors.ink3} style={styles.leadingIcon} />
                 <TextInput
-                  style={styles.passwordInput}
+                  style={styles.input}
                   value={confirmarSenha}
                   onChangeText={(v) => { setConfirmarSenha(v); clearError('confirmarSenha'); }}
                   placeholder="Repita a senha"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.ink3}
                   secureTextEntry={!showConfirmPassword}
                   autoCapitalize="none"
                 />
@@ -209,8 +231,8 @@ export default function RedefinirSenha() {
                 >
                   <Ionicons
                     name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#607367"
+                    size={18}
+                    color={colors.ink3}
                   />
                 </Pressable>
               </View>
@@ -218,15 +240,12 @@ export default function RedefinirSenha() {
             </View>
 
             <Pressable
-              style={[
-                styles.submitButton,
-                (loading || codigo.length !== 6) && styles.submitButtonDisabled,
-              ]}
+              style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
               onPress={handleRedefinir}
-              disabled={loading || codigo.length !== 6}
+              disabled={!canSubmit}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <Text style={styles.submitButtonText}>Redefinir senha</Text>
               )}
@@ -247,19 +266,19 @@ export default function RedefinirSenha() {
             </Pressable>
 
             <Pressable onPress={() => router.replace('/login')} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={14} color={colors.brand} />
               <Text style={styles.backText}>Voltar para o login</Text>
             </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
   },
   keyboardView: {
     flex: 1,
@@ -267,71 +286,82 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     paddingVertical: 40,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
-  logo: {
-    width: 180,
-    height: 80,
+  logoCard: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.xl,
+    backgroundColor: colors.bgElev,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+    ...shadows.md,
   },
-  card: {
-    backgroundColor: '#ffffffcc',
-    borderRadius: 16,
-    padding: 24,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f3322',
+  brandTitle: {
+    ...typography.h2,
+    color: colors.ink,
     textAlign: 'center',
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 13,
-    color: '#4d5c53',
+  brandSub: {
+    ...typography.small,
+    color: colors.ink3,
+    marginTop: 4,
     textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: 20,
   },
   email: {
     fontWeight: '700',
-    color: '#29442d',
+    color: colors.brand,
+  },
+  card: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 22,
+    ...shadows.md,
   },
   fieldGroup: {
-    marginBottom: 14,
+    marginBottom: spacing.md,
   },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1f3322',
+    color: colors.ink2,
     marginBottom: 6,
   },
-  inputError: {
-    borderWidth: 1,
-    borderColor: '#e53935',
-    backgroundColor: '#fdecea',
+  cellsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 18,
   },
-  errorText: {
-    fontSize: 11,
-    color: '#e53935',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  codeBox: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingVertical: 16,
+  cell: {
+    flex: 1,
+    height: 50,
+    borderRadius: radii.md,
+    backgroundColor: colors.bgMuted,
+    borderWidth: 1.5,
+    borderColor: colors.line,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  codeText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#29442d',
-    letterSpacing: 4,
+  cellFocused: {
+    borderColor: colors.brand,
+    backgroundColor: colors.bgElev,
+  },
+  cellFilled: {
+    borderColor: colors.lineStrong,
+    backgroundColor: colors.bgElev,
+  },
+  cellText: {
+    ...typography.h2,
+    fontSize: 22,
+    color: colors.ink,
   },
   hiddenInput: {
     position: 'absolute',
@@ -339,37 +369,53 @@ const styles = StyleSheet.create({
     height: 1,
     width: 1,
   },
-  passwordContainer: {
+  inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.md - 1,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
-  passwordInput: {
+  leadingIcon: {
+    marginLeft: 12,
+    marginRight: 6,
+  },
+  input: {
     flex: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 6,
     paddingVertical: 12,
     fontSize: 14,
-    color: '#1f3322',
+    color: colors.ink,
+  },
+  inputError: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
+  },
+  errorText: {
+    fontSize: 11,
+    color: colors.danger,
+    marginTop: 4,
+    fontWeight: '500',
   },
   eyeButton: {
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   submitButton: {
-    backgroundColor: '#29442dff',
-    borderRadius: 12,
+    backgroundColor: colors.brand,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 6,
   },
   submitButtonDisabled: {
-    opacity: 0.5,
+    backgroundColor: colors.lineStrong,
   },
   submitButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.white,
   },
   resendButton: {
     alignItems: 'center',
@@ -378,17 +424,21 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#29442dff',
+    color: colors.brand,
   },
   resendTextDisabled: {
-    color: '#8a9a90',
+    color: colors.ink3,
   },
   backButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
     marginTop: 12,
   },
   backText: {
-    fontSize: 12,
-    color: '#607367',
+    fontSize: 13,
+    color: colors.brand,
+    fontWeight: '600',
   },
 });

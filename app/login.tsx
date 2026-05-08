@@ -1,5 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import {
+  Animated,
+  Easing,
   StyleSheet,
   Text,
   View,
@@ -13,11 +15,13 @@ import {
   Image,
   Keyboard,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { login, iniciarCadastro } from './service/authService';
 import { useAppContext } from './context/AppContext';
+import { colors, radii, shadows, typography } from './theme/tokens';
 
 type Mode = 'login' | 'cadastro';
 
@@ -51,6 +55,10 @@ export default function Login() {
   const emailRef = useRef<TextInput>(null);
   const senhaRef = useRef<TextInput>(null);
   const confirmarSenhaRef = useRef<TextInput>(null);
+
+  const modeAnim = useRef(new Animated.Value(0)).current;
+  const [tabWidth, setTabWidth] = useState(0);
+  const [extraFieldHeight, setExtraFieldHeight] = useState(110);
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -101,6 +109,12 @@ export default function Login() {
   const switchMode = (newMode: Mode) => {
     resetFields();
     setMode(newMode);
+    Animated.timing(modeAnim, {
+      toValue: newMode === 'cadastro' ? 1 : 0,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
   };
 
   const handleLogin = async () => {
@@ -168,7 +182,12 @@ export default function Login() {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.brandSoft, colors.bgMuted]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -187,27 +206,38 @@ export default function Login() {
         >
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/images/locvaclogo-trim.png')}
-              style={styles.logo}
+              source={require('../assets/images/logo.png')}
+              style={styles.logoImage}
               resizeMode="contain"
             />
+            <Text style={styles.brandTitle}>LocVac</Text>
+            <Text style={styles.brandSub}>Sua carteira de vacinação digital</Text>
           </View>
 
           <View style={styles.card}>
-            <View style={styles.tabRow}>
-              <Pressable
-                style={[styles.tab, mode === 'login' && styles.tabActive]}
-                onPress={() => switchMode('login')}
-              >
-                <Text style={[styles.tabText, mode === 'login' && styles.tabTextActive]}>
+            <View
+              style={styles.tabRow}
+              onLayout={(e) => {
+                const totalWidth = e.nativeEvent.layout.width;
+                setTabWidth((totalWidth - 8) / 2);
+              }}
+            >
+              {tabWidth > 0 && (
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.tabIndicator,
+                    { width: tabWidth, left: mode === 'cadastro' ? tabWidth + 4 : 4 },
+                  ]}
+                />
+              )}
+              <Pressable style={styles.tab} onPress={() => switchMode('login')}>
+                <Text style={[styles.tabText, { color: mode === 'login' ? '#ffffff' : colors.ink3 }]}>
                   Entrar
                 </Text>
               </Pressable>
-              <Pressable
-                style={[styles.tab, mode === 'cadastro' && styles.tabActive]}
-                onPress={() => switchMode('cadastro')}
-              >
-                <Text style={[styles.tabText, mode === 'cadastro' && styles.tabTextActive]}>
+              <Pressable style={styles.tab} onPress={() => switchMode('cadastro')}>
+                <Text style={[styles.tabText, { color: mode === 'cadastro' ? '#ffffff' : colors.ink3 }]}>
                   Criar conta
                 </Text>
               </Pressable>
@@ -215,32 +245,36 @@ export default function Login() {
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>E-mail</Text>
-              <TextInput
-                ref={emailRef}
-                style={[styles.input, errors.email && styles.inputError]}
-                value={email}
-                onChangeText={(v) => { setEmail(v); clearError('email'); }}
-                onFocus={focusFor(emailRef)}
-                placeholder="Digite seu e-mail"
-                placeholderTextColor="#999"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              <View style={[styles.inputWrap, errors.email && styles.inputError]}>
+                <Ionicons name="mail-outline" size={18} color={colors.ink3} style={styles.leadingIcon} />
+                <TextInput
+                  ref={emailRef}
+                  style={styles.input}
+                  value={email}
+                  onChangeText={(v) => { setEmail(v); clearError('email'); }}
+                  onFocus={focusFor(emailRef)}
+                  placeholder="seu@email.com"
+                  placeholderTextColor={colors.ink3}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
               {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Senha</Text>
-              <View style={[styles.passwordContainer, errors.senha && styles.inputError]}>
+              <View style={[styles.inputWrap, errors.senha && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={18} color={colors.ink3} style={styles.leadingIcon} />
                 <TextInput
                   ref={senhaRef}
-                  style={styles.passwordInput}
+                  style={styles.input}
                   value={senha}
                   onChangeText={(v) => { setSenha(v); clearError('senha'); }}
                   onFocus={focusFor(senhaRef)}
-                  placeholder="Digite sua senha"
-                  placeholderTextColor="#999"
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.ink3}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
@@ -250,28 +284,47 @@ export default function Login() {
                 >
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#607367"
+                    size={18}
+                    color={colors.ink3}
                   />
                 </Pressable>
               </View>
               {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
             </View>
 
-            {mode === 'cadastro' && (
-              <View style={styles.fieldGroup}>
+            <Animated.View
+              style={{
+                maxHeight: modeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, extraFieldHeight],
+                }),
+                opacity: modeAnim,
+                overflow: 'hidden',
+              }}
+            >
+              <View
+                style={styles.fieldGroup}
+                onLayout={(e) => {
+                  const h = e.nativeEvent.layout.height;
+                  if (h > 0 && Math.abs(h - extraFieldHeight) > 2) {
+                    setExtraFieldHeight(h);
+                  }
+                }}
+              >
                 <Text style={styles.label}>Confirmar senha</Text>
-                <View style={[styles.passwordContainer, errors.confirmarSenha && styles.inputError]}>
+                <View style={[styles.inputWrap, errors.confirmarSenha && styles.inputError]}>
+                  <Ionicons name="lock-closed-outline" size={18} color={colors.ink3} style={styles.leadingIcon} />
                   <TextInput
                     ref={confirmarSenhaRef}
-                    style={styles.passwordInput}
+                    style={styles.input}
                     value={confirmarSenha}
                     onChangeText={(v) => { setConfirmarSenha(v); clearError('confirmarSenha'); }}
                     onFocus={focusFor(confirmarSenhaRef)}
                     placeholder="Repita a senha"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={colors.ink3}
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
+                    editable={mode === 'cadastro'}
                   />
                   <Pressable
                     style={styles.eyeButton}
@@ -279,14 +332,14 @@ export default function Login() {
                   >
                     <Ionicons
                       name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color="#607367"
+                      size={18}
+                      color={colors.ink3}
                     />
                   </Pressable>
                 </View>
                 {errors.confirmarSenha && <Text style={styles.errorText}>{errors.confirmarSenha}</Text>}
               </View>
-            )}
+            </Animated.View>
 
             <Pressable
               style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -302,11 +355,27 @@ export default function Login() {
               )}
             </Pressable>
 
-            {mode === 'login' && (
-              <Pressable style={styles.forgotButton} onPress={() => router.push('/esqueci-senha')}>
+            <Animated.View
+              style={{
+                maxHeight: modeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [44, 0],
+                }),
+                opacity: modeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 0],
+                }),
+                overflow: 'hidden',
+              }}
+            >
+              <Pressable
+                style={styles.forgotButton}
+                onPress={() => router.push('/esqueci-senha')}
+                disabled={mode !== 'login'}
+              >
                 <Text style={styles.forgotText}>Esqueci minha senha</Text>
               </Pressable>
-            )}
+            </Animated.View>
           </View>
 
           <View style={styles.footer}>
@@ -321,109 +390,125 @@ export default function Login() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 40,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 22,
+    paddingTop: 72,
+    paddingBottom: 40,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
-  logo: {
-    width: 180,
+  logoImage: {
+    width: 80,
     height: 80,
+    marginBottom: 14,
+  },
+  brandTitle: {
+    ...typography.h2,
+    fontSize: 28,
+    color: colors.ink,
+  },
+  brandSub: {
+    fontSize: 12,
+    color: colors.ink3,
+    marginTop: 4,
+    letterSpacing: 0.2,
   },
   card: {
-    backgroundColor: '#ffffffcc',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 22,
+    ...shadows.md,
   },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: '#F2F7F6',
-    borderRadius: 12,
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.md,
     padding: 4,
     marginBottom: 20,
+    position: 'relative',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 4,
+    backgroundColor: colors.brand,
+    borderRadius: radii.sm + 2,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 10,
-    borderRadius: 10,
-  },
-  tabActive: {
-    backgroundColor: '#29442dff',
+    borderRadius: radii.sm + 2,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#607367',
-  },
-  tabTextActive: {
-    color: '#fff',
   },
   fieldGroup: {
     marginBottom: 14,
   },
   label: {
+    ...typography.labelCap,
+    color: colors.ink2,
+    textTransform: 'none',
+    letterSpacing: 0.2,
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1f3322',
     marginBottom: 6,
   },
-  inputError: {
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.md - 1,
     borderWidth: 1,
-    borderColor: '#e53935',
-    backgroundColor: '#fdecea',
+    borderColor: colors.line,
+  },
+  leadingIcon: {
+    marginLeft: 12,
+    marginRight: 6,
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: colors.ink,
+  },
+  inputError: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
   },
   errorText: {
     fontSize: 11,
-    color: '#e53935',
+    color: colors.danger,
     marginTop: 4,
     fontWeight: '500',
-  },
-  input: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#1f3322',
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#1f3322',
   },
   eyeButton: {
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   submitButton: {
-    backgroundColor: '#29442dff',
-    borderRadius: 12,
+    backgroundColor: colors.brand,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 6,
@@ -442,7 +527,7 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    color: '#29442dff',
+    color: colors.brand,
     fontWeight: '600',
   },
   footer: {
@@ -450,15 +535,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    marginTop: 24,
+    marginTop: 22,
   },
   footerText: {
     fontSize: 13,
-    color: '#4d5c53',
+    color: colors.ink2,
   },
   footerLink: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#29442dff',
+    color: colors.brand,
   },
 });

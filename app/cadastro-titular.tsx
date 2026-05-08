@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import {
+  Image,
   StyleSheet,
   Text,
   View,
@@ -10,15 +11,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
   Keyboard,
   Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { cadastrarTitular, logout } from './service/authService';
 import { useAppContext } from './context/AppContext';
+import { colors, radii, shadows, typography, spacing } from './theme/tokens';
 
 const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
 type EstadoUF = typeof ESTADO_OPTIONS[number];
@@ -290,7 +293,12 @@ export default function CadastroTitular() {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={[colors.brandSoft, colors.bgMuted]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -298,7 +306,7 @@ export default function CadastroTitular() {
       >
         <ScrollView
           ref={scrollRef}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + keyboardHeight }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + keyboardHeight }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           onScroll={(e) => { currentScrollY.current = e.nativeEvent.contentOffset.y; }}
@@ -306,21 +314,18 @@ export default function CadastroTitular() {
         >
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/images/locvaclogo-trim.png')}
-              style={styles.logo}
+              source={require('../assets/images/logo.png')}
+              style={styles.logoImage}
               resizeMode="contain"
             />
+            <Text style={styles.brandTitle}>Seus dados</Text>
+            <Text style={styles.brandSub}>Finalize o cadastro do titular</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.title}>Seus dados</Text>
-            <Text style={styles.subtitle}>
-              Para finalizar o cadastro, preencha as informações do titular da conta.
-            </Text>
             <Text style={styles.legend}>
               Campos com <Text style={styles.required}>*</Text> são obrigatórios
             </Text>
-
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>
                 Nome completo <Text style={styles.required}>*</Text>
@@ -332,7 +337,7 @@ export default function CadastroTitular() {
                 onChangeText={(v) => { setNome(v); clearError('nome'); }}
                 onFocus={focusFor(nomeRef)}
                 placeholder="Digite seu nome"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
                 autoCapitalize="words"
               />
               {errors.nome && <Text style={styles.errorText}>{errors.nome}</Text>}
@@ -347,7 +352,7 @@ export default function CadastroTitular() {
                 onPress={() => setShowDatePicker(true)}
                 style={[styles.input, errors.dataNascimento && styles.inputError]}
               >
-                <Text style={{ color: dataNascimento ? '#1f3322' : '#999' }}>
+                <Text style={{ color: dataNascimento ? colors.ink : colors.ink3, fontSize: 14 }}>
                   {dataNascimento ? dataNascimento.toLocaleDateString() : 'Selecione a data'}
                 </Text>
               </Pressable>
@@ -377,7 +382,7 @@ export default function CadastroTitular() {
                 onChangeText={(v) => { setCpf(formatCpf(v)); clearError('cpf'); }}
                 onFocus={focusFor(cpfRef)}
                 placeholder="000.000.000-00"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
                 keyboardType="numeric"
                 maxLength={14}
               />
@@ -391,7 +396,7 @@ export default function CadastroTitular() {
                 value={cns}
                 onChangeText={(v) => setCns(formatCns(v))}
                 placeholder="000 0000 0000 0000"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
                 keyboardType="numeric"
                 maxLength={18}
               />
@@ -401,26 +406,26 @@ export default function CadastroTitular() {
               <Text style={styles.label}>
                 Sexo biológico <Text style={styles.required}>*</Text>
               </Text>
-              <View ref={sexoBiologicoRef} style={{ flexDirection: 'row', gap: 16 }}>
+              <View ref={sexoBiologicoRef} style={{ flexDirection: 'row', gap: 12 }}>
                 <Pressable
                   style={[
-                    styles.input,
-                    { flex: 1, backgroundColor: sexoBiologico === 'MASCULINO' ? '#CAE3E2' : '#F2F7F6' },
-                    errors.sexoBiologico && styles.inputError,
+                    styles.sexChip,
+                    sexoBiologico === 'MASCULINO' && styles.sexChipActive,
+                    errors.sexoBiologico && !sexoBiologico && styles.inputError,
                   ]}
                   onPress={() => { setSexoBiologico('MASCULINO'); clearError('sexoBiologico'); }}
                 >
-                  <Text style={{ color: '#1f3322', textAlign: 'center' }}>Masculino</Text>
+                  <Text style={[styles.sexChipText, sexoBiologico === 'MASCULINO' && styles.sexChipTextActive]}>Masculino</Text>
                 </Pressable>
                 <Pressable
                   style={[
-                    styles.input,
-                    { flex: 1, backgroundColor: sexoBiologico === 'FEMININO' ? '#CAE3E2' : '#F2F7F6' },
-                    errors.sexoBiologico && styles.inputError,
+                    styles.sexChip,
+                    sexoBiologico === 'FEMININO' && styles.sexChipActive,
+                    errors.sexoBiologico && !sexoBiologico && styles.inputError,
                   ]}
                   onPress={() => { setSexoBiologico('FEMININO'); clearError('sexoBiologico'); }}
                 >
-                  <Text style={{ color: '#1f3322', textAlign: 'center' }}>Feminino</Text>
+                  <Text style={[styles.sexChipText, sexoBiologico === 'FEMININO' && styles.sexChipTextActive]}>Feminino</Text>
                 </Pressable>
               </View>
               {errors.sexoBiologico && <Text style={styles.errorText}>{errors.sexoBiologico}</Text>}
@@ -438,7 +443,7 @@ export default function CadastroTitular() {
                 onFocus={focusFor(cepRef)}
                 onBlur={() => fetchCep(cep)}
                 placeholder="00000-000"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
                 keyboardType="numeric"
                 maxLength={9}
               />
@@ -452,7 +457,7 @@ export default function CadastroTitular() {
                 value={rua}
                 onChangeText={setRua}
                 placeholder="Rua e número"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
               />
             </View>
 
@@ -463,7 +468,7 @@ export default function CadastroTitular() {
                 value={complemento}
                 onChangeText={setComplemento}
                 placeholder="Apto, bloco, etc."
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
               />
             </View>
 
@@ -474,7 +479,7 @@ export default function CadastroTitular() {
                 value={municipio}
                 onChangeText={setMunicipio}
                 placeholder="Nome da cidade"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
               />
             </View>
 
@@ -484,10 +489,10 @@ export default function CadastroTitular() {
                 style={[styles.input, styles.pickerButton]}
                 onPress={() => setShowStatePicker(!showStatePicker)}
               >
-                <Text style={{ color: estado ? '#1f3322' : '#999', fontSize: 14 }}>
+                <Text style={{ color: estado ? colors.ink : colors.ink3, fontSize: 14 }}>
                   {estado || 'Selecione o estado'}
                 </Text>
-                <Text style={{ color: '#1f3322' }}>▾</Text>
+                <Ionicons name="chevron-down" size={16} color={colors.brand} />
               </Pressable>
               {showStatePicker && (
                 <ScrollView style={styles.pickerDropdown} nestedScrollEnabled>
@@ -517,7 +522,7 @@ export default function CadastroTitular() {
                 onChangeText={(v) => { setTelefone(formatPhone(v)); clearError('telefone'); }}
                 onFocus={focusFor(telefoneRef)}
                 placeholder="(00) 00000-0000"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.ink3}
                 keyboardType="phone-pad"
               />
               {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
@@ -529,7 +534,7 @@ export default function CadastroTitular() {
               disabled={loading || loggingOut}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <Text style={styles.submitButtonText}>Concluir cadastro</Text>
               )}
@@ -541,91 +546,159 @@ export default function CadastroTitular() {
               style={styles.backButton}
             >
               {loggingOut ? (
-                <ActivityIndicator color="#607367" size="small" />
+                <ActivityIndicator color={colors.brand} size="small" />
               ) : (
-                <Text style={styles.backText}>Voltar para o login</Text>
+                <View style={styles.backRow}>
+                  <Ionicons name="chevron-back" size={14} color={colors.brand} />
+                  <Text style={styles.backText}>Voltar para o login</Text>
+                </View>
               )}
             </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#CAE3E2' },
+  container: { flex: 1 },
   keyboardView: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     paddingVertical: 40,
   },
   logoContainer: { alignItems: 'center', marginBottom: 24 },
-  logo: { width: 180, height: 80 },
-  card: { backgroundColor: '#ffffffcc', borderRadius: 16, padding: 20 },
-  title: { fontSize: 18, fontWeight: '700', color: '#1f3322', marginBottom: 6 },
-  subtitle: { fontSize: 13, color: '#4d5c53', marginBottom: 8 },
-  legend: { fontSize: 11, color: '#607367', marginBottom: 14, fontStyle: 'italic' },
-  required: { color: '#e53935', fontWeight: '700' },
-  fieldGroup: { marginBottom: 14 },
-  label: { fontSize: 12, fontWeight: '600', color: '#1f3322', marginBottom: 6 },
-  inputError: {
+  logoImage: {
+    width: 80,
+    height: 80,
+    marginBottom: 14,
+  },
+  brandTitle: {
+    ...typography.h2,
+    color: colors.ink,
+    textAlign: 'center',
+  },
+  brandSub: {
+    ...typography.small,
+    color: colors.ink3,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#e53935',
-    backgroundColor: '#fdecea',
+    borderColor: colors.line,
+    padding: 22,
+    ...shadows.md,
+  },
+  legend: {
+    ...typography.caption,
+    color: colors.ink3,
+    marginBottom: spacing.md,
+    fontStyle: 'italic',
+  },
+  required: { color: colors.coral, fontWeight: '700' },
+  fieldGroup: { marginBottom: spacing.md },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.ink2,
+    marginBottom: 6,
+  },
+  inputError: {
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
   },
   errorText: {
     fontSize: 11,
-    color: '#e53935',
+    color: colors.danger,
     marginTop: 4,
     fontWeight: '500',
   },
   input: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.md - 1,
+    borderWidth: 1,
+    borderColor: colors.line,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
-    color: '#1f3322',
+    color: colors.ink,
+  },
+  sexChip: {
+    flex: 1,
+    backgroundColor: colors.bgMuted,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md - 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  sexChipActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  sexChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ink,
+  },
+  sexChipTextActive: {
+    color: colors.white,
   },
   submitButton: {
-    backgroundColor: '#29442dff',
-    borderRadius: 12,
+    backgroundColor: colors.brand,
+    borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 6,
   },
   submitButtonDisabled: { opacity: 0.7 },
-  submitButtonText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  backButton: { alignItems: 'center', marginTop: 14, paddingVertical: 4 },
-  backText: { fontSize: 12, color: '#607367' },
+  submitButtonText: { fontSize: 15, fontWeight: '700', color: colors.white },
+  backButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    paddingVertical: 4,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  backText: { fontSize: 13, color: colors.brand, fontWeight: '600' },
   pickerButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   pickerDropdown: {
-    maxHeight: 160,
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
+    maxHeight: 200,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
     marginTop: 4,
   },
   pickerOption: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8EEE8',
+    borderBottomColor: colors.line,
   },
   pickerOptionActive: {
-    backgroundColor: '#CAE3E2',
+    backgroundColor: colors.brandSoft,
   },
   pickerOptionText: {
     fontSize: 14,
-    color: '#1f3322',
+    color: colors.ink,
   },
   pickerOptionTextActive: {
     fontWeight: '700',
+    color: colors.brandInk,
   },
 });
