@@ -37,7 +37,7 @@ public class Pessoa {
     @Column(name = "cep", nullable = false, length = 8)
     private String cep;
 
-    @Column(name = "telefone", nullable = false, length = 11)
+    @Column(name = "telefone", nullable = false, length = 20)
     private String telefone;
 
     @Column(name = "foto_url", length = 500)
