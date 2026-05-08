@@ -1,7 +1,11 @@
-import { View, Text, Image, Pressable, Modal, StyleSheet, StyleSheet as RNStyleSheet } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, StyleSheet, StyleSheet as RNStyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { FamilyMember } from '../../../app/types/vaccination';
+import { colors, radii, spacing, typography, shadows, Tone } from '../../../app/theme/tokens';
+import { Avatar } from '../../redesign';
+
+const TONES: Tone[] = ['brand', 'coral', 'ochre'];
 
 type ProfileModalProps = {
   visible: boolean;
@@ -27,46 +31,59 @@ export default function ProfileModal({
       hardwareAccelerated
       onRequestClose={onClose}
     >
-      <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+      <StatusBar style="light" backgroundColor={colors.dimDark} translucent />
       <View style={styles.modalOverlay}>
         <Pressable style={RNStyleSheet.absoluteFill} onPress={onClose} />
         <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Selecionar perfil</Text>
-            <Pressable onPress={onClose}>
-              <Ionicons name="close" size={18} color="#29442dff" />
+            <View style={styles.headerText}>
+              <Text style={styles.kicker}>Trocar perfil</Text>
+              <Text style={styles.modalTitle}>Quem está vacinando?</Text>
+            </View>
+            <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={8}>
+              <Ionicons name="close" size={18} color={colors.ink2} />
             </Pressable>
           </View>
 
-          {familyMembers.map((profile) => {
-            const isSelected = profile.id === selectedProfileId;
-            return (
-              <Pressable
-                key={profile.id}
-                style={[styles.modalOption, isSelected && styles.modalOptionActive]}
-                onPress={() => {
-                  onSelectProfile(profile.id);
-                  onClose();
-                }}
-              >
-                <View style={styles.modalOptionBadge}>
-                  {profile.photoUri ? (
-                    <Image
-                      source={{ uri: profile.photoUri }}
-                      style={styles.modalOptionBadgeImage}
-                    />
-                  ) : (
-                    <Text style={styles.modalOptionBadgeText}>
-                      {profile.name && profile.name.length > 0 ? profile.name.charAt(0) : '?'}
+          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+            {familyMembers.map((profile, idx) => {
+              const isSelected = profile.id === selectedProfileId;
+              const tone: Tone = profile.kind === 'user' ? 'brand' : TONES[idx % TONES.length];
+              const label = profile.kind === 'user' ? 'Você' : profile.name;
+              return (
+                <Pressable
+                  key={profile.id}
+                  style={[styles.modalOption, isSelected && styles.modalOptionActive]}
+                  onPress={() => {
+                    onSelectProfile(profile.id);
+                    onClose();
+                  }}
+                >
+                  <Avatar
+                    name={profile.name}
+                    photoUri={profile.photoUri}
+                    size={40}
+                    tone={tone}
+                  />
+                  <View style={styles.optionTextWrap}>
+                    <Text style={[styles.modalOptionText, isSelected && styles.modalOptionTextActive]} numberOfLines={1}>
+                      {label}
                     </Text>
+                    {profile.kind !== 'user' && profile.relationship && (
+                      <Text style={[styles.modalOptionSub, isSelected && styles.modalOptionSubActive]} numberOfLines={1}>
+                        {profile.relationship}
+                      </Text>
+                    )}
+                  </View>
+                  {isSelected && (
+                    <View style={styles.checkBadge}>
+                      <Ionicons name="checkmark" size={14} color={colors.white} />
+                    </View>
                   )}
-                </View>
-                <Text style={[styles.modalOptionText, isSelected && styles.modalOptionTextActive]}>
-                  {profile.kind === 'user' ? 'Você' : profile.name}
-                </Text>
-              </Pressable>
-            );
-          })}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </Pressable>
       </View>
     </Modal>
@@ -76,68 +93,94 @@ export default function ProfileModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: spacing.lg,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 280,
+    maxWidth: 360,
     maxHeight: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 12,
-    gap: 8,
-    flexDirection: 'column',
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    ...shadows.lg,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+  },
+  kicker: {
+    ...typography.caption,
+    color: colors.brand,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 2,
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f3322',
+    ...typography.h3,
+    color: colors.ink,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.bgMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  list: {
+    maxHeight: 400,
   },
   modalOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: '#F2F7F6',
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.bgElev,
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginBottom: 8,
   },
   modalOptionActive: {
-    backgroundColor: '#29442dff',
+    backgroundColor: colors.brandSoft,
+    borderColor: colors.brand,
   },
-  modalOptionBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#CAE3E2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalOptionBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1f3322',
-  },
-  modalOptionBadgeImage: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  optionTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   modalOptionText: {
-    fontSize: 14,
+    ...typography.body,
     fontWeight: '600',
-    color: '#1f3322',
+    color: colors.ink,
   },
   modalOptionTextActive: {
-    color: '#fff',
+    color: colors.brandInk,
+  },
+  modalOptionSub: {
+    ...typography.caption,
+    color: colors.ink3,
+  },
+  modalOptionSubActive: {
+    color: colors.brand,
+  },
+  checkBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

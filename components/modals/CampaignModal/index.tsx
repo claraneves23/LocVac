@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Campanha } from '../../../app/types/vaccination';
+import { colors, radii, spacing, typography, shadows } from '../../../app/theme/tokens';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
@@ -58,35 +59,39 @@ export default function CampaignModal({
       hardwareAccelerated
       onRequestClose={onClose}
     >
-      <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+      <StatusBar style="light" backgroundColor={colors.dimDark} translucent />
       <View style={styles.modalOverlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {isEditing ? 'Editar Campanha' : 'Adicionar Campanha'}
-            </Text>
-            <Pressable onPress={onClose}>
-              <Ionicons name="close" size={18} color="#29442dff" />
+            <View style={styles.modalHeaderText}>
+              <Text style={styles.modalKicker}>Campanha</Text>
+              <Text style={styles.modalTitle}>
+                {isEditing ? 'Editar campanha' : 'Adicionar campanha'}
+              </Text>
+            </View>
+            <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
+              <Ionicons name="close" size={18} color={colors.ink2} />
             </Pressable>
           </View>
 
+          <Text style={styles.legend}>
+            Campos com <Text style={styles.required}>*</Text> são obrigatórios
+          </Text>
+
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
-            <Text style={styles.legend}>
-              Campos com <Text style={styles.required}>*</Text> são obrigatórios
-            </Text>
             <View style={styles.formField}>
               <Text style={styles.formLabel}>
-                Nome da Campanha <Text style={styles.required}>*</Text>
+                Nome da campanha <Text style={styles.required}>*</Text>
               </Text>
               <Pressable
-                style={[styles.datePickerButton, campaignNameError && styles.inputError]}
+                style={[styles.dateButton, campaignNameError && styles.inputError]}
                 onPress={onToggleCampaignPicker}
               >
-                <Text style={[styles.datePickerText, !campaignName && styles.placeholderText]}>
+                <Text style={campaignName ? styles.dateTextFilled : styles.dateText} numberOfLines={1}>
                   {campaignName || 'Selecione uma campanha'}
                 </Text>
-                <Ionicons name="chevron-down" size={18} color="#1f3322" />
+                <Ionicons name="chevron-down" size={18} color={colors.brand} />
               </Pressable>
               {campaignNameError && <Text style={styles.errorText}>{campaignNameError}</Text>}
 
@@ -111,7 +116,7 @@ export default function CampaignModal({
                           {c.nome} {c.ativa ? '' : '(Inativa)'}
                         </Text>
                         {campaignName === c.nome && (
-                          <Ionicons name="checkmark" size={18} color="#29442dff" />
+                          <Ionicons name="checkmark" size={18} color={colors.brand} />
                         )}
                       </Pressable>
                     ))}
@@ -122,16 +127,16 @@ export default function CampaignModal({
 
             <View style={styles.formField}>
               <Text style={styles.formLabel}>
-                Data de Participação <Text style={styles.required}>*</Text>
+                Data de participação <Text style={styles.required}>*</Text>
               </Text>
               <Pressable
-                style={[styles.datePickerButton, participationDateError && styles.inputError]}
+                style={[styles.dateButton, participationDateError && styles.inputError]}
                 onPress={onShowDatePicker}
               >
-                <Ionicons name="calendar-outline" size={18} color="#1f3322" />
-                <Text style={styles.datePickerText}>
+                <Text style={participationDate ? styles.dateTextFilled : styles.dateText}>
                   {participationDate ? formatDateToBR(participationDate) : 'Selecione a data'}
                 </Text>
+                <Ionicons name="calendar-outline" size={18} color={colors.brand} />
               </Pressable>
               {participationDateError && <Text style={styles.errorText}>{participationDateError}</Text>}
               {showDatePicker && (
@@ -161,7 +166,7 @@ export default function CampaignModal({
               disabled={saving}
             >
               {saving ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <Text style={styles.saveButtonText}>Salvar</Text>
               )}
@@ -176,89 +181,108 @@ export default function CampaignModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: spacing.lg,
   },
   modalContainer: {
     width: '100%',
-    maxWidth: 320,
-    maxHeight: '70%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 12,
-    flexDirection: 'column',
+    maxWidth: 380,
+    maxHeight: '80%',
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    ...shadows.lg,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    gap: spacing.sm,
   },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f3322',
-  },
-  formScroll: {
-    maxHeight: '100%',
-    marginVertical: 8,
-  },
-  formField: {
-    marginBottom: 12,
-  },
-  formLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1f3322',
-    marginBottom: 4,
-  },
-  datePickerButton: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E8EEE8',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  datePickerText: {
-    fontSize: 14,
-    color: '#1f3322',
+  modalHeaderText: {
     flex: 1,
   },
-  placeholderText: {
-    color: '#9CA3AF',
+  modalKicker: {
+    ...typography.caption,
+    color: colors.ochreInk,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  modalTitle: {
+    ...typography.h3,
+    color: colors.ink,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.bgMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  formScroll: {
+    marginVertical: spacing.md,
   },
   legend: {
-    fontSize: 11,
-    color: '#607367',
-    marginBottom: 8,
+    ...typography.caption,
+    color: colors.ink3,
+    marginTop: 6,
     fontStyle: 'italic',
   },
   required: {
-    color: '#e53935',
+    color: colors.coral,
     fontWeight: '700',
   },
+  formField: {
+    marginBottom: spacing.md,
+    gap: 4,
+  },
+  formLabel: {
+    ...typography.small,
+    fontWeight: '600',
+    color: colors.ink,
+  },
+  dateButton: {
+    backgroundColor: colors.bgMuted,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateText: {
+    ...typography.body,
+    color: colors.ink4,
+    flex: 1,
+  },
+  dateTextFilled: {
+    ...typography.body,
+    color: colors.ink,
+    flex: 1,
+  },
   inputError: {
-    borderColor: '#e53935',
-    backgroundColor: '#fdecea',
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
   },
   errorText: {
-    fontSize: 11,
-    color: '#e53935',
+    ...typography.caption,
+    color: colors.danger,
     marginTop: 4,
     fontWeight: '500',
   },
   pickerDropdown: {
     marginTop: 6,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.line,
     maxHeight: 200,
     overflow: 'hidden',
   },
@@ -266,56 +290,57 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   pickerOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F7F6',
+    borderBottomColor: colors.line,
   },
   pickerOptionActive: {
-    backgroundColor: '#E6F2F1',
+    backgroundColor: colors.brandSoft,
   },
   pickerOptionText: {
-    fontSize: 13,
-    color: '#1f3322',
+    ...typography.body,
+    color: colors.ink,
   },
   pickerOptionTextActive: {
     fontWeight: '600',
-    color: '#29442dff',
+    color: colors.brandInk,
   },
   formActions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-    marginBottom: 8,
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#E8EEE8',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.bgElev,
   },
   cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1f3322',
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.ink2,
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#09BEA5',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     alignItems: 'center',
+    backgroundColor: colors.brand,
+  },
+  saveButtonText: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.white,
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  saveButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#fff',
   },
 });

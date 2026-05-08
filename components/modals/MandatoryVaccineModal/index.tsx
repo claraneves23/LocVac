@@ -2,6 +2,7 @@ import { View, Text, Pressable, Modal, ScrollView, TextInput, StyleSheet, Platfo
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { colors, radii, spacing, typography, shadows } from '../../../app/theme/tokens';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
@@ -67,36 +68,40 @@ export default function MandatoryVaccineModal({
       hardwareAccelerated
       onRequestClose={onClose}
     >
-      <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+      <StatusBar style="light" backgroundColor={colors.dimDark} translucent />
       <View style={styles.modalOverlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <Pressable onPress={onClose}>
-              <Ionicons name="close" size={18} color="#29442dff" />
+            <View style={styles.modalHeaderText}>
+              <Text style={styles.modalKicker}>Vacina obrigatória</Text>
+              <Text style={styles.modalTitle} numberOfLines={2}>{title}</Text>
+            </View>
+            <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
+              <Ionicons name="close" size={18} color={colors.ink2} />
             </Pressable>
           </View>
 
           <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.formField}>
-              <View style={styles.checkboxField}>
-                <Pressable style={styles.checkbox} onPress={onToggleApplied}>
-                  {isApplied && <Ionicons name="checkmark" size={16} color="#09BEA5" />}
-                </Pressable>
-                <Text style={styles.checkboxLabel}>Vacina aplicada</Text>
+            <Pressable style={styles.toggleRow} onPress={onToggleApplied}>
+              <View style={[styles.toggleCheck, isApplied && styles.toggleCheckActive]}>
+                {isApplied && <Ionicons name="checkmark" size={14} color={colors.white} />}
               </View>
-            </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Vacina aplicada</Text>
+                <Text style={styles.toggleSub}>Marque para registrar a dose</Text>
+              </View>
+            </Pressable>
 
             {isApplied && (
               <>
                 <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Data de Aplicação</Text>
-                  <Pressable style={styles.datePickerButton} onPress={onShowDatePicker}>
-                    <Ionicons name="calendar-outline" size={18} color="#1f3322" />
-                    <Text style={styles.datePickerText}>
+                  <Text style={styles.formLabel}>Data de aplicação</Text>
+                  <Pressable style={styles.dateButton} onPress={onShowDatePicker}>
+                    <Text style={date ? styles.dateTextFilled : styles.dateText}>
                       {date ? formatDateToBR(date) : 'Selecione a data'}
                     </Text>
+                    <Ionicons name="calendar-outline" size={18} color={colors.brand} />
                   </Pressable>
                   {showDatePicker && (
                     <DateTimePicker
@@ -115,7 +120,7 @@ export default function MandatoryVaccineModal({
                   <TextInput
                     style={styles.formInput}
                     placeholder="Número do lote"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.ink4}
                     value={lot}
                     onChangeText={onChangeLot}
                   />
@@ -126,29 +131,29 @@ export default function MandatoryVaccineModal({
                   <TextInput
                     style={styles.formInput}
                     placeholder="Código"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.ink4}
                     value={code}
                     onChangeText={onChangeCode}
                   />
                 </View>
 
                 <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Nome do Profissional</Text>
+                  <Text style={styles.formLabel}>Nome do profissional</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="Nome completo"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.ink4}
                     value={profName}
                     onChangeText={onChangeProfName}
                   />
                 </View>
 
                 <View style={styles.formField}>
-                  <Text style={styles.formLabel}>RG do Profissional</Text>
+                  <Text style={styles.formLabel}>RG do profissional</Text>
                   <TextInput
                     style={styles.formInput}
                     placeholder="RG"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.ink4}
                     value={profId}
                     onChangeText={onChangeProfId}
                   />
@@ -171,7 +176,7 @@ export default function MandatoryVaccineModal({
               disabled={saving}
             >
               {saving ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <Text style={styles.saveButtonText}>Salvar</Text>
               )}
@@ -186,121 +191,154 @@ export default function MandatoryVaccineModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: spacing.lg,
   },
   modalContainer: {
     width: '100%',
-    maxWidth: 320,
-    maxHeight: '70%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 12,
-    flexDirection: 'column',
+    maxWidth: 380,
+    maxHeight: '80%',
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
+    ...shadows.lg,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    gap: spacing.sm,
+  },
+  modalHeaderText: {
+    flex: 1,
+  },
+  modalKicker: {
+    ...typography.caption,
+    color: colors.brand,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 2,
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f3322',
+    ...typography.h3,
+    color: colors.ink,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.bgMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   formScroll: {
-    maxHeight: '100%',
-    marginVertical: 8,
+    marginVertical: spacing.md,
   },
-  formField: {
-    marginBottom: 12,
-  },
-  formLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1f3322',
-    marginBottom: 4,
-  },
-  formInput: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#1f3322',
-    borderWidth: 1,
-    borderColor: '#E8EEE8',
-  },
-  datePickerButton: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E8EEE8',
+  toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.md,
+    backgroundColor: colors.brandSoft,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    marginBottom: spacing.md,
   },
-  datePickerText: {
+  toggleCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: colors.brand,
+    backgroundColor: colors.bgElev,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggleCheckActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  toggleLabel: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.brandInk,
+  },
+  toggleSub: {
+    ...typography.small,
+    color: colors.ink2,
+  },
+  formField: {
+    marginBottom: spacing.md,
+    gap: 4,
+  },
+  formLabel: {
+    ...typography.small,
+    fontWeight: '600',
+    color: colors.ink,
+  },
+  formInput: {
+    backgroundColor: colors.bgMuted,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
     fontSize: 14,
-    color: '#1f3322',
-    flex: 1,
+    color: colors.ink,
+  },
+  dateButton: {
+    backgroundColor: colors.bgMuted,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateText: {
+    ...typography.body,
+    color: colors.ink4,
+  },
+  dateTextFilled: {
+    ...typography.body,
+    color: colors.ink,
   },
   formActions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-    marginBottom: 8,
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#E8EEE8',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.bgElev,
   },
   cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1f3322',
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.ink2,
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#09BEA5',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: radii.md,
     alignItems: 'center',
+    backgroundColor: colors.brand,
+  },
+  saveButtonText: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.white,
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  saveButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  checkboxField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#09BEA5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F2F7F6',
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f3322',
   },
 });

@@ -5,8 +5,10 @@ import com.locvac.dto.pessoa.PessoaRequestDTO;
 import com.locvac.dto.pessoa.PessoaResponseDTO;
 import com.locvac.mapper.PessoaMapper;
 import com.locvac.model.associacao.UsuarioPessoa;
+import com.locvac.model.core.GrupoRisco;
 import com.locvac.model.core.Usuario;
 import com.locvac.repository.DoseAplicadaRepository;
+import com.locvac.repository.GrupoRiscoRepository;
 import com.locvac.repository.NotificacaoRepository;
 import com.locvac.repository.ParticipacaoCampanhaRepository;
 import com.locvac.repository.UsuarioPessoaRepository;
@@ -25,9 +27,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Transactional
 public class PessoaServiceImpl implements PessoaService {
 
     private final PessoaRepository repository;
@@ -39,6 +43,7 @@ public class PessoaServiceImpl implements PessoaService {
     private final NotificacaoRepository notificacaoRepository;
     private final ValidacaoCpfUtils validacaoCpfUtils;
     private final ValidacaoCnsUtils validacaoCnsUtils;
+    private final GrupoRiscoRepository grupoRiscoRepository;
 
     public PessoaServiceImpl(
             PessoaRepository repository,
@@ -49,7 +54,8 @@ public class PessoaServiceImpl implements PessoaService {
             ParticipacaoCampanhaRepository participacaoCampanhaRepository,
             NotificacaoRepository notificacaoRepository,
             ValidacaoCpfUtils validacaoCpfUtils,
-            ValidacaoCnsUtils validacaoCnsUtils
+            ValidacaoCnsUtils validacaoCnsUtils,
+            GrupoRiscoRepository grupoRiscoRepository
     ) {
         this.repository = repository;
         this.mapper = mapper;
@@ -60,7 +66,9 @@ public class PessoaServiceImpl implements PessoaService {
         this.notificacaoRepository = notificacaoRepository;
         this.validacaoCpfUtils = validacaoCpfUtils;
         this.validacaoCnsUtils = validacaoCnsUtils;
+        this.grupoRiscoRepository = grupoRiscoRepository;
     }
+
     @Override
     public List<PessoaResponseDTO> listarDependentes(java.util.UUID usuarioId) {
         TipoVinculo tipoDependente = TipoVinculo.getByCodigo(3);
@@ -75,12 +83,11 @@ public class PessoaServiceImpl implements PessoaService {
         validacaoCpfUtils.validarCpfDuplicado(dto.cpf());
         validacaoCnsUtils.validarCnsDuplicado(dto.cns());
         Pessoa pessoa = mapper.toEntity(dto);
-        Pessoa salvo = repository.save(pessoa);
-        return mapper.toResponse(salvo);
+        pessoa.setGruposRisco(resolverGrupos(dto.gruposRiscoIds()));
+        return mapper.toResponse(repository.save(pessoa));
     }
 
     @Override
-    @Transactional
     public PessoaResponseDTO cadastrarTitular(PessoaRequestDTO dto) {
         TokenData dados = usuarioAutenticado();
 
@@ -95,6 +102,7 @@ public class PessoaServiceImpl implements PessoaService {
 
         Pessoa pessoa = mapper.toEntity(dto);
         pessoa.setAtivo(true);
+        pessoa.setGruposRisco(resolverGrupos(dto.gruposRiscoIds()));
         pessoa = repository.save(pessoa);
 
         UsuarioPessoa vinculo = new UsuarioPessoa();
@@ -113,14 +121,6 @@ public class PessoaServiceImpl implements PessoaService {
         return mapper.toResponse(pessoa);
     }
 
-    private TokenData usuarioAutenticado() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof TokenData dados)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido.");
-        }
-        return dados;
-    }
-
     @Override
     public List<PessoaResponseDTO> listarTodos() {
         return repository.findAll()
@@ -134,18 +134,6 @@ public class PessoaServiceImpl implements PessoaService {
         Pessoa pessoa = repository.findById(idPessoa)
                 .orElseThrow(() -> new RuntimeException("Pessoa não encontrada"));
         return mapper.toResponse(pessoa);
-    }
-
-    @Override
-    @Transactional
-    public void deletar(Long id) {
-        Pessoa pessoa = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pessoa não encontrada com o ID: " + id));
-        notificacaoRepository.deleteAll(notificacaoRepository.findByPessoaId(id));
-        doseAplicadaRepository.deleteAll(doseAplicadaRepository.findByPessoaId(id));
-        participacaoCampanhaRepository.deleteAll(participacaoCampanhaRepository.findByPessoaId(id));
-        usuarioPessoaRepository.deleteAll(usuarioPessoaRepository.findByPessoaId(id));
-        repository.delete(pessoa);
     }
 
     @Override
@@ -163,6 +151,33 @@ public class PessoaServiceImpl implements PessoaService {
         pessoa.setTelefone(dto.telefone());
         pessoa.setFotoUrl(dto.fotoUrl());
         pessoa.setNomeResponsavel(dto.nomeResponsavel());
+        if (dto.gruposRiscoIds() != null) {
+            pessoa.setGruposRisco(resolverGrupos(dto.gruposRiscoIds()));
+        }
         return mapper.toResponse(repository.save(pessoa));
+    }
+
+    @Override
+    public void deletar(Long id) {
+        Pessoa pessoa = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pessoa não encontrada com o ID: " + id));
+        notificacaoRepository.deleteAll(notificacaoRepository.findByPessoaId(id));
+        doseAplicadaRepository.deleteAll(doseAplicadaRepository.findByPessoaId(id));
+        participacaoCampanhaRepository.deleteAll(participacaoCampanhaRepository.findByPessoaId(id));
+        usuarioPessoaRepository.deleteAll(usuarioPessoaRepository.findByPessoaId(id));
+        repository.delete(pessoa);
+    }
+
+    private List<GrupoRisco> resolverGrupos(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return new ArrayList<>();
+        return grupoRiscoRepository.findAllById(ids);
+    }
+
+    private TokenData usuarioAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof TokenData dados)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido.");
+        }
+        return dados;
     }
 }
