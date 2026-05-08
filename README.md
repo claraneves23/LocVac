@@ -70,171 +70,256 @@ Abaixo, apresentamos a estrutura relacional do banco de dados PostgreSQL utiliza
 
 ```mermaid
 erDiagram
+
+    %% ── Entidades principais ──────────────────────────────────────────────
+
     USUARIO {
-        string id_usuario PK
-        string nome
-        string email
-        string senha_hash
-        string telefone
+        uuid    id_usuario        PK
+        string  nome
+        string  email
+        string  senha_hash
+        string  telefone
         boolean ativo
-        datetime data_criacao
+        date    data_criacao
         datetime ultimo_login
+        boolean mfa_enabled
+        string  mfa_secret
+        int     tentativas_falhas
+        datetime bloqueado_ate
     }
 
     PESSOA {
-        string id_pessoa PK
-        string nome
-        date data_nascimento
-        string sexo
-        string cpf
-        string cns
-        string nome_mae
+        bigint  id_pessoa         PK
+        string  nome
+        date    data_nascimento
+        string  cpf
+        string  sexo_biologico
+        string  cns
+        string  cep
+        string  telefone
+        string  foto_url
+        string  nome_responsavel
+        string  rua
+        string  complemento
+        string  municipio
+        string  estado
         boolean ativo
     }
 
-    CAMPANHA {
-        string id_campanha PK
-        string nome
-        string doenca_alvo
-        date data_inicio
-        date data_fim
-        string publico_alvo
-        boolean ativa
-    }
-
-    UNIDADE_SAUDE {
-        string id_unidade PK
-        string nome
-        string cnes
-        string endereco
-        string municipio
-        string estado
-        string telefone
-        string email
-        string descricao
-        boolean ativa
-    }
-
     VACINA {
-        string id_vacina PK
-        string nome
-        string fabricante
-        string tipo
-        string via_administracao
-        string codigo_pni
+        bigint  id_vacina         PK
+        string  nome
+        string  descricao
+        string  dose
+        string  via_administracao
+        string  codigo_pni
         boolean ativa
+        string  tipo_secao_vacinacao
+        int     idade_minima_meses
+        int     idade_maxima_meses
+    }
+
+    CAMPANHA {
+        bigint  id_campanha       PK
+        string  nome
+        string  doenca_alvo
+        date    data_inicio
+        date    data_fim
+        string  publico_alvo
+        boolean ativa
+    }
+
+    GRUPO_RISCO {
+        bigint  id_grupo_risco    PK
+        string  nome
+        string  descricao
     }
 
     CATEGORIA_VACINA {
-        string id_categoria PK
-        string descricao
+        bigint  id_categoria      PK
+        string  descricao
     }
 
-    LOG_AUDITORIA {
-        string id_log PK
-        string entidade
-        string id_entidade
-        string acao
-        string id_usuario FK
-        datetime data_hora
-        jsonb dados_anteriores
-        jsonb dados_novos
+    %% ── Autenticação e segurança ──────────────────────────────────────────
+
+    REFRESH_TOKENS {
+        uuid    id                PK
+        uuid    id_usuario        FK
+        string  token_hash
+        datetime expires_at
+        boolean revoked
+        datetime created_at
     }
+
+    EMAIL_VERIFICACAO {
+        bigint  id_email_verificacao PK
+        string  email
+        string  senha_hash
+        string  codigo_hash
+        int     tentativas
+        datetime expira_em
+        datetime criado_em
+        datetime ultimo_envio_em
+    }
+
+    RECUPERACAO_SENHA {
+        bigint  id_recuperacao_senha PK
+        string  email
+        string  codigo_hash
+        int     tentativas
+        datetime expira_em
+        datetime criado_em
+        datetime ultimo_envio_em
+    }
+
+    %% ── Push notifications ────────────────────────────────────────────────
+
+    EXPO_PUSH_TOKEN {
+        bigint  id_token          PK
+        uuid    id_usuario        FK
+        string  token
+        string  plataforma
+        datetime criado_em
+    }
+
+    %% ── Vínculo usuário–pessoa ────────────────────────────────────────────
 
     USUARIO_PESSOA {
-        string id_usuario_pessoa PK
-        string id_usuario FK
-        string id_pessoa FK
-        string tipo_vinculo
+        bigint  id_usuario_pessoa PK
+        uuid    id_usuario        FK
+        bigint  id_pessoa         FK
+        string  tipo_vinculo
         boolean pode_visualizar
         boolean pode_editar
-        datetime data_vinculo
+        date    data_vinculo
+        string  dsc_parentesco
     }
 
-    AGENDA_VACINAL {
-        string id_agenda PK
-        string id_pessoa FK
-        string id_vacina FK
-        string id_calendario FK
-        string id_campanha FK
-        date data_prevista
-        string tipo_evento
-        string status
+    %% ── Vacinação ─────────────────────────────────────────────────────────
+
+    CALENDARIO_VACINAL {
+        bigint  id_calendario     PK
+        bigint  id_vacina         FK
+        int     faixa_etaria_min_meses
+        int     faixa_etaria_max_meses
+        string  publico_alvo
+        boolean obrigatoria
+        string  numero_dose
+        string  descricao_dose
+        string  ordem_exibicao
     }
 
     DOSE_APLICADA {
-        string id_dose PK
-        string id_pessoa FK
-        string id_vacina FK
-        string id_categoria FK
-        string id_campanha FK
-        int dose_numero
-        date data_aplicacao
-        string lote
-        string id_unidade FK
-        string observacao
-        string criada_por FK
-        datetime data_registro
+        bigint  id_dose           PK
+        bigint  id_pessoa         FK
+        bigint  id_vacina         FK
+        bigint  id_categoria      FK
+        string  nome_custom
+        int     dose_numero
+        string  nome_profissional
+        string  registro_profissional
+        date    data_aplicacao
+        string  lote
+        string  observacao
+        string  fabricante
+        date    data_registro
+        string  unidade_saude
     }
 
-    VACINA_INFORMATIVO {
-        string id_informativo PK
-        string id_vacina FK
-        int versao
-        datetime data_publicacao
-        string orgao_emissor
-        string fonte_referencia
-        boolean ativa
-    }
-
-    CALENDARIO_VACINAL {
-        string id_calendario PK
-        string id_vacina FK
-        string id_categoria FK
-        int faixa_etaria_min_meses
-        int faixa_etaria_max_meses
-        string publico_alvo
-        boolean obrigatoria
+    PARTICIPACAO_CAMPANHA {
+        bigint  id_participacao   PK
+        bigint  id_pessoa         FK
+        bigint  id_campanha       FK
+        date    data_participacao
     }
 
     NOTIFICACAO {
-        string id_notificacao PK
-        string id_usuario FK
-        string id_pessoa FK
-        string id_agenda FK
-        string titulo
-        string mensagem
-        datetime data_criacao
-        datetime data_visualizacao
+        bigint  id_notificacao    PK
+        uuid    id_usuario        FK
+        bigint  id_pessoa         FK
+        bigint  id_calendario     FK
+        bigint  id_campanha       FK
+        int     dias_offset
+        boolean persistente
+        string  titulo
+        string  mensagem
+        date    data_criacao
+        date    data_visualizacao
         boolean lida
-        string tipo
+        string  tipo_notificacao
+    }
+
+    VACINA_EFEITO_COLATERAL {
+        bigint  id_efeito_colateral PK
+        bigint  id_vacina           FK
+        string  descricao
+        string  severidade
+        string  orientacao
+    }
+
+    VACINA_INFORMATIVO {
+        bigint  id_informativo    PK
+        bigint  id_vacina         FK
+        int     versao
+        date    data_publicacao
+        string  orgao_emissor
+        string  fonte_referencia
     }
 
     VACINA_SECAO_INFORMATIVA {
-        string id_secao PK
-        string id_informativo FK
-        string titulo_secao
-        string conteudo
-        int ordem_exibicao
+        bigint  id_secao          PK
+        bigint  id_informativo    FK
+        string  titulo_secao
+        text    conteudo
+        int     ordem_exibicao
     }
 
-    USUARIO ||--o{ USUARIO_PESSOA : "possui"
-    PESSOA ||--o{ USUARIO_PESSOA : "vinculada"
-    USUARIO ||--o{ LOG_AUDITORIA : "gera"
-    PESSOA ||--o{ AGENDA_VACINAL : "tem"
-    PESSOA ||--o{ DOSE_APLICADA : "recebe"
-    PESSOA ||--o{ NOTIFICACAO : "recebe"
-    VACINA ||--o{ AGENDA_VACINAL : "agendada"
-    VACINA ||--o{ DOSE_APLICADA : "aplicada"
-    VACINA ||--o{ VACINA_INFORMATIVO : "possui"
-    VACINA ||--o{ CALENDARIO_VACINAL : "pertence"
-    CATEGORIA_VACINA ||--o{ DOSE_APLICADA : "classifica"
-    CATEGORIA_VACINA ||--o{ CALENDARIO_VACINAL : "organiza"
-    CAMPANHA ||--o{ AGENDA_VACINAL : "promove"
-    CAMPANHA ||--o{ DOSE_APLICADA : "registra"
-    UNIDADE_SAUDE ||--o{ DOSE_APLICADA : "realiza"
-    VACINA_INFORMATIVO ||--o{ VACINA_SECAO_INFORMATIVA : "detalha"
-    AGENDA_VACINAL ||--o{ NOTIFICACAO : "gera"
+    %% ── Carrossel educativo ───────────────────────────────────────────────
+
+    CARROSSEL_ITEM {
+        bigint  id_item           PK
+        string  titulo
+        string  descricao
+        string  imagem_url
+        int     ordem_exibicao
+        boolean ativo
+    }
+
+    CARROSSEL_CONTEUDO {
+        bigint  id_conteudo       PK
+        bigint  id_item           FK
+        string  titulo_secao
+        text    conteudo
+        int     ordem_exibicao
+    }
+
+    CARROSSEL_CONTEUDO_ITEM {
+        bigint  id_conteudo       FK
+        text    item
+        int     ordem
+    }
+
+    %% ── Relacionamentos ───────────────────────────────────────────────────
+
+    USUARIO             ||--o{ USUARIO_PESSOA          : "possui"
+    PESSOA              ||--o{ USUARIO_PESSOA          : "vinculada em"
+    USUARIO             ||--o{ REFRESH_TOKENS          : "possui"
+    USUARIO             ||--o{ EXPO_PUSH_TOKEN         : "registra"
+    USUARIO             ||--o{ NOTIFICACAO             : "recebe"
+    PESSOA              ||--o{ DOSE_APLICADA           : "recebe"
+    PESSOA              ||--o{ PARTICIPACAO_CAMPANHA   : "participa de"
+    PESSOA              ||--o{ NOTIFICACAO             : "referenciada em"
+    VACINA              ||--o{ CALENDARIO_VACINAL      : "compõe"
+    VACINA              ||--o{ DOSE_APLICADA           : "aplicada em"
+    VACINA              ||--o{ VACINA_EFEITO_COLATERAL : "possui"
+    VACINA              ||--o{ VACINA_INFORMATIVO      : "possui"
+    VACINA_INFORMATIVO  ||--o{ VACINA_SECAO_INFORMATIVA : "detalha"
+    CAMPANHA            ||--o{ PARTICIPACAO_CAMPANHA   : "recebe"
+    CAMPANHA            ||--o{ NOTIFICACAO             : "referenciada em"
+    CATEGORIA_VACINA    ||--o{ DOSE_APLICADA           : "classifica"
+    CALENDARIO_VACINAL  ||--o{ NOTIFICACAO             : "gera"
+    CARROSSEL_ITEM      ||--o{ CARROSSEL_CONTEUDO      : "contém"
+    CARROSSEL_CONTEUDO  ||--o{ CARROSSEL_CONTEUDO_ITEM : "lista"
 ```
 
 ---
