@@ -8,12 +8,12 @@ module.exports = {
     orientation: "portrait",
     icon: "./assets/images/iconLocVac.png",
     userInterfaceStyle: "light",
-    backgroundColor: "#CAE3E2",
+    backgroundColor: "#F1F5F4",
     newArchEnabled: true,
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff",
+      backgroundColor: "#F1F5F4",
     },
     ios: {
       supportsTablet: true,
