@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Skeleton from '../components/redesign/Skeleton';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Notifications from 'expo-notifications';
@@ -23,8 +24,11 @@ import {
   marcarNotificacaoComoLida,
   NotificacaoDTO,
 } from './service/notificationService';
+import Tag from '../components/redesign/Tag';
+import { colors, radii, typography } from './theme/tokens';
 
 type ActiveTab = 'history' | 'pending';
+type EntryType = 'mandatory' | 'other' | 'campaign';
 
 type ProfileData = {
   member: FamilyMember;
@@ -35,7 +39,7 @@ type ProfileData = {
 
 type HistoryEntry = {
   key: string;
-  type: 'mandatory' | 'other' | 'campaign';
+  type: EntryType;
   name: string;
   date?: string;
   detail?: string;
@@ -44,13 +48,24 @@ type HistoryEntry = {
 
 type PendingEntry = {
   key: string;
-  notificacaoId: number;
+  notificacaoId?: number;
   type: 'vaccine' | 'campaign';
   name: string;
+  ageLabel?: string;
   description?: string;
   urgency: 'high' | 'medium' | 'low';
-  lida: boolean;
+  lida?: boolean;
   member?: FamilyMember;
+};
+
+const formatAge = (months: number): string => {
+  if (months === 0) return 'Ao nascer';
+  if (months === 1) return '1 mês';
+  if (months < 12) return `${months} meses`;
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (m === 0) return y === 1 ? '1 ano' : `${y} anos`;
+  return `${y} ano${y > 1 ? 's' : ''} e ${m} mês${m > 1 ? 'es' : ''}`;
 };
 
 const formatDateToBR = (isoDate: string | undefined): string => {
@@ -59,14 +74,31 @@ const formatDateToBR = (isoDate: string | undefined): string => {
   return `${day}/${month}/${year}`;
 };
 
+const TYPE_TONE: Record<EntryType, 'brand' | 'neutral' | 'ochre'> = {
+  mandatory: 'brand',
+  other: 'neutral',
+  campaign: 'ochre',
+};
+
+const TYPE_ICON: Record<EntryType, React.ComponentProps<typeof Ionicons>['name']> = {
+  mandatory: 'shield-checkmark',
+  other: 'medkit',
+  campaign: 'megaphone',
+};
+
+const TYPE_LABEL: Record<EntryType, string> = {
+  mandatory: 'Obrigatória',
+  other: 'Outra vacina',
+  campaign: 'Campanha',
+};
+
 export default function Search() {
   const { mainUser, dependents } = useAppContext();
-
   const [activeTab, setActiveTab] = useState<ActiveTab>('history');
   const [filterProfile, setFilterProfile] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mandatoryVaccines, setMandatoryVaccines] = useState<VacinaDTO[]>([]);
   const [campaigns, setCampaigns] = useState<Campanha[]>([]);
+  const [mandatoryVaccines, setMandatoryVaccines] = useState<VacinaDTO[]>([]);
   const [profilesData, setProfilesData] = useState<ProfileData[]>([]);
   const [notificacoes, setNotificacoes] = useState<NotificacaoDTO[]>([]);
 
@@ -82,11 +114,12 @@ export default function Search() {
       setLoading(true);
 
       const fetchAll = async () => {
-        const [mandatory, camps, notifs] = await Promise.all([
-          fetchMandatoryVaccines(),
+        const [mandatories, camps, notifs] = await Promise.all([
+          fetchMandatoryVaccines().catch(() => [] as VacinaDTO[]),
           fetchCampaigns(),
           fetchNotificacoes().catch(() => [] as NotificacaoDTO[]),
         ]);
+        setMandatoryVaccines(mandatories);
         const data = await Promise.all(
           members.map(async (member) => {
             const [applied, other, participacoes] = await Promise.all([
@@ -97,7 +130,6 @@ export default function Search() {
             return { member, applied, other, participacoes };
           })
         );
-        setMandatoryVaccines(mandatory);
         setCampaigns(camps);
         setProfilesData(data);
         setNotificacoes(notifs);
@@ -109,16 +141,13 @@ export default function Search() {
 
   useEffect(() => {
     const sub = Notifications.addNotificationReceivedListener(() => {
-      fetchNotificacoes()
-        .then(setNotificacoes)
-        .catch(() => {});
+      fetchNotificacoes().then(setNotificacoes).catch(() => {});
     });
     return () => sub.remove();
   }, []);
 
   const historyEntries = useMemo<HistoryEntry[]>(() => {
     const entries: HistoryEntry[] = [];
-
     profilesData.forEach(({ member, applied, other, participacoes }) => {
       applied.forEach((dose) => {
         entries.push({
@@ -128,12 +157,10 @@ export default function Search() {
           date: dose.dataAplicacao,
           detail:
             [dose.lote && `Lote: ${dose.lote}`, dose.nomeProfissional && `Prof: ${dose.nomeProfissional}`]
-              .filter(Boolean)
-              .join(' • ') || undefined,
+              .filter(Boolean).join(' • ') || undefined,
           member,
         });
       });
-
       other.forEach((dose) => {
         entries.push({
           key: `other-${dose.id}`,
@@ -142,12 +169,10 @@ export default function Search() {
           date: dose.dataAplicacao,
           detail:
             [dose.lote && `Lote: ${dose.lote}`, dose.unidadeSaude && `Local: ${dose.unidadeSaude}`]
-              .filter(Boolean)
-              .join(' • ') || undefined,
+              .filter(Boolean).join(' • ') || undefined,
           member,
         });
       });
-
       participacoes.forEach((p) => {
         const camp = campaigns.find((c) => c.id === p.idCampanha);
         entries.push({
@@ -159,7 +184,6 @@ export default function Search() {
         });
       });
     });
-
     return entries.sort((a, b) => {
       if (!a.date && !b.date) return 0;
       if (!a.date) return 1;
@@ -169,50 +193,74 @@ export default function Search() {
   }, [profilesData, campaigns]);
 
   const pendingEntries = useMemo<PendingEntry[]>(() => {
-    const memberByPessoaId = new Map<number, FamilyMember>();
-    if (mainUser) memberByPessoaId.set(Number(mainUser.id), mainUser);
-    dependents.forEach((d) => memberByPessoaId.set(Number(d.id), d));
+    const entries: PendingEntry[] = [];
 
-    const entries = notificacoes.map<PendingEntry>((n) => {
-      let urgency: PendingEntry['urgency'] = 'low';
-      if (n.tipo === 'VACINA_ATRASADA') {
-        urgency = 'high';
-      } else if (n.diasOffset === 0) {
-        urgency = 'high';
-      } else if (n.diasOffset != null && n.diasOffset <= 7) {
-        urgency = 'medium';
-      }
+    // Vacinas: calculado localmente — quais a pessoa deveria ter tomado pela idade e ainda não tomou
+    profilesData.forEach(({ member, applied }) => {
+      if (!member.birthDate) return;
+      const [y, mo, d] = member.birthDate.split('-').map(Number);
+      const birth = new Date(y, mo - 1, d);
+      const now = new Date();
+      const personAgeMonths =
+        (now.getFullYear() - birth.getFullYear()) * 12 +
+        (now.getMonth() - birth.getMonth());
 
-      const type: PendingEntry['type'] = n.tipo === 'NOVA_CAMPANHA' ? 'campaign' : 'vaccine';
-      const member = n.pessoaId != null ? memberByPessoaId.get(n.pessoaId) : undefined;
+      const appliedIds = new Set(applied.map((dose) => dose.idVacina));
 
-      return {
-        key: `notif-${n.id}`,
-        notificacaoId: n.id,
-        type,
-        name: n.titulo,
-        description: n.mensagem,
-        urgency,
-        lida: n.lida,
-        member,
-      };
+      mandatoryVaccines
+        .filter((v) => {
+          const minAge = v.idadeMinimaMeses ?? 0;
+          return minAge <= personAgeMonths && !appliedIds.has(v.id);
+        })
+        .forEach((v) => {
+          const minAge = v.idadeMinimaMeses ?? 0;
+          // Atrasada = faixa etária já passou; no prazo = mês atual
+          const urgency: PendingEntry['urgency'] =
+            minAge < personAgeMonths ? 'high' : 'medium';
+          entries.push({
+            key: `pending-${member.id}-${v.id}`,
+            type: 'vaccine',
+            name: v.nome,
+            ageLabel: formatAge(minAge),
+            urgency,
+            member,
+          });
+        });
     });
 
-    const urgencyOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
-    return entries.sort((a, b) => {
-      if (a.lida !== b.lida) return a.lida ? 1 : -1;
-      return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
-    });
-  }, [notificacoes, mainUser, dependents]);
+    // Campanhas: vindas do backend
+    notificacoes
+      .filter((n) => n.tipo === 'NOVA_CAMPANHA')
+      .forEach((n) => {
+        entries.push({
+          key: `notif-${n.id}`,
+          notificacaoId: n.id,
+          type: 'campaign',
+          name: n.titulo,
+          description: n.mensagem,
+          urgency: 'low',
+          lida: n.lida,
+          member: n.pessoaId != null
+            ? (mainUser?.id === String(n.pessoaId)
+                ? mainUser ?? undefined
+                : dependents.find((dep) => dep.id === String(n.pessoaId)))
+            : undefined,
+        });
+      });
+
+    const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    return entries.sort((a, b) => order[a.urgency] - order[b.urgency]);
+  }, [mandatoryVaccines, profilesData, notificacoes, mainUser, dependents]);
 
   const handleTapPending = useCallback((entry: PendingEntry) => {
-    if (entry.lida) return;
+    if (!entry.notificacaoId || entry.lida) return;
+    const id = entry.notificacaoId;
     setNotificacoes((prev) =>
-      prev.map((n) => (n.id === entry.notificacaoId ? { ...n, lida: true } : n))
+      prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
     );
-    marcarNotificacaoComoLida(entry.notificacaoId).catch(() => {
+    marcarNotificacaoComoLida(id).catch(() => {
       setNotificacoes((prev) =>
-        prev.map((n) => (n.id === entry.notificacaoId ? { ...n, lida: false } : n))
+        prev.map((n) => (n.id === id ? { ...n, lida: false } : n))
       );
     });
   }, []);
@@ -221,110 +269,96 @@ export default function Search() {
     () => (!filterProfile ? historyEntries : historyEntries.filter((e) => e.member.id === filterProfile)),
     [historyEntries, filterProfile]
   );
-
   const filteredPending = useMemo(
-    () =>
-      !filterProfile
-        ? pendingEntries
-        : pendingEntries.filter((e) => e.member?.id === filterProfile),
+    () => (!filterProfile ? pendingEntries : pendingEntries.filter((e) => e.member?.id === filterProfile)),
     [pendingEntries, filterProfile]
   );
-
   const pendingCount = filteredPending.length;
   const highUrgencyCount = filteredPending.filter((e) => e.urgency === 'high').length;
 
-  const getTypeLabel = (type: HistoryEntry['type']) => {
-    if (type === 'mandatory') return 'Obrigatória';
-    if (type === 'other') return 'Outra Vacina';
-    return 'Campanha';
-  };
-
-  const getTypeColor = (type: HistoryEntry['type']) => {
-    if (type === 'mandatory') return '#005570';
-    if (type === 'other') return '#6B7280';
-    return '#D97706';
-  };
-
-  const getTypeIcon = (type: HistoryEntry['type']): React.ComponentProps<typeof Ionicons>['name'] => {
-    if (type === 'mandatory') return 'shield-checkmark';
-    if (type === 'other') return 'medical';
-    return 'megaphone';
-  };
-
-  const getPendingTypeLabel = (type: PendingEntry['type']) =>
-    type === 'vaccine' ? 'Vacina Faltante' : 'Campanha';
-
-  const getPendingTypeColor = (type: PendingEntry['type']) =>
-    type === 'vaccine' ? '#DC2626' : '#D97706';
-
-  const getPendingTypeIcon = (type: PendingEntry['type']): React.ComponentProps<typeof Ionicons>['name'] =>
-    type === 'vaccine' ? 'alert-circle' : 'megaphone';
-
-  const getUrgencyColor = (urgency: PendingEntry['urgency']) => {
-    if (urgency === 'high') return '#DC2626';
-    if (urgency === 'medium') return '#D97706';
-    return '#6B7280';
-  };
+  const urgencyTone = (u: PendingEntry['urgency']): 'coral' | 'ochre' | 'neutral' =>
+    u === 'high' ? 'coral' : u === 'medium' ? 'ochre' : 'neutral';
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Ionicons name="time" size={24} color="#005570" />
-          <Text style={styles.headerTitle}>Histórico</Text>
-        </View>
-      </View>
 
-      <View style={styles.tabContainer}>
+      <View style={styles.tabRow}>
         <Pressable
           style={[styles.tab, activeTab === 'history' && styles.tabActive]}
           onPress={() => setActiveTab('history')}
         >
-          <Ionicons name="document-text-outline" size={18} color={activeTab === 'history' ? '#005570' : '#9CA3AF'} />
-          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>Histórico</Text>
+          <Ionicons name="document-text-outline" size={16} color={activeTab === 'history' ? colors.brand : colors.ink3} />
+          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>Registros</Text>
         </Pressable>
         <Pressable
           style={[styles.tab, activeTab === 'pending' && styles.tabActive]}
           onPress={() => setActiveTab('pending')}
         >
-          <Ionicons name="alert-circle-outline" size={18} color={activeTab === 'pending' ? '#005570' : '#9CA3AF'} />
+          <Ionicons name="alert-circle-outline" size={16} color={activeTab === 'pending' ? colors.brand : colors.ink3} />
           <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Pendências</Text>
           {pendingCount > 0 && (
-            <View style={[styles.tabBadge, highUrgencyCount > 0 && styles.tabBadgeUrgent]}>
-              <Text style={styles.tabBadgeText}>{pendingCount}</Text>
-            </View>
+            <View style={styles.tabDot} />
           )}
         </Pressable>
       </View>
 
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          <Pressable
-            style={[styles.filterChip, !filterProfile && styles.filterChipActive]}
-            onPress={() => setFilterProfile(null)}
-          >
-            <Text style={[styles.filterChipText, !filterProfile && styles.filterChipTextActive]}>Todos</Text>
-          </Pressable>
-          {familyMembers.map((member) => (
+      <View style={styles.filterRow}>
+        <Pressable
+          style={[styles.filterChip, !filterProfile && styles.filterChipActive]}
+          onPress={() => setFilterProfile(null)}
+        >
+          <Text style={[styles.filterChipText, !filterProfile && styles.filterChipTextActive]}>Todos</Text>
+        </Pressable>
+        {familyMembers.map((m) => {
+          const active = filterProfile === m.id;
+          return (
             <Pressable
-              key={member.id}
-              style={[styles.filterChip, filterProfile === member.id && styles.filterChipActive]}
-              onPress={() => setFilterProfile(filterProfile === member.id ? null : member.id)}
+              key={m.id}
+              style={[styles.filterChip, active && styles.filterChipActive]}
+              onPress={() => setFilterProfile(active ? null : m.id)}
             >
-              <Text style={[styles.filterChipText, filterProfile === member.id && styles.filterChipTextActive]}>
-                {member.kind === 'user' ? 'Você' : member.name}
+              <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                {m.kind === 'user' ? 'Você' : m.name}
               </Text>
             </Pressable>
-          ))}
-        </ScrollView>
+          );
+        })}
       </View>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#005570" />
-        </View>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.statsRow}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={styles.statCard}>
+                <Skeleton width={32} height={20} radius={4} style={{ marginBottom: 6 }} />
+                <Skeleton width={48} height={10} radius={4} />
+              </View>
+            ))}
+          </View>
+          <View style={styles.timeline}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <View key={i} style={styles.timelineRow}>
+                <View style={styles.timelineRail}>
+                  <View style={[styles.timelineDot, { backgroundColor: colors.line, borderColor: colors.bg }]} />
+                  {i < 4 && <View style={styles.timelineLine} />}
+                </View>
+                <View style={[styles.timelineCard, { marginBottom: 10 }]}>
+                  <View style={[styles.timelineHeader, { gap: 8 }]}>
+                    <Skeleton width={20} height={18} radius={4} />
+                    <Skeleton width="55%" height={14} radius={4} />
+                  </View>
+                  <View style={[styles.timelineMeta, { marginTop: 10 }]}>
+                    <Skeleton width={60} height={18} radius={6} />
+                    <Skeleton width={72} height={10} radius={4} />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+          <View style={{ height: 120 }} />
+        </ScrollView>
       ) : activeTab === 'history' ? (
-        <>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{filteredHistory.filter((e) => e.type !== 'campaign').length}</Text>
@@ -340,61 +374,63 @@ export default function Search() {
             </View>
           </View>
 
-          <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-            {filteredHistory.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="document-text-outline" size={48} color="#9CA3AF" />
-                <Text style={styles.emptyText}>Nenhum registro encontrado.</Text>
-                <Text style={styles.emptySubtext}>Os registros de vacinas e campanhas aparecerão aqui.</Text>
-              </View>
-            ) : (
-              filteredHistory.map((entry) => (
-                <View key={entry.key} style={styles.historyCard}>
-                  <View style={styles.historyCardHeader}>
-                    <View style={[styles.typeIconContainer, { backgroundColor: getTypeColor(entry.type) + '15' }]}>
-                      <Ionicons name={getTypeIcon(entry.type)} size={20} color={getTypeColor(entry.type)} />
+          {filteredHistory.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="document-text-outline" size={38} color={colors.ink4} />
+              <Text style={styles.emptyTitle}>Nenhum registro encontrado.</Text>
+              <Text style={styles.emptySub}>Seus registros de vacinas e campanhas aparecerão aqui.</Text>
+            </View>
+          ) : (
+            <View style={styles.timeline}>
+              {filteredHistory.map((entry, idx) => {
+                const tone = TYPE_TONE[entry.type];
+                const isLast = idx === filteredHistory.length - 1;
+                return (
+                  <View key={entry.key} style={styles.timelineRow}>
+                    <View style={styles.timelineRail}>
+                      <View style={[
+                        styles.timelineDot,
+                        {
+                          backgroundColor:
+                            tone === 'brand' ? colors.brand : tone === 'ochre' ? colors.ochre : colors.ink3,
+                        },
+                      ]} />
+                      {!isLast && <View style={styles.timelineLine} />}
                     </View>
-                    <View style={styles.historyCardInfo}>
-                      <Text style={styles.historyCardName}>{entry.name}</Text>
-                      <View style={styles.historyCardMeta}>
-                        <View style={[styles.typeBadge, { backgroundColor: getTypeColor(entry.type) + '20' }]}>
-                          <Text style={[styles.typeBadgeText, { color: getTypeColor(entry.type) }]}>
-                            {getTypeLabel(entry.type)}
-                          </Text>
-                        </View>
-                        <Text style={styles.profileLabel}>
+                    <View style={styles.timelineCard}>
+                      <View style={styles.timelineHeader}>
+                        <Ionicons
+                          name={TYPE_ICON[entry.type]}
+                          size={18}
+                          color={tone === 'brand' ? colors.brand : tone === 'ochre' ? colors.ochre : colors.ink2}
+                        />
+                        <Text style={styles.timelineName} numberOfLines={1}>{entry.name}</Text>
+                      </View>
+                      <View style={styles.timelineMeta}>
+                        <Tag tone={tone}>{TYPE_LABEL[entry.type]}</Tag>
+                        <Text style={styles.timelineMetaText}>
                           {entry.member.kind === 'user' ? 'Você' : entry.member.name}
                         </Text>
+                        {entry.date && (
+                          <Text style={styles.timelineMetaText}>· {formatDateToBR(entry.date)}</Text>
+                        )}
                       </View>
+                      {entry.detail && <Text style={styles.timelineDetail}>{entry.detail}</Text>}
                     </View>
                   </View>
-                  {(entry.date || entry.detail) && (
-                    <View style={styles.historyCardDetails}>
-                      {entry.date && (
-                        <View style={styles.detailRow}>
-                          <Ionicons name="calendar-outline" size={14} color="#66776b" />
-                          <Text style={styles.detailText}>{formatDateToBR(entry.date)}</Text>
-                        </View>
-                      )}
-                      {entry.detail && (
-                        <View style={styles.detailRow}>
-                          <Ionicons name="information-circle-outline" size={14} color="#66776b" />
-                          <Text style={styles.detailText}>{entry.detail}</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </View>
-              ))
-            )}
-            <View style={{ height: 100 }} />
-          </ScrollView>
-        </>
+                );
+              })}
+            </View>
+          )}
+          <View style={{ height: 120 }} />
+        </ScrollView>
       ) : (
-        <>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, highUrgencyCount > 0 && { color: '#DC2626' }]}>{highUrgencyCount}</Text>
+              <Text style={[styles.statValue, highUrgencyCount > 0 && { color: colors.coral }]}>
+                {highUrgencyCount}
+              </Text>
               <Text style={styles.statLabel}>Urgentes</Text>
             </View>
             <View style={styles.statCard}>
@@ -407,59 +443,53 @@ export default function Search() {
             </View>
           </View>
 
-          <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-            {filteredPending.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="checkmark-circle-outline" size={48} color="#09BEA5" />
-                <Text style={styles.emptyText}>Tudo em dia!</Text>
-                <Text style={styles.emptySubtext}>Não há pendências de vacinação no momento.</Text>
-              </View>
-            ) : (
-              filteredPending.map((entry) => (
+          {filteredPending.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="checkmark-circle-outline" size={38} color={colors.success} />
+              <Text style={styles.emptyTitle}>Tudo em dia!</Text>
+              <Text style={styles.emptySub}>Não há pendências de vacinação no momento.</Text>
+            </View>
+          ) : (
+            filteredPending.map((entry) => {
+              const tone = urgencyTone(entry.urgency);
+              const accent = tone === 'coral' ? colors.coral : tone === 'ochre' ? colors.ochre : colors.ink3;
+              return (
                 <Pressable
                   key={entry.key}
                   onPress={() => handleTapPending(entry)}
                   style={[
-                    styles.historyCard,
-                    { borderLeftWidth: 3, borderLeftColor: getUrgencyColor(entry.urgency) },
-                    entry.lida && styles.historyCardLida,
+                    styles.pendingCard,
+                    { borderLeftColor: accent },
+                    entry.lida && { opacity: 0.55 },
                   ]}
                 >
-                  <View style={styles.historyCardHeader}>
-                    <View style={[styles.typeIconContainer, { backgroundColor: getPendingTypeColor(entry.type) + '15' }]}>
-                      <Ionicons name={getPendingTypeIcon(entry.type)} size={20} color={getPendingTypeColor(entry.type)} />
-                    </View>
-                    <View style={styles.historyCardInfo}>
-                      <Text style={styles.historyCardName}>{entry.name}</Text>
-                      <View style={styles.historyCardMeta}>
-                        <View style={[styles.typeBadge, { backgroundColor: getPendingTypeColor(entry.type) + '20' }]}>
-                          <Text style={[styles.typeBadgeText, { color: getPendingTypeColor(entry.type) }]}>
-                            {getPendingTypeLabel(entry.type)}
-                          </Text>
-                        </View>
-                        {entry.member && (
-                          <Text style={styles.profileLabel}>
-                            {entry.member.kind === 'user' ? 'Você' : entry.member.name}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                    {!entry.lida && <View style={styles.unreadDot} />}
+                  <View style={styles.pendingHeader}>
+                    <Ionicons
+                      name={entry.type === 'vaccine' ? 'alert-circle-outline' : 'megaphone-outline'}
+                      size={20}
+                      color={accent}
+                    />
+                    <Text style={styles.pendingName} numberOfLines={1}>{entry.name}</Text>
+                    {entry.lida === false && <View style={[styles.unreadDot, { backgroundColor: accent }]} />}
                   </View>
-                  {entry.description && (
-                    <View style={styles.historyCardDetails}>
-                      <View style={styles.detailRow}>
-                        <Ionicons name="information-circle-outline" size={14} color="#66776b" />
-                        <Text style={styles.detailText}>{entry.description}</Text>
-                      </View>
-                    </View>
-                  )}
+                  <View style={styles.timelineMeta}>
+                    <Tag tone={tone}>{entry.type === 'vaccine' ? 'Vacina faltante' : 'Campanha'}</Tag>
+                    {entry.ageLabel && (
+                      <Text style={styles.timelineMetaText}>· {entry.ageLabel}</Text>
+                    )}
+                    {entry.member && (
+                      <Text style={styles.timelineMetaText}>
+                        · {entry.member.kind === 'user' ? 'Você' : entry.member.name}
+                      </Text>
+                    )}
+                  </View>
+                  {entry.description && <Text style={styles.timelineDetail}>{entry.description}</Text>}
                 </Pressable>
-              ))
-            )}
-            <View style={{ height: 100 }} />
-          </ScrollView>
-        </>
+              );
+            })
+          )}
+          <View style={{ height: 120 }} />
+        </ScrollView>
       )}
 
       <StatusBar style="dark" />
@@ -470,28 +500,14 @@ export default function Search() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
+    backgroundColor: colors.bg,
+    paddingTop: 48,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: '12%',
-    paddingBottom: 8,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1f3322',
-  },
-  tabContainer: {
+  tabRow: {
     flexDirection: 'row',
     marginHorizontal: 20,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.md,
     padding: 4,
     marginBottom: 10,
   },
@@ -500,189 +516,196 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 9,
+    borderRadius: radii.sm + 2,
     gap: 6,
   },
   tabActive: {
-    backgroundColor: '#E8F4F3',
+    backgroundColor: colors.bgElev,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: colors.ink3,
   },
   tabTextActive: {
-    color: '#005570',
+    color: colors.brand,
   },
-  tabBadge: {
-    backgroundColor: '#D97706',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
+  tabDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.coral,
+    marginLeft: 2,
   },
-  tabBadgeUrgent: {
-    backgroundColor: '#DC2626',
-  },
-  tabBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  filterContainer: {
-    paddingBottom: 8,
-  },
-  filterScroll: {
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 20,
     gap: 8,
+    marginBottom: 6,
   },
   filterChip: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#fff',
+    borderRadius: 999,
+    backgroundColor: colors.bgElev,
     borderWidth: 1,
-    borderColor: '#E8EEE8',
+    borderColor: colors.line,
   },
   filterChipActive: {
-    backgroundColor: '#29442dff',
-    borderColor: '#29442dff',
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#66776b',
+    color: colors.ink2,
+    lineHeight: 16,
+    includeFontPadding: false,
   },
   filterChipTextActive: {
     color: '#fff',
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+
+  scroll: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
   },
   statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
     gap: 10,
-    marginTop: 4,
-    marginBottom: 4,
+    marginBottom: 12,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingVertical: 10,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#005570',
+    ...typography.h2,
+    fontSize: 22,
+    color: colors.brand,
   },
   statLabel: {
     fontSize: 11,
-    color: '#66776b',
+    color: colors.ink3,
     marginTop: 2,
     fontWeight: '500',
+    letterSpacing: 0.4,
   },
-  content: {
-    flex: 1,
+  // Timeline
+  timeline: {
+    paddingTop: 6,
   },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
+  timelineRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  emptyContainer: {
+  timelineRail: {
+    width: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 60,
+  },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 18,
+    borderWidth: 2,
+    borderColor: colors.bg,
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: colors.line,
+    marginTop: 4,
+  },
+  timelineCard: {
+    flex: 1,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 12,
+    marginBottom: 10,
+  },
+  timelineHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
-  emptyText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#66776b',
+  timelineName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.ink,
   },
-  emptySubtext: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    paddingHorizontal: 40,
+  timelineMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    flexWrap: 'wrap',
   },
-  historyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
+  timelineMetaText: {
+    fontSize: 11,
+    color: colors.ink3,
+    fontWeight: '500',
+  },
+  timelineDetail: {
+    marginTop: 6,
+    fontSize: 12,
+    color: colors.ink2,
+    lineHeight: 17,
+  },
+
+  // Pending
+  pendingCard: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderLeftWidth: 3,
+    padding: 12,
     marginBottom: 8,
   },
-  historyCardLida: {
-    opacity: 0.55,
+  pendingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pendingName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.ink,
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#DC2626',
-    marginLeft: 6,
+    marginLeft: 4,
   },
-  historyCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  typeIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+
+  empty: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  historyCardInfo: {
-    flex: 1,
-  },
-  historyCardName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1f3322',
-    marginBottom: 4,
-  },
-  historyCardMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingTop: 56,
     gap: 8,
   },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ink2,
   },
-  typeBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  profileLabel: {
-    fontSize: 11,
-    color: '#66776b',
-    fontWeight: '500',
-  },
-  historyCardDetails: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    gap: 6,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  detailText: {
+  emptySub: {
     fontSize: 12,
-    color: '#66776b',
+    color: colors.ink3,
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
 });
