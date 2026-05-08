@@ -1,10 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import Skeleton from '../../../components/redesign/Skeleton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { fetchCarrosselConteudo } from '../../service/infoService';
 import { CarrosselConteudoDTO } from '../../types/info';
+import { colors, radii, shadows, spacing, typography } from '../../theme/tokens';
+import { ScreenTitle } from '../../../components/redesign';
 
 export default function CarrosselDetalhe() {
   const { id, titulo } = useLocalSearchParams<{ id: string; titulo: string }>();
@@ -20,18 +22,29 @@ export default function CarrosselDetalhe() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back-outline" size={28} color="#29442dff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{titulo}</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <ScreenTitle title={String(titulo || 'Conteúdo')} back={() => router.back()} />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 40 }} />
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
+          {[['52%', '100%', '88%', '70%'], ['40%', '100%', '92%', '75%', '55%'], ['58%', '100%', '80%']].map((widths, si) => (
+            <View key={si} style={styles.secaoCard}>
+              <Skeleton width={widths[0]} height={18} radius={6} style={{ marginBottom: spacing.sm }} />
+              {widths.slice(1).map((w, li) => (
+                <Skeleton key={li} width={w} height={13} radius={4} style={{ marginBottom: li < widths.length - 2 ? 8 : spacing.sm }} />
+              ))}
+              <View style={styles.itensList}>
+                {[0, 1, 2].map((j) => (
+                  <View key={j} style={styles.itemRow}>
+                    <Skeleton width={7} height={7} radius={4} style={{ marginTop: 8 }} />
+                    <Skeleton width={`${62 + j * 8}%`} height={13} radius={4} />
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
           {secoes.map((secao) => (
             <View key={secao.id} style={styles.secaoCard}>
               <Text style={styles.secaoTitulo}>{secao.tituloSecao}</Text>
@@ -52,12 +65,10 @@ export default function CarrosselDetalhe() {
               ) : null}
             </View>
           ))}
-
-          <View style={{ height: 80 }} />
         </ScrollView>
       )}
 
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
     </View>
   );
 }
@@ -65,50 +76,38 @@ export default function CarrosselDetalhe() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: '10%',
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#29442dff',
+    backgroundColor: colors.bg,
+    paddingTop: '5%',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+  },
+  contentInner: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: 130,
   },
   secaoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.sm,
   },
   secaoTitulo: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#29442dff',
-    marginBottom: 8,
+    ...typography.h3,
+    color: colors.ink,
+    marginBottom: spacing.sm,
   },
   secaoConteudo: {
-    fontSize: 13,
-    color: '#555',
-    lineHeight: 20,
+    ...typography.body,
+    color: colors.ink2,
   },
   itensList: {
-    marginTop: 4,
-    gap: 8,
+    marginTop: spacing.sm,
+    gap: 10,
   },
   itemRow: {
     flexDirection: 'row',
@@ -119,13 +118,12 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#29442dff',
-    marginTop: 6,
+    backgroundColor: colors.brand,
+    marginTop: 8,
   },
   itemTexto: {
     flex: 1,
-    fontSize: 13,
-    color: '#444',
-    lineHeight: 20,
+    ...typography.body,
+    color: colors.ink2,
   },
 });

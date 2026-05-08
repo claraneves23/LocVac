@@ -1,21 +1,24 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import Skeleton from '../../components/redesign/Skeleton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { fetchInformativosPorVacina, fetchEfeitosColateraisPorVacina } from '../service/infoService';
 import { VacinaInformativoDTO, EfeitoColateralDTO } from '../types/info';
+import { colors, radii, shadows, spacing, typography, tonePairs, Tone } from '../theme/tokens';
+import { ScreenTitle } from '../../components/redesign';
 
-const SEVERIDADE_COR: Record<EfeitoColateralDTO['severidade'], string> = {
-  LEVE: '#FFF3E0',
-  MODERADA: '#FFF8E1',
-  GRAVE: '#FFEBEE',
+const SEVERIDADE_TONE: Record<EfeitoColateralDTO['severidade'], Tone> = {
+  LEVE: 'success',
+  MODERADA: 'warn',
+  GRAVE: 'danger',
 };
 
-const SEVERIDADE_TEXTO: Record<EfeitoColateralDTO['severidade'], string> = {
-  LEVE: '#E65100',
-  MODERADA: '#F57F17',
-  GRAVE: '#B71C1C',
+const SEVERIDADE_LABEL: Record<EfeitoColateralDTO['severidade'], string> = {
+  LEVE: 'Leve',
+  MODERADA: 'Moderada',
+  GRAVE: 'Grave',
 };
 
 export default function VaccineDetails() {
@@ -41,27 +44,67 @@ export default function VaccineDetails() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back-outline" size={28} color="#29442dff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{vaccineName}</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <ScreenTitle title={String('')} back={() => router.back()} />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 48 }} />
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
+          {/* Hero */}
+          <View style={styles.heroCard}>
+            <Skeleton width={56} height={56} radius={28} />
+            <Skeleton width="58%" height={22} radius={6} style={{ marginTop: 4 }} />
+            <Skeleton width="78%" height={13} radius={4} />
+          </View>
+
+          {/* Seções de informativo */}
+          {[['45%', '100%', '90%', '72%'], ['55%', '100%', '88%', '60%']].map((widths, si) => (
+            <View key={si} style={styles.section}>
+              <Skeleton width={widths[0]} height={18} radius={6} style={{ marginBottom: spacing.sm }} />
+              <View style={styles.sectionCard}>
+                {widths.slice(1).map((w, li) => (
+                  <Skeleton key={li} width={w} height={13} radius={4} style={li < 2 ? { marginBottom: 8 } : undefined} />
+                ))}
+              </View>
+            </View>
+          ))}
+
+          {/* Source box */}
+          <View style={[styles.sourceBox, { marginBottom: spacing.lg }]}>
+            <Skeleton width={14} height={14} radius={4} />
+            <Skeleton width="52%" height={11} radius={4} />
+          </View>
+
+          {/* Efeitos colaterais */}
+          <View style={styles.section}>
+            <Skeleton width="42%" height={18} radius={6} style={{ marginBottom: spacing.sm }} />
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={[styles.efeitoCard, { backgroundColor: colors.bgMuted, borderLeftColor: colors.line, marginBottom: spacing.sm }]}>
+                <View style={[styles.efeitoHeader]}>
+                  <Skeleton width={16} height={16} radius={8} />
+                  <Skeleton width={56} height={11} radius={4} />
+                </View>
+                <Skeleton width="82%" height={13} radius={4} style={{ marginBottom: 6 }} />
+                <Skeleton width="62%" height={11} radius={4} />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.mainInfo}>
-            <Ionicons name="shield-checkmark-outline" size={64} color="#29442dff" />
-            <Text style={styles.vaccineTitle}>{vaccineName}</Text>
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
+          <View style={styles.heroCard}>
+            <View style={styles.heroIcon}>
+              <Ionicons name="shield-checkmark" size={28} color={colors.brand} />
+            </View>
+            <Text style={styles.heroTitle}>{vaccineName}</Text>
+            <Text style={styles.heroSub}>Informações oficiais e reações conhecidas</Text>
           </View>
 
           {informativos.length === 0 && efeitos.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="information-circle-outline" size={40} color="#ACDAD8" />
-              <Text style={styles.emptyText}>Nenhuma informação cadastrada para esta vacina.</Text>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="information-circle-outline" size={28} color={colors.brand} />
+              </View>
+              <Text style={styles.emptyTitle}>Sem informações</Text>
+              <Text style={styles.emptyText}>Nenhuma informação cadastrada para esta vacina ainda.</Text>
             </View>
           ) : (
             <>
@@ -77,7 +120,7 @@ export default function VaccineDetails() {
                   ))}
 
                   <View style={styles.sourceBox}>
-                    <Ionicons name="document-text-outline" size={16} color="#666" />
+                    <Ionicons name="document-text-outline" size={14} color={colors.ink3} />
                     <Text style={styles.sourceText}>
                       {informativo.orgaoEmissor} · v{informativo.versao} · {informativo.dataPublicacao}
                     </Text>
@@ -87,39 +130,42 @@ export default function VaccineDetails() {
 
               {efeitos.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Possíveis Reações</Text>
-                  {efeitos.map((efeito) => (
-                    <View
-                      key={efeito.id}
-                      style={[styles.efeitoCard, { backgroundColor: SEVERIDADE_COR[efeito.severidade] }]}
-                    >
-                      <View style={styles.efeitoHeader}>
-                        <Ionicons name="alert-circle-outline" size={18} color={SEVERIDADE_TEXTO[efeito.severidade]} />
-                        <Text style={[styles.efeitoSeveridade, { color: SEVERIDADE_TEXTO[efeito.severidade] }]}>
-                          {efeito.severidade}
-                        </Text>
+                  <Text style={styles.sectionTitle}>Possíveis reações</Text>
+                  {efeitos.map((efeito) => {
+                    const tone = tonePairs[SEVERIDADE_TONE[efeito.severidade]];
+                    return (
+                      <View
+                        key={efeito.id}
+                        style={[styles.efeitoCard, { backgroundColor: tone.bg, borderLeftColor: tone.solid }]}
+                      >
+                        <View style={styles.efeitoHeader}>
+                          <Ionicons name="alert-circle" size={16} color={tone.ink} />
+                          <Text style={[styles.efeitoSeveridade, { color: tone.ink }]}>
+                            {SEVERIDADE_LABEL[efeito.severidade]}
+                          </Text>
+                        </View>
+                        <Text style={styles.efeitoDescricao}>{efeito.descricao}</Text>
+                        {efeito.orientacao ? (
+                          <Text style={styles.efeitoOrientacao}>{efeito.orientacao}</Text>
+                        ) : null}
                       </View>
-                      <Text style={styles.efeitoDescricao}>{efeito.descricao}</Text>
-                      <Text style={styles.efeitoOrientacao}>{efeito.orientacao}</Text>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </View>
               )}
             </>
           )}
 
           <View style={styles.recommendationBox}>
-            <Ionicons name="checkmark-circle-outline" size={24} color="#4CAF50" />
+            <Ionicons name="checkmark-circle" size={20} color={colors.success} />
             <Text style={styles.recommendationText}>
-              Sempre consulte um profissional de saúde para dúvidas sobre vacinação e seu cronograma específico.
+              Sempre consulte um profissional de saúde para dúvidas sobre vacinação e cronograma.
             </Text>
           </View>
-
-          <View style={{ height: 80 }} />
         </ScrollView>
       )}
 
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
     </View>
   );
 }
@@ -127,121 +173,140 @@ export default function VaccineDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: '10%',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#29442dff',
+    backgroundColor: colors.bg,
+    paddingTop: '5%',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 6,
   },
-  mainInfo: {
+  contentInner: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: 130,
+  },
+  heroCard: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: spacing.lg,
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 24,
-    marginVertical: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: 8,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
   },
-  vaccineTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#29442dff',
-    marginTop: 12,
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroTitle: {
+    ...typography.h2,
+    color: colors.ink,
+    textAlign: 'center',
+  },
+  heroSub: {
+    ...typography.small,
+    color: colors.ink3,
+    textAlign: 'center',
   },
   section: {
-    marginVertical: 12,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#29442dff',
-    marginBottom: 8,
+    ...typography.h3,
+    color: colors.ink,
+    marginBottom: spacing.sm,
   },
   sectionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: spacing.md,
   },
   sectionContent: {
-    fontSize: 13,
-    color: '#555',
-    lineHeight: 20,
+    ...typography.body,
+    color: colors.ink2,
   },
   sourceBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 8,
     paddingHorizontal: 4,
   },
   sourceText: {
-    fontSize: 11,
-    color: '#888',
+    ...typography.caption,
+    color: colors.ink3,
   },
   efeitoCard: {
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: radii.md,
+    borderLeftWidth: 4,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   efeitoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   efeitoSeveridade: {
-    fontSize: 11,
+    ...typography.caption,
     fontWeight: '700',
     textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   efeitoDescricao: {
-    fontSize: 13,
-    color: '#444',
+    ...typography.body,
+    color: colors.ink,
     marginBottom: 4,
   },
   efeitoOrientacao: {
-    fontSize: 12,
-    color: '#666',
+    ...typography.small,
+    color: colors.ink2,
     fontStyle: 'italic',
   },
   emptyBox: {
     alignItems: 'center',
-    paddingVertical: 40,
-    gap: 12,
+    paddingVertical: 32,
+    gap: 8,
+  },
+  emptyIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    ...typography.bodyLg,
+    fontWeight: '600',
+    color: colors.ink,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#888',
+    ...typography.small,
+    color: colors.ink3,
     textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
   recommendationBox: {
     flexDirection: 'row',
-    backgroundColor: '#E8F5E9',
-    padding: 12,
-    borderRadius: 8,
-    gap: 12,
-    marginTop: 8,
-    marginBottom: '11%',
+    backgroundColor: colors.successSoft,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    gap: 10,
+    marginTop: spacing.sm,
+    alignItems: 'flex-start',
   },
   recommendationText: {
     flex: 1,
-    fontSize: 13,
-    color: '#2E7D32',
+    ...typography.small,
+    color: colors.successInk,
     lineHeight: 18,
   },
 });

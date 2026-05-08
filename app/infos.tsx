@@ -1,43 +1,119 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, FlatList, Image, Platform, ActivityIndicator } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
+import {
+  FlatList,
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as NavigationBar from 'expo-navigation-bar';
 import { fetchCarrosselAtivos, fetchTodasVacinas } from './service/infoService';
 import { CarrosselItemDTO } from './types/info';
 import { VacinaDTO } from './service/mandatoryVaccineService';
+import { colors, radii, shadows, typography } from './theme/tokens';
+import Skeleton from '../components/redesign/Skeleton';
+
+type AgeGroupId = 'all' | 'baby' | 'child' | 'teen' | 'adult' | 'senior' | 'pregnant';
+
+type AgeGroup = {
+  id: AgeGroupId;
+  label: string;
+  sub?: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  tone: 'brand' | 'coral' | 'ochre';
+  // Faixa em meses (null = sem limite). Usado para casar com idadeMinima/Maxima da vacina.
+  minMonths: number | null;
+  maxMonths: number | null;
+};
+
+const AGE_GROUPS: AgeGroup[] = [
+  { id: 'baby',     label: 'Bebês',        sub: '0 a 2 anos',      icon: 'heart-outline',   tone: 'brand', minMonths: 0,    maxMonths: 24 },
+  { id: 'child',    label: 'Crianças',     sub: '3 a 9 anos',      icon: 'sparkles-outline', tone: 'brand', minMonths: 36,   maxMonths: 108 },
+  { id: 'teen',     label: 'Adolescentes', sub: '10 a 19 anos',    icon: 'shield-outline',  tone: 'ochre', minMonths: 120,  maxMonths: 228 },
+  { id: 'adult',    label: 'Adultos',      sub: '20 a 59 anos',    icon: 'person-outline',  tone: 'ochre', minMonths: 240,  maxMonths: 708 },
+  { id: 'senior',   label: 'Idosos',       sub: '60 anos ou mais', icon: 'person-outline',  tone: 'coral', minMonths: 720,  maxMonths: null },
+  { id: 'pregnant', label: 'Gestantes',    sub: 'Pré-natal',       icon: 'heart-outline',   tone: 'coral', minMonths: null, maxMonths: null },
+];
+
+const TONE_BG: Record<string, string> = {
+  brand: colors.brandSoft,
+  coral: colors.coralSoft,
+  ochre: colors.ochreSoft,
+};
+const TONE_INK: Record<string, string> = {
+  brand: colors.brandInk,
+  coral: colors.coralInk,
+  ochre: colors.ochreInk,
+};
+
+const getDoseLabel = (dose: string | null | undefined): string => {
+  if (!dose) return '';
+  const d = dose.toLowerCase();
+  if (d.includes('unica') || d.includes('única')) return 'Dose única';
+  return 'Múltiplas doses';
+};
+
+const overlapsGroup = (vaccine: VacinaDTO, group: AgeGroup): boolean => {
+  if (group.id === 'pregnant') {
+    const text = `${vaccine.nome} ${vaccine.descricao || ''}`.toLowerCase();
+    return /gestante|pré.?natal|gravid/.test(text);
+  }
+  // Sem dados de idade: exibe em todos os grupos
+  if (vaccine.idadeMinimaMeses === null && vaccine.idadeMaximaMeses === null) return true;
+
+  const vMin = vaccine.idadeMinimaMeses ?? 0;
+  const gMin = group.minMonths ?? 0;
+  const gMax = group.maxMonths ?? Number.POSITIVE_INFINITY;
+
+  if (vaccine.idadeMaximaMeses !== null) {
+    // Com idade máxima definida: intervalo real da vacina deve sobrepor o grupo
+    return vaccine.idadeMaximaMeses >= gMin && vMin <= gMax;
+  }
+  // Sem idade máxima: a vacina pertence apenas ao grupo onde sua idade mínima cai
+  return vMin >= gMin && vMin <= gMax;
+};
 
 export default function Infos() {
-  const [helpVisible, setHelpVisible] = useState(false);
   const router = useRouter();
-  const [activeSlide, setActiveSlide] = useState(0);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [helpVisible, setHelpVisible] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(false);
   const [carrosselItems, setCarrosselItems] = useState<CarrosselItemDTO[]>([]);
   const [vacinas, setVacinas] = useState<VacinaDTO[]>([]);
   const [loadingCarrossel, setLoadingCarrossel] = useState(true);
   const [loadingVacinas, setLoadingVacinas] = useState(true);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [query, setQuery] = useState('');
+  const [activeGroup, setActiveGroup] = useState<AgeGroupId>('all');
 
   useEffect(() => {
     fetchCarrosselAtivos()
-      .then((data) => setCarrosselItems(data))
-      .catch((err) => console.log('Erro ao carregar carrossel:', err?.response?.status, err?.response?.data || err?.message))
+      .then(setCarrosselItems)
+      .catch(() => setCarrosselItems([]))
       .finally(() => setLoadingCarrossel(false));
-
     fetchTodasVacinas()
       .then((data) => {
         const unicas = data.filter((v, i, arr) => arr.findIndex((x) => x.nome === v.nome) === i);
         setVacinas(unicas);
       })
-      .catch((err) => console.log('Erro ao carregar vacinas:', err?.response?.status, err?.response?.data || err?.message))
+      .catch(() => setVacinas([]))
       .finally(() => setLoadingVacinas(false));
   }, []);
 
   useEffect(() => {
-    const updateSystemBars = async () => {
+    const updateBars = async () => {
       if (Platform.OS !== 'android') return;
       try {
-        if (helpVisible) {
+        if (helpVisible || filterVisible) {
           await NavigationBar.setBackgroundColorAsync('#80000000');
           await NavigationBar.setButtonStyleAsync('light');
           await NavigationBar.setVisibilityAsync('visible');
@@ -45,19 +121,35 @@ export default function Infos() {
           await NavigationBar.setBackgroundColorAsync('#00FFFFFF');
           await NavigationBar.setButtonStyleAsync('dark');
         }
-      } catch (error) {
-        console.log('NavigationBar API não disponível no Expo Go');
-      }
+      } catch {}
     };
-    updateSystemBars();
-  }, [helpVisible]);
+    updateBars();
+  }, [helpVisible, filterVisible]);
 
-  const handleCarouselPress = (item: CarrosselItemDTO) => {
-    router.push({
-      pathname: '/infos/carousel/[id]',
-      params: { id: item.id, titulo: item.titulo },
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return vacinas.filter((v) => {
+      const matchesQuery = !q || v.nome.toLowerCase().includes(q);
+      if (!matchesQuery) return false;
+      if (activeGroup === 'all') return true;
+      const group = AGE_GROUPS.find((g) => g.id === activeGroup);
+      if (!group) return true;
+      return overlapsGroup(v, group);
     });
-  };
+  }, [vacinas, query, activeGroup]);
+
+  const grouped = useMemo(() => {
+    const groupsToShow =
+      activeGroup === 'all'
+        ? AGE_GROUPS
+        : AGE_GROUPS.filter((g) => g.id === activeGroup);
+    return groupsToShow
+      .map((group) => ({
+        group,
+        items: filtered.filter((v) => overlapsGroup(v, group)),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [filtered, activeGroup]);
 
   const handleVaccinePress = (vaccine: VacinaDTO) => {
     router.push({
@@ -66,91 +158,181 @@ export default function Infos() {
     });
   };
 
+  const handleCarouselPress = (item: CarrosselItemDTO) => {
+    router.push({
+      pathname: '/infos/carousel/[id]',
+      params: { id: item.id, titulo: item.titulo },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.helpButton} onPress={() => setHelpVisible(true)}>
-          <Ionicons name="help-circle-outline" size={28} color="#29442dff" />
-        </TouchableOpacity>
+        <Pressable style={styles.helpButton} onPress={() => setHelpVisible(true)}>
+          <Ionicons name="help-circle-outline" size={22} color={colors.ink2} />
+        </Pressable>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.carouselSection}>
-          {loadingCarrossel ? (
-            <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 24 }} />
-          ) : carrosselItems.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhum conteúdo disponível no momento.</Text>
-          ) : (
-            <>
-              <FlatList
-                data={carrosselItems}
-                horizontal
-                pagingEnabled={false}
-                snapToInterval={292}
-                decelerationRate="fast"
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => String(item.id)}
-                onScroll={(event) => {
-                  if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-                  const contentOffsetX = event.nativeEvent.contentOffset.x;
-                  scrollTimeoutRef.current = setTimeout(() => {
-                    setActiveSlide(Math.round(contentOffsetX / 292));
-                  }, 10);
-                }}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.carouselCard}
-                    onPress={() => handleCarouselPress(item)}
-                    activeOpacity={0.8}
-                  >
-                    <Image source={{ uri: item.imagemUrl }} style={styles.carouselImage} />
-                    <View style={styles.carouselContent}>
-                      <Text style={styles.carouselTitle}>{item.titulo}</Text>
-                      <Text style={styles.carouselDescription}>{item.descricao}</Text>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Featured carrossel */}
+        {loadingCarrossel ? (
+          <View style={[styles.carrosselSection, { flexDirection: 'row', paddingRight: 16 }]}>
+            {[0, 1].map((i) => (
+              <View key={i} style={styles.carrosselCard}>
+                <Skeleton width={280} height={140} radius={0} />
+                <View style={{ padding: 12, gap: 8 }}>
+                  <Skeleton width="70%" height={14} />
+                  <Skeleton width="45%" height={11} />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : carrosselItems.length > 0 ? (
+          <View style={styles.carrosselSection}>
+            <FlatList
+              data={carrosselItems}
+              horizontal
+              snapToInterval={292}
+              decelerationRate="fast"
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => String(item.id)}
+              onScroll={(event) => {
+                if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+                const x = event.nativeEvent.contentOffset.x;
+                scrollTimeoutRef.current = setTimeout(() => {
+                  setActiveSlide(Math.round(x / 292));
+                }, 10);
+              }}
+              renderItem={({ item }) => (
+                <Pressable
+                  style={styles.carrosselCard}
+                  onPress={() => handleCarouselPress(item)}
+                >
+                  <Image source={{ uri: item.imagemUrl }} style={styles.carrosselImage} />
+                  <View style={styles.carrosselContent}>
+                    <Text style={styles.carrosselTitle}>{item.titulo}</Text>
+                    <Text style={styles.carrosselDescription} numberOfLines={2}>
+                      {item.descricao}
+                    </Text>
+                  </View>
+                </Pressable>
+              )}
+            />
+            <View style={styles.indicators}>
+              {carrosselItems.map((_, i) => (
+                <View key={i} style={[styles.indicator, activeSlide === i && styles.indicatorActive]} />
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Busca */}
+        <View style={styles.searchWrap}>
+          <Ionicons name="search-outline" size={18} color={colors.ink3} style={{ marginLeft: 12, marginRight: 6 }} />
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar vacina"
+            placeholderTextColor={colors.ink3}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+          {query.length > 0 && (
+            <Pressable onPress={() => setQuery('')} style={{ paddingHorizontal: 12 }}>
+              <Ionicons name="close-circle" size={18} color={colors.ink3} />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Lista por faixa etária */}
+        {loadingVacinas ? (
+          <>
+            <View style={styles.sectionHeader}>
+              <Skeleton width={80} height={20} />
+              <Skeleton width={60} height={28} radius={999} />
+            </View>
+            {[0, 1].map((gi) => (
+              <View key={gi} style={styles.groupSection}>
+                <View style={styles.groupHeader}>
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Skeleton width="40%" height={18} />
+                    <Skeleton width="55%" height={10} style={{ marginTop: 4 }} />
+                  </View>
+                </View>
+                {[0, 1, 2, 3].map((i) => (
+                  <View key={i} style={styles.vaccineRow}>
+                    <Skeleton width={32} height={32} radius={10} />
+                    <View style={{ flex: 1, gap: 6 }}>
+                      <Skeleton width="65%" height={14} />
+                      <Skeleton width="40%" height={10} />
                     </View>
-                  </TouchableOpacity>
-                )}
-              />
-              <View style={styles.carouselIndicators}>
-                {carrosselItems.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[styles.indicator, activeSlide === index && styles.indicatorActive]}
-                  />
+                    <Skeleton width={18} height={18} radius={4} />
+                  </View>
                 ))}
               </View>
-            </>
-          )}
-        </View>
-
-        <View style={styles.vaccinesSection}>
-          <Text style={styles.sectionTitle}>Vacinas</Text>
-          {loadingVacinas ? (
-            <ActivityIndicator size="large" color="#29442dff" style={{ marginTop: 24 }} />
-          ) : vacinas.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma vacina disponível no momento.</Text>
-          ) : (
-            vacinas.map((vaccine) => (
-              <TouchableOpacity
-                key={vaccine.id}
-                style={styles.vaccineItem}
-                onPress={() => handleVaccinePress(vaccine)}
-                activeOpacity={0.7}
+            ))}
+          </>
+        ) : (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Vacinas</Text>
+              <Pressable
+                style={[styles.filterButton, activeGroup !== 'all' && styles.filterButtonActive]}
+                onPress={() => setFilterVisible(true)}
               >
                 <Ionicons
-                  name="shield-checkmark-outline"
-                  size={24}
-                  color="#29442dff"
-                  style={styles.vaccineIcon}
+                  name="options-outline"
+                  size={18}
+                  color={activeGroup !== 'all' ? '#fff' : colors.ink2}
                 />
-                <Text style={styles.vaccineName}>{vaccine.nome}</Text>
-                <Ionicons name="chevron-forward-outline" size={24} color="#29442dff" />
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
+                {activeGroup !== 'all' && (
+                  <Text style={styles.filterButtonText} numberOfLines={1}>
+                    {AGE_GROUPS.find((g) => g.id === activeGroup)?.label}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+            {grouped.length === 0 ? (
+              <View style={styles.empty}>
+                <Text style={styles.emptyText}>Nenhum verbete encontrado.</Text>
+              </View>
+            ) : (
+          grouped.map(({ group, items }) => (
+            <View key={group.id} style={styles.groupSection}>
+              <View style={styles.groupHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.groupLabel}>{group.label}</Text>
+                  <Text style={styles.groupSub}>
+                    {group.sub} · {items.length} {items.length === 1 ? 'vacina' : 'vacinas'}
+                  </Text>
+                </View>
+              </View>
+              {items.map((v) => (
+                <Pressable
+                  key={`${group.id}-${v.id}`}
+                  style={styles.vaccineRow}
+                  onPress={() => handleVaccinePress(v)}
+                >
+                  <View style={[styles.vaccineDot, { backgroundColor: TONE_BG[group.tone] }]}>
+                    <Ionicons name="shield-checkmark-outline" size={16} color={TONE_INK[group.tone]} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.vaccineName} numberOfLines={1}>{v.nome}</Text>
+                    {v.dose ? (
+                      <Text style={styles.vaccineSub} numberOfLines={1}>{getDoseLabel(v.dose)}</Text>
+                    ) : null}
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.ink3} />
+                </Pressable>
+              ))}
+            </View>
+          ))
+            )}
+          </>
+        )}
 
-        <View style={{ height: 80 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       <Modal
@@ -161,40 +343,90 @@ export default function Infos() {
         hardwareAccelerated
         onRequestClose={() => setHelpVisible(false)}
       >
-        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+        <StatusBar style="light" />
         <View style={styles.modalOverlay}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setHelpVisible(false)} activeOpacity={1} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setHelpVisible(false)} />
           <View style={styles.modalContent}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setHelpVisible(false)}>
-              <Ionicons name="close-circle-outline" size={32} color="#29442dff" />
-            </TouchableOpacity>
-            <Ionicons name="help-circle-outline" size={64} color="#29442dff" style={styles.modalIcon} />
-            <Text style={styles.modalTitle}>O que é a área de Informações?</Text>
-            <Text style={styles.modalDescription}>
-              A área de Informações é um espaço dedicado a ajudá-lo a conhecer melhor sobre vacinações. Aqui você encontra:
-            </Text>
-            <View style={styles.modalList}>
-              <View style={styles.modalListItem}>
-                <Text style={styles.modalBullet}>•</Text>
-                <Text style={styles.modalListText}>
-                  <Text style={styles.bold}>Saiba Mais:</Text> Artigos e informações sobre vacinas, cronogramas e efeitos colaterais
-                </Text>
-              </View>
-              <View style={styles.modalListItem}>
-                <Text style={styles.modalBullet}>•</Text>
-                <Text style={styles.modalListText}>
-                  <Text style={styles.bold}>Vacinas:</Text> Detalhes completos sobre cada vacina, incluindo indicações e recomendações
-                </Text>
-              </View>
+            <Pressable style={styles.modalClose} onPress={() => setHelpVisible(false)}>
+              <Ionicons name="close" size={22} color={colors.ink2} />
+            </Pressable>
+            <View style={[styles.groupIcon, { backgroundColor: colors.brandSoft, alignSelf: 'center', marginTop: 8 }]}>
+              <Ionicons name="help-circle-outline" size={22} color={colors.brand} />
             </View>
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setHelpVisible(false)}>
-              <Text style={styles.modalCloseButtonText}>Entendi</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>O que é a Biblioteca?</Text>
+            <Text style={styles.modalText}>
+              Aqui você encontra informações detalhadas sobre cada vacina e conteúdos sobre vacinação,
+              organizados por faixa etária.
+            </Text>
+            <Pressable style={styles.modalCta} onPress={() => setHelpVisible(false)}>
+              <Text style={styles.modalCtaText}>Entendi</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
 
-      <StatusBar style={helpVisible ? 'light' : 'dark'} />
+      <Modal
+        visible={filterVisible}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        hardwareAccelerated
+        onRequestClose={() => setFilterVisible(false)}
+      >
+        <StatusBar style="light" />
+        <View style={styles.sheetOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setFilterVisible(false)} />
+          <View style={styles.sheetContent}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Filtrar por faixa etária</Text>
+              <Pressable style={styles.modalClose} onPress={() => setFilterVisible(false)}>
+                <Ionicons name="close" size={20} color={colors.ink2} />
+              </Pressable>
+            </View>
+            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+              <Pressable
+                onPress={() => {
+                  setActiveGroup('all');
+                  setFilterVisible(false);
+                }}
+                style={[styles.filterOption, activeGroup === 'all' && styles.filterOptionActive]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.filterOptionLabel}>Todas as faixas</Text>
+                  <Text style={styles.filterOptionSub}>Mostrar todas as vacinas</Text>
+                </View>
+                {activeGroup === 'all' && (
+                  <Ionicons name="checkmark-circle" size={22} color={colors.brand} />
+                )}
+              </Pressable>
+              {AGE_GROUPS.map((g) => {
+                const selected = activeGroup === g.id;
+                return (
+                  <Pressable
+                    key={g.id}
+                    onPress={() => {
+                      setActiveGroup(g.id);
+                      setFilterVisible(false);
+                    }}
+                    style={[styles.filterOption, selected && styles.filterOptionActive]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.filterOptionLabel}>{g.label}</Text>
+                      {g.sub ? <Text style={styles.filterOptionSub}>{g.sub}</Text> : null}
+                    </View>
+                    {selected && (
+                      <Ionicons name="checkmark-circle" size={22} color={colors.brand} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <StatusBar style={helpVisible || filterVisible ? 'light' : 'dark'} />
     </View>
   );
 }
@@ -202,174 +434,310 @@ export default function Infos() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
+    backgroundColor: colors.bg,
+    paddingTop: 48,
   },
   header: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: '10%',
+    justifyContent: 'space-between',
   },
   helpButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.bgElev,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  content: {
+  searchWrap: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  searchInput: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingRight: 12,
+    fontSize: 14,
+    color: colors.ink,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#29442dff',
-    marginBottom: 12,
-    marginTop: 16,
-  },
-  carouselSection: {
-    marginVertical: 16,
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
-  },
-  carouselCard: {
-    width: 280,
-    marginRight: 12,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-  },
-  carouselImage: {
-    width: '100%',
-    height: 150,
-    backgroundColor: '#f0f0f0',
-  },
-  carouselContent: {
-    padding: 12,
-  },
-  carouselTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#29442dff',
+
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 18,
     marginBottom: 4,
   },
-  carouselDescription: {
-    fontSize: 12,
-    color: '#666',
+  sectionTitle: {
+    ...typography.h2,
+    color: colors.ink,
   },
-  carouselIndicators: {
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: colors.bgElev,
+    borderWidth: 1,
+    borderColor: colors.line,
+    maxWidth: 180,
+  },
+  filterButtonActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  filterButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: colors.dimDark,
+    justifyContent: 'flex-end',
+  },
+  sheetContent: {
+    backgroundColor: colors.bgElev,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 40,
+    ...shadows.lg,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.lineStrong,
+    marginBottom: 12,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sheetTitle: {
+    ...typography.h3,
+    color: colors.ink,
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: radii.md,
+    marginVertical: 2,
+  },
+  filterOptionActive: {
+    backgroundColor: colors.brandSoft,
+  },
+  filterOptionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ink,
+  },
+  filterOptionSub: {
+    fontSize: 12,
+    color: colors.ink3,
+    marginTop: 2,
+  },
+
+  scroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+  },
+
+  carrosselSection: {
+    marginHorizontal: -16,
+    marginTop: '5%',
+    marginBottom: 12,
+    paddingLeft: 16,
+  },
+  carrosselCard: {
+    width: 280,
+    marginRight: 12,
+    borderRadius: radii.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.bgElev,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  carrosselImage: {
+    width: '100%',
+    height: 140,
+    backgroundColor: colors.bgMuted,
+  },
+  carrosselContent: {
+    padding: 12,
+  },
+  carrosselTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.ink,
+    marginBottom: 4,
+  },
+  carrosselDescription: {
+    fontSize: 12,
+    color: colors.ink2,
+  },
+  indicators: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: 10,
     gap: 6,
+    marginRight: 16,
   },
   indicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#ACDAD8',
+    backgroundColor: colors.lineStrong,
   },
   indicatorActive: {
-    backgroundColor: '#29442dff',
+    backgroundColor: colors.brand,
     width: 24,
   },
-  vaccinesSection: {
-    marginBottom: '10%',
+
+  groupSection: {
+    marginTop: 18,
   },
-  vaccineItem: {
+  groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginVertical: 6,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    gap: 10,
+    marginBottom: 10,
   },
-  vaccineIcon: {
-    marginRight: 12,
+  groupIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  groupLabel: {
+    ...typography.h3,
+    color: colors.ink,
+  },
+  groupSub: {
+    fontSize: 11,
+    color: colors.ink3,
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+
+  vaccineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.bgElev,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radii.md,
+    padding: 12,
+    marginBottom: 6,
+  },
+  vaccineDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   vaccineName: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#607367',
-    fontSize: 13,
-    marginTop: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxHeight: '80%',
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 16,
-  },
-  modalIcon: {
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#29442dff',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-    lineHeight: 20,
-    textAlign: 'center',
+    fontWeight: '600',
+    color: colors.ink,
   },
-  modalList: {
-    marginBottom: 20,
-  },
-  modalListItem: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  modalBullet: {
-    fontSize: 14,
-    color: '#29442dff',
-    marginRight: 8,
+  vaccineSub: {
+    fontSize: 12,
+    color: colors.ink3,
     marginTop: 2,
   },
-  modalListText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#555',
-    lineHeight: 18,
-  },
-  bold: {
-    fontWeight: '600',
-    color: '#29442dff',
-  },
-  modalCloseButton: {
-    backgroundColor: '#29442dff',
-    paddingVertical: 12,
-    borderRadius: 8,
+
+  empty: {
+    marginTop: 16,
+    padding: 22,
+    borderRadius: radii.lg,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
     alignItems: 'center',
   },
-  modalCloseButtonText: {
+  emptyText: {
+    color: colors.ink3,
+    fontSize: 13,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: colors.dimDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  modalContent: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 26,
+    width: '100%',
+    maxWidth: 420,
+    ...shadows.lg,
+    gap: 8,
+  },
+  modalClose: {
+    alignSelf: 'flex-end',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.bgMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    ...typography.h2,
+    color: colors.ink,
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 14,
+  },
+  modalText: {
+    fontSize: 13,
+    color: colors.ink2,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 26,
+  },
+  modalCta: {
+    backgroundColor: colors.brand,
+    borderRadius: radii.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalCtaText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
