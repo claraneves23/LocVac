@@ -26,11 +26,15 @@ import { FamilyMember } from './types/vaccination';
 import { addDependentAndLink, updateDependent, deleteDependent } from './service/dependentsService';
 import { useAppContext } from './context/AppContext';
 import DependentInfoModal from '../components/modals/DependentInfoModal';
+import { colors, radii, spacing, typography, shadows, tonePairs, Tone } from './theme/tokens';
+import { Avatar, ScreenTitle } from '../components/redesign';
 
 const SEX_OPTIONS = ['M', 'F'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
 const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
 type EstadoUF = typeof ESTADO_OPTIONS[number];
+
+const DEPENDENT_TONES: Tone[] = ['brand', 'coral', 'ochre'];
 
 type DraftDependent = {
   id?: string;
@@ -74,18 +78,15 @@ export default function User() {
     phone: '',
   });
 
-  // Funções para conversão de formato de data
   const formatDateToBR = (isoDate: string): string => {
     if (!isoDate) return '';
     const [year, month, day] = isoDate.split('-');
     return `${day}/${month}/${year}`;
   };
 
-
   useEffect(() => {
     const updateSystemBars = async () => {
       if (Platform.OS !== 'android') return;
-      
       try {
         if (isModalOpen) {
           await NavigationBar.setBackgroundColorAsync('#80000000');
@@ -162,19 +163,13 @@ export default function User() {
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert('Permissao necessaria', 'Autorize o acesso para escolher a foto.');
+      Alert.alert('Permissão necessária', 'Autorize o acesso para escolher a foto.');
       return;
     }
 
     const result = fromCamera
-      ? await ImagePicker.launchCameraAsync({
-          mediaTypes: ['images'],
-          quality: 0.7,
-        })
-      : await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          quality: 0.7,
-        });
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7 })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
 
     if (!result.canceled && result.assets.length > 0) {
       setDraft((current) => ({ ...current, photoUri: result.assets[0].uri }));
@@ -344,63 +339,70 @@ export default function User() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
+
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {mainUser && (
-          <View style={styles.profile}>
-            <View style={styles.photo}>
-              <Text style={styles.photoInitial}>{mainUser.name ? mainUser.name.charAt(0) : ''}</Text>
-            </View>
-            <View>
-              <Text style={styles.name}>{mainUser.name}</Text>
-              <Text style={styles.subtitle}>Titular da conta</Text>
-              <Text style={styles.subtitle}>{mainUser.email}</Text>
+          <View style={styles.profileCard}>
+            <Avatar name={mainUser.name} size={72} tone="brand" active />
+            <View style={styles.profileText}>
+              <Text style={styles.profileName}>{mainUser.name}</Text>
+              <View style={styles.profileTagRow}>
+                <View style={styles.profileTag}>
+                  <Ionicons name="shield-checkmark" size={11} color={colors.brandInk} />
+                  <Text style={styles.profileTagText}>Titular</Text>
+                </View>
+              </View>
+              <Text style={styles.profileEmail} numberOfLines={1}>{mainUser.email}</Text>
             </View>
           </View>
         )}
 
-        <View style={styles.sectionCard}>
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Gerenciar Dependentes</Text>
-            <TouchableOpacity style={styles.addButton} onPress={openCreate}>
-              <Ionicons name="add" size={16} color="#fff" />
+            <View>
+              <Text style={styles.sectionTitle}>Dependentes</Text>
+              <Text style={styles.sectionSub}>{dependents.length} {dependents.length === 1 ? 'pessoa' : 'pessoas'} vinculadas</Text>
+            </View>
+            <TouchableOpacity style={styles.addButton} onPress={openCreate} activeOpacity={0.85}>
+              <Ionicons name="add" size={16} color={colors.white} />
               <Text style={styles.addButtonText}>Adicionar</Text>
             </TouchableOpacity>
           </View>
-          
+
           {dependents.length === 0 ? (
-            <Text style={styles.dependentSummary}>Nenhum dependente cadastrado.</Text>
+            <View style={styles.emptyCard}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="people-outline" size={22} color={colors.brand} />
+              </View>
+              <Text style={styles.emptyTitle}>Nenhum dependente</Text>
+              <Text style={styles.emptySub}>Adicione filhos, idosos ou outros familiares para acompanhar a vacinação deles.</Text>
+            </View>
           ) : (
             <View style={styles.dependentsList}>
-              {dependents.map((dependent) => {
-                console.log('DEBUG dependente:', {
-                  id: dependent.id,
-                  name: dependent.name,
-                  relationship: dependent.relationship,
-                  kind: dependent.kind
-                });
+              {dependents.map((dependent, idx) => {
+                const tone: Tone = DEPENDENT_TONES[idx % DEPENDENT_TONES.length];
                 return (
                   <View key={dependent.id} style={styles.dependentCard}>
                     <Pressable style={styles.dependentRow} onPress={() => setSelectedDependent(dependent)}>
-                      {dependent.photoUri ? (
-                        <Image source={{ uri: dependent.photoUri }} style={styles.dependentAvatar} />
-                      ) : (
-                        <View style={styles.dependentAvatarPlaceholder}>
-                          <Text style={styles.dependentAvatarInitial}>{dependent.name ? dependent.name.charAt(0) : ''}</Text>
-                        </View>
-                      )}
+                      <Avatar
+                        name={dependent.name}
+                        photoUri={dependent.photoUri}
+                        size={44}
+                        tone={tone}
+                      />
                       <View style={styles.dependentInfo}>
                         <Text style={styles.dependentName}>{dependent.name}</Text>
-                        <Text style={styles.dependentMeta}>
-                          {dependent.relationship || dependent.kind} • {formatDateToBR(dependent.birthDate)} • {dependent.sex}
+                        <Text style={styles.dependentMeta} numberOfLines={1}>
+                          {dependent.relationship || dependent.kind} · {formatDateToBR(dependent.birthDate)} · {dependent.sex}
                         </Text>
                       </View>
                     </Pressable>
                     <View style={styles.dependentActions}>
-                      <Pressable style={styles.dependentActionButton} onPress={() => openEdit(dependent)}>
-                        <Ionicons name="create-outline" size={20} color="#09BEA5" />
+                      <Pressable style={styles.iconButton} onPress={() => openEdit(dependent)}>
+                        <Ionicons name="create-outline" size={18} color={colors.brand} />
                       </Pressable>
-                      <Pressable style={styles.dependentActionButton} onPress={() => handleRemove(dependent)}>
-                        <Ionicons name="trash-outline" size={20} color="#e53935" />
+                      <Pressable style={styles.iconButton} onPress={() => handleRemove(dependent)}>
+                        <Ionicons name="trash-outline" size={18} color={colors.coral} />
                       </Pressable>
                     </View>
                   </View>
@@ -410,31 +412,39 @@ export default function User() {
           )}
         </View>
 
-        <View style={styles.sectionCard}>
-          <TouchableOpacity style={styles.option}>
-            <Ionicons name="settings" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Configurações</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.optionNoBorder}>
-            <Ionicons name="help-circle" size={24} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Ajuda</Text>
-          </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Conta</Text>
+          <View style={styles.menuCard}>
+            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+              <View style={styles.menuIconWrap}>
+                <Ionicons name="settings-outline" size={18} color={colors.brand} />
+              </View>
+              <Text style={styles.menuLabel}>Configurações</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.ink4} />
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+              <View style={styles.menuIconWrap}>
+                <Ionicons name="help-circle-outline" size={18} color={colors.brand} />
+              </View>
+              <Text style={styles.menuLabel}>Ajuda</Text>
+              <Ionicons name="chevron-forward" size={18} color={colors.ink4} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Botão de logout */}
-        <View style={styles.sectionCard}>
-          <TouchableOpacity
-            style={[styles.option, { justifyContent: 'center', backgroundColor: '#ef4444', borderRadius: 8, marginTop: 12 }]}
-            onPress={async () => {
-              await logout();
-              reset();
-              router.replace('/login');
-            }}
-          >
-            <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.icon} />
-            <Text style={[styles.optionText, { color: '#fff' }]}>Sair</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          activeOpacity={0.85}
+          onPress={async () => {
+            await logout();
+            reset();
+            router.replace('/login');
+          }}
+        >
+          <Ionicons name="log-out-outline" size={18} color={colors.coral} />
+          <Text style={styles.logoutText}>Sair da conta</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <Modal
@@ -445,13 +455,18 @@ export default function User() {
         hardwareAccelerated
         onRequestClose={() => setIsModalOpen(false)}
       >
-        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.5)" translucent />
+        <StatusBar style="light" backgroundColor={colors.dimDark} translucent />
         <View style={styles.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsModalOpen(false)} />
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              {draft.id ? 'Editar dependente' : 'Novo dependente'}
-            </Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {draft.id ? 'Editar dependente' : 'Novo dependente'}
+              </Text>
+              <Pressable style={styles.modalClose} onPress={() => setIsModalOpen(false)} hitSlop={8}>
+                <Ionicons name="close" size={18} color={colors.ink2} />
+              </Pressable>
+            </View>
             <Text style={styles.legend}>
               Campos com <Text style={styles.required}>*</Text> são obrigatórios
             </Text>
@@ -468,22 +483,24 @@ export default function User() {
                   <Image source={{ uri: draft.photoUri }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <Ionicons name="person" size={22} color="#29442dff" />
+                    <Ionicons name="person" size={24} color={colors.brand} />
                   </View>
                 )}
                 <View style={styles.photoActions}>
                   <Pressable style={styles.photoButton} onPress={() => handlePickImage(false)}>
+                    <Ionicons name="image-outline" size={14} color={colors.white} />
                     <Text style={styles.photoButtonText}>Galeria</Text>
                   </Pressable>
                   <Pressable style={styles.photoButton} onPress={() => handlePickImage(true)}>
-                    <Text style={styles.photoButtonText}>Camera</Text>
+                    <Ionicons name="camera-outline" size={14} color={colors.white} />
+                    <Text style={styles.photoButtonText}>Câmera</Text>
                   </Pressable>
                   {draft.photoUri ? (
                     <Pressable
                       style={[styles.photoButton, styles.photoButtonGhost]}
                       onPress={() => setDraft((current) => ({ ...current, photoUri: undefined }))}
                     >
-                      <Text style={styles.photoButtonText}>Remover</Text>
+                      <Text style={[styles.photoButtonText, styles.photoButtonTextGhost]}>Remover</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -499,6 +516,7 @@ export default function User() {
                   value={draft.name}
                   onChangeText={(value) => { setDraft((current) => ({ ...current, name: value })); clearError('name'); }}
                   placeholder="Nome completo"
+                  placeholderTextColor={colors.ink4}
                 />
                 {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
               </View>
@@ -515,7 +533,7 @@ export default function User() {
                   <Text style={draft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {draft.birthDate ? formatDateToBR(draft.birthDate) : 'Selecionar data'}
                   </Text>
-                  <Ionicons name="calendar-outline" size={18} color="#29442dff" />
+                  <Ionicons name="calendar-outline" size={18} color={colors.brand} />
                 </Pressable>
                 {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate}</Text>}
                 {showDatePicker && (
@@ -548,7 +566,7 @@ export default function User() {
                   <Text style={draft.relationship ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {draft.relationship || 'Selecionar parentesco'}
                   </Text>
-                  <Ionicons name="chevron-down" size={18} color="#29442dff" />
+                  <Ionicons name="chevron-down" size={18} color={colors.brand} />
                 </Pressable>
                 {errors.relationship && <Text style={styles.errorText}>{errors.relationship}</Text>}
                 {showRelationshipPicker && (
@@ -576,7 +594,7 @@ export default function User() {
                             {option}
                           </Text>
                           {draft.relationship === option && (
-                            <Ionicons name="checkmark" size={18} color="#29442dff" />
+                            <Ionicons name="checkmark" size={18} color={colors.brand} />
                           )}
                         </Pressable>
                       ))}
@@ -616,12 +634,13 @@ export default function User() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Local de Nascimento</Text>
+                <Text style={styles.label}>Local de nascimento</Text>
                 <TextInput
                   style={styles.input}
                   value={draft.birthPlace}
                   onChangeText={(value) => setDraft((current) => ({ ...current, birthPlace: value }))}
                   placeholder="Ex: São Paulo - SP"
+                  placeholderTextColor={colors.ink4}
                 />
               </View>
 
@@ -632,18 +651,20 @@ export default function User() {
                   value={draft.cns}
                   onChangeText={(value) => setDraft((current) => ({ ...current, cns: formatCns(value) }))}
                   placeholder="000 0000 0000 0000"
+                  placeholderTextColor={colors.ink4}
                   keyboardType="numeric"
                   maxLength={18}
                 />
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Nome da Mãe ou Responsável</Text>
+                <Text style={styles.label}>Nome da mãe ou responsável</Text>
                 <TextInput
                   style={styles.input}
                   value={draft.guardianName}
                   onChangeText={(value) => setDraft((current) => ({ ...current, guardianName: value }))}
                   placeholder="Nome do responsável"
+                  placeholderTextColor={colors.ink4}
                 />
               </View>
 
@@ -661,6 +682,7 @@ export default function User() {
                   }}
                   onBlur={() => fetchCep(draft.zipCode || '')}
                   placeholder="00000-000"
+                  placeholderTextColor={colors.ink4}
                   keyboardType="numeric"
                   maxLength={9}
                 />
@@ -674,6 +696,7 @@ export default function User() {
                   value={draft.address}
                   onChangeText={(value) => setDraft((current) => ({ ...current, address: value }))}
                   placeholder="Rua e número"
+                  placeholderTextColor={colors.ink4}
                 />
               </View>
 
@@ -684,6 +707,7 @@ export default function User() {
                   value={draft.complement}
                   onChangeText={(value) => setDraft((current) => ({ ...current, complement: value }))}
                   placeholder="Apto, bloco, etc."
+                  placeholderTextColor={colors.ink4}
                 />
               </View>
 
@@ -694,6 +718,7 @@ export default function User() {
                   value={draft.city}
                   onChangeText={(value) => setDraft((current) => ({ ...current, city: value }))}
                   placeholder="Nome da cidade"
+                  placeholderTextColor={colors.ink4}
                 />
               </View>
 
@@ -706,7 +731,7 @@ export default function User() {
                   <Text style={draft.state ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {draft.state || 'Selecionar estado'}
                   </Text>
-                  <Ionicons name="chevron-down" size={18} color="#29442dff" />
+                  <Ionicons name="chevron-down" size={18} color={colors.brand} />
                 </Pressable>
                 {showStatePicker && (
                   <View style={styles.pickerDropdown}>
@@ -723,7 +748,7 @@ export default function User() {
                           <Text style={[styles.pickerOptionText, draft.state === uf && styles.pickerOptionTextActive]}>
                             {uf}
                           </Text>
-                          {draft.state === uf && <Ionicons name="checkmark" size={18} color="#29442dff" />}
+                          {draft.state === uf && <Ionicons name="checkmark" size={18} color={colors.brand} />}
                         </Pressable>
                       ))}
                     </ScrollView>
@@ -744,6 +769,7 @@ export default function User() {
                     clearError('phone');
                   }}
                   placeholder="(00) 00000-0000"
+                  placeholderTextColor={colors.ink4}
                   keyboardType="phone-pad"
                 />
                 {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
@@ -764,7 +790,7 @@ export default function User() {
                 disabled={savingDependent}
               >
                 {savingDependent ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.white} size="small" />
                 ) : (
                   <Text style={styles.saveButtonText}>Salvar</Text>
                 )}
@@ -788,107 +814,132 @@ export default function User() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
+    backgroundColor: colors.bg,
+    paddingTop: '5%',
   },
-  profile: {
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: 130,
+  },
+
+  profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingTop: 60,
+    gap: spacing.lg,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    marginVertical: spacing.xl,
+    ...shadows.sm,
   },
-  photo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#B0D5D3',
-    marginRight: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoInitial: {
-    fontSize: 28,
-    color: '#29442dff',
-    fontWeight: '700',
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 12,
-    color: '#4d5c53',
-  },
-  optionsContainer: {
+  profileText: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 20
+    gap: 4,
+    marginTop: 8,
   },
-  sectionCard: {
-    backgroundColor: '#ffffffcc',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
+  profileName: {
+    ...typography.h3,
+    color: colors.ink,
+  },
+  profileTagRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  profileTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.brandSoft,
+    borderRadius: radii.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
+  },
+  profileTagText: {
+    ...typography.caption,
+    color: colors.brandInk,
+    fontWeight: '600',
+  },
+  profileEmail: {
+    ...typography.small,
+    color: colors.ink3,
+  },
+  section: {
+    marginBottom: spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f3322',
+    ...typography.h3,
+    color: colors.ink,
+    marginBottom: 2,
+  },
+  sectionSub: {
+    ...typography.small,
+    color: colors.ink3,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#29442dff',
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: colors.brand,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
   },
   addButtonText: {
-    fontSize: 12,
-    color: '#fff',
+    ...typography.small,
+    color: colors.white,
     fontWeight: '600',
   },
 
-  dependentSummary: {
-    fontSize: 13,
-    color: '#607367',
-  },
-  option: {
-    flexDirection: 'row',
+  emptyCard: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.line,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomEndRadius: 0.2,
-    borderBottomWidth: 0.4,
-    borderBottomColor: '#6666662d',
+    gap: spacing.sm,
   },
-  optionNoBorder: {
-    flexDirection: 'row',
+  emptyIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.brandSoft,
     alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'center',
   },
-  icon: {
-    marginRight: 15,
+  emptyTitle: {
+    ...typography.bodyLg,
+    fontWeight: '600',
+    color: colors.ink,
   },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
+  emptySub: {
+    ...typography.small,
+    color: colors.ink3,
+    textAlign: 'center',
   },
+
   dependentsList: {
-    gap: 8,
-    marginTop: 10,
+    gap: spacing.sm,
   },
   dependentCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.line,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -896,101 +947,149 @@ const styles = StyleSheet.create({
   dependentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
     flex: 1,
-  },
-  dependentAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  dependentAvatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#B0D5D3',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dependentAvatarInitial: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#29442dff',
   },
   dependentInfo: {
     flex: 1,
   },
   dependentName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1f3322',
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.ink,
   },
   dependentMeta: {
+    ...typography.small,
+    color: colors.ink3,
     marginTop: 2,
-    fontSize: 11,
-    color: '#607367',
   },
   dependentActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 4,
   },
-  dependentActionButton: {
-    padding: 6,
-  },
-  editIconButton: {
-    padding: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  iconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.md,
+    backgroundColor: colors.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+  },
+
+  menuCard: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  menuIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: radii.md,
+    backgroundColor: colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuLabel: {
+    ...typography.body,
+    color: colors.ink,
+    flex: 1,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: colors.line,
+    marginLeft: spacing.md + 32 + spacing.md,
+  },
+
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.coralSoft,
+    borderRadius: radii.lg,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: colors.coralSoft,
+  },
+  logoutText: {
+    ...typography.body,
+    color: colors.coralInk,
+    fontWeight: '600',
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: colors.dimDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 280,
-    maxHeight: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 12,
+    maxWidth: 380,
+    maxHeight: '85%',
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.xl,
+    padding: spacing.lg,
     flexDirection: 'column',
+    ...shadows.lg,
   },
-  modalScroll: {
-    maxHeight: '100%',
-    marginVertical: 8,
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f3322',
-    marginBottom: 4,
+    ...typography.h3,
+    color: colors.ink,
+  },
+  modalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.bgMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalScroll: {
+    marginVertical: spacing.md,
   },
   legend: {
-    fontSize: 11,
-    color: '#607367',
-    marginBottom: 6,
+    ...typography.caption,
+    color: colors.ink3,
+    marginTop: 4,
     fontStyle: 'italic',
   },
   required: {
-    color: '#e53935',
+    color: colors.coral,
     fontWeight: '700',
   },
   inputError: {
     borderWidth: 1,
-    borderColor: '#e53935',
-    backgroundColor: '#fdecea',
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
   },
   errorText: {
-    fontSize: 11,
-    color: '#e53935',
+    ...typography.caption,
+    color: colors.danger,
     marginTop: 4,
     fontWeight: '500',
   },
+
   photoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   photoPreview: {
     width: 64,
@@ -1001,7 +1100,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#E6F2F1',
+    backgroundColor: colors.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1009,38 +1108,49 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   photoButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: '#29442dff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radii.pill,
+    backgroundColor: colors.brand,
   },
   photoButtonGhost: {
-    backgroundColor: '#B0D5D3',
+    backgroundColor: colors.bgMuted,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
   photoButtonText: {
-    fontSize: 12,
+    ...typography.small,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.white,
   },
+  photoButtonTextGhost: {
+    color: colors.ink2,
+  },
+
   fieldGroup: {
     gap: 4,
-    marginBottom: 10,
+    marginBottom: spacing.md,
   },
   label: {
-    fontSize: 12,
+    ...typography.small,
     fontWeight: '600',
-    color: '#1f3322',
+    color: colors.ink,
   },
   input: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 13,
-    color: '#1f3322',
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.sm + 3, // 11
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.ink,
   },
   sexRow: {
     flexDirection: 'row',
@@ -1049,44 +1159,49 @@ const styles = StyleSheet.create({
   sexChip: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#F2F7F6',
+    paddingVertical: 10,
+    borderRadius: radii.sm + 3,
+    backgroundColor: colors.bgMuted,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
   sexChipActive: {
-    backgroundColor: '#29442dff',
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
   },
   sexChipText: {
-    fontSize: 12,
+    ...typography.small,
     fontWeight: '600',
-    color: '#1f3322',
+    color: colors.ink,
   },
   sexChipTextActive: {
-    color: '#fff',
+    color: colors.white,
   },
   dateButton: {
-    backgroundColor: '#F2F7F6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    backgroundColor: colors.bgMuted,
+    borderRadius: radii.sm + 3,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   dateButtonText: {
-    fontSize: 13,
-    color: '#999',
+    ...typography.body,
+    color: colors.ink4,
   },
   dateButtonTextFilled: {
-    fontSize: 13,
-    color: '#1f3322',
+    ...typography.body,
+    color: colors.ink,
   },
   pickerDropdown: {
     marginTop: 6,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.line,
     maxHeight: 200,
     overflow: 'hidden',
   },
@@ -1094,54 +1209,55 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   pickerOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F7F6',
+    borderBottomColor: colors.line,
   },
   pickerOptionActive: {
-    backgroundColor: '#E6F2F1',
+    backgroundColor: colors.brandSoft,
   },
   pickerOptionText: {
-    fontSize: 13,
-    color: '#1f3322',
+    ...typography.body,
+    color: colors.ink,
   },
   pickerOptionTextActive: {
     fontWeight: '600',
-    color: '#29442dff',
+    color: colors.brandInk,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
   cancelButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: '#29442d55',
+    borderColor: colors.line,
+    backgroundColor: colors.bgElev,
   },
   cancelButtonText: {
-    fontSize: 13,
+    ...typography.body,
     fontWeight: '600',
-    color: '#29442dff',
+    color: colors.ink2,
   },
   saveButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#29442dff',
+    paddingVertical: 12,
+    borderRadius: radii.md,
+    backgroundColor: colors.brand,
   },
   saveButtonText: {
-    fontSize: 13,
+    ...typography.body,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.white,
   },
   buttonDisabled: {
     opacity: 0.6,
