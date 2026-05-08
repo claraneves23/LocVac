@@ -1,39 +1,99 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Pressable, ScrollView, Image, Modal, Platform, TextInput, Alert } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { router, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Dependent, FamilyMember, MandatoryVaccineRecord, OtherVaccine, ParticipatingCampaign } from './types/vaccination';
-import { fetchMandatoryVaccines, fetchDosesPorPessoa, registrarDose, atualizarDose, deletarDose, VacinaDTO, fetchOutrasVacinasPorPessoa, registrarOutraVacina, atualizarOutraVacina } from './service/mandatoryVaccineService';
-import { fetchCampaigns, addParticipacaoCampanha, updateParticipacaoCampanha, fetchParticipacoesByPessoa, deleteParticipacaoCampanha } from './service/campaignService';
-import { Campanha } from './types/vaccination';
-import { useAppContext } from './context/AppContext';
 
-// Componentes
-import Header from '../components/index_/Header';
-import VaccinationCard from '../components/index_/VaccinationCard';
-import MandatoryVaccinesSection from '../components/index_/MandatoryVaccinesSection';
-import OtherVaccinesSection from '../components/index_/OtherVaccinesSection';
-import CampaignsSection from '../components/index_/CampaignSection';
+import {
+  fetchMandatoryVaccines,
+  fetchDosesPorPessoa,
+  registrarDose,
+  atualizarDose,
+  deletarDose,
+  fetchOutrasVacinasPorPessoa,
+  registrarOutraVacina,
+  atualizarOutraVacina,
+  VacinaDTO,
+} from './service/mandatoryVaccineService';
+import {
+  fetchCampaigns,
+  fetchParticipacoesByPessoa,
+  addParticipacaoCampanha,
+  updateParticipacaoCampanha,
+  deleteParticipacaoCampanha,
+} from './service/campaignService';
+import { useAppContext } from './context/AppContext';
+import {
+  Campanha,
+  FamilyMember,
+  MandatoryVaccineRecord,
+  OtherVaccine,
+  ParticipatingCampaign,
+} from './types/vaccination';
+
+import AppHeader from '../components/redesign/AppHeader';
+import Skeleton from '../components/redesign/Skeleton';
 import ProfileModal from '../components/modals/ProfileModal';
 import MandatoryVaccineModal from '../components/modals/MandatoryVaccineModal';
 import OtherVaccineModal from '../components/modals/OtherVaccineModal';
 import CampaignModal from '../components/modals/CampaignModal';
-import ImagePreviewModal from '../components/modals/ImagePreviewModal';
+import { colors, radii, shadows, typography } from './theme/tokens';
 
-// Funções auxiliares para formatação de data
+const SELECTED_PROFILE_KEY = 'selectedProfileId';
+
+type Filter = 'todas' | 'aplicadas' | 'pendentes' | 'campanhas';
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: 'todas', label: 'Todas' },
+  { id: 'aplicadas', label: 'Aplicadas' },
+  { id: 'pendentes', label: 'Pendentes' },
+  { id: 'campanhas', label: 'Campanhas' },
+];
+
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
   const [year, month, day] = isoDate.split('-');
   return `${day}/${month}/${year}`;
 };
 
-const formatDateToISO = (brDate: string): string => {
-  if (!brDate) return '';
-  const [day, month, year] = brDate.split('/');
-  return `${year}-${month}-${day}`;
+const formatId = (id: string | undefined): string => {
+  if (!id) return 'LV-XXXX';
+  const padded = id.padStart(4, '0');
+  return `LV-${new Date().getFullYear()}-${padded.slice(-4)}`;
+};
+
+const formatSex = (sex: 'M' | 'F' | 'Outro' | undefined): string => {
+  if (sex === 'M') return 'Masculino';
+  if (sex === 'F') return 'Feminino';
+  return 'Outro';
+};
+
+const formatCNS = (cns: string): string => {
+  const d = cns.replace(/\D/g, '');
+  if (d.length === 15) return `${d.slice(0, 3)} ${d.slice(3, 7)} ${d.slice(7, 11)} ${d.slice(11)}`;
+  return cns;
+};
+
+const formatAge = (months: number): string => {
+  if (months === 0) return 'Ao nascer';
+  if (months === 1) return '1 mês';
+  if (months < 12) return `${months} meses`;
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (m === 0) return y === 1 ? '1 ano' : `${y} anos`;
+  return `${y} ano${y > 1 ? 's' : ''} e ${m} mês${m > 1 ? 'es' : ''}`;
 };
 
 const parseDate = (dateStr: string): Date => {
@@ -45,65 +105,69 @@ const parseDate = (dateStr: string): Date => {
   return new Date(dateStr);
 };
 
-
-const SELECTED_PROFILE_KEY = 'selectedProfileId';
-
 export default function Index() {
-  // Exibe tela de autenticação (login/cadastro) se não autenticado
-  // O componente Login já gerencia o fluxo de autenticação/cadastro
-  // e redireciona para a tela principal após login
-  // return <Login />; // Removido para evitar código inalcançável
-  const { mainUser, dependents, usuarioId, refreshDependents } = useAppContext();
+  const router = useRouter();
+  const { mainUser, dependents } = useAppContext();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
-  const [mandatoryVaccineList, setMandatoryVaccineList] = useState<VacinaDTO[]>([]);
-  const [mandatoryVaccineRecords, setMandatoryVaccineRecords] = useState<MandatoryVaccineRecord[]>([]);
-  const [isMandatoryVaccineModalOpen, setIsMandatoryVaccineModalOpen] = useState(false);
-  const [editingMandatoryVaccine, setEditingMandatoryVaccine] = useState<{ vaccineId: string; record?: MandatoryVaccineRecord } | null>(null);
-  const [showMandatoryDatePicker, setShowMandatoryDatePicker] = useState(false);
-  const [mandatoryVaccineDate, setMandatoryVaccineDate] = useState(new Date());
-  const [savingMandatoryVaccine, setSavingMandatoryVaccine] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<Filter>('todas');
 
-  // Estados para o formulário de vacina obrigatória
+  const [mandatoryVaccineList, setMandatoryVaccineList] = useState<VacinaDTO[]>([]);
+  const [mandatoryRecords, setMandatoryRecords] = useState<MandatoryVaccineRecord[]>([]);
+  const [otherVaccines, setOtherVaccines] = useState<OtherVaccine[]>([]);
+  const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
+  const [availableCampaigns, setAvailableCampaigns] = useState<Campanha[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [mandatoryListLoaded, setMandatoryListLoaded] = useState(false);
+
+  // Mandatory modal state
+  const [isMandatoryModalOpen, setIsMandatoryModalOpen] = useState(false);
+  const [editingMandatory, setEditingMandatory] = useState<{ vaccineId: string; record?: MandatoryVaccineRecord } | null>(null);
+  const [mandatoryShowDatePicker, setMandatoryShowDatePicker] = useState(false);
+  const [mandatoryPickerDate, setMandatoryPickerDate] = useState(new Date());
   const [mandatoryIsApplied, setMandatoryIsApplied] = useState(false);
   const [mandatoryDate, setMandatoryDate] = useState('');
   const [mandatoryLot, setMandatoryLot] = useState('');
   const [mandatoryCode, setMandatoryCode] = useState('');
   const [mandatoryProfName, setMandatoryProfName] = useState('');
   const [mandatoryProfId, setMandatoryProfId] = useState('');
+  const [savingMandatory, setSavingMandatory] = useState(false);
 
-  // Estados para outras vacinas
-  const [otherVaccines, setOtherVaccines] = useState<OtherVaccine[]>([]);
-  const [isOtherVaccineModalOpen, setIsOtherVaccineModalOpen] = useState(false);
-  const [editingOtherVaccine, setEditingOtherVaccine] = useState<OtherVaccine | null>(null);
-  const [showOtherVaccineDatePicker, setShowOtherVaccineDatePicker] = useState(false);
-  const [otherVaccineDate, setOtherVaccineDate] = useState(new Date());
-  const [otherVaccineName, setOtherVaccineName] = useState('');
-  const [otherVaccineAppDate, setOtherVaccineAppDate] = useState('');
-  const [otherVaccineLot, setOtherVaccineLot] = useState('');
-  const [otherVaccineCode, setOtherVaccineCode] = useState('');
-  const [otherVaccineProfName, setOtherVaccineProfName] = useState('');
-  const [otherVaccineProfId, setOtherVaccineProfId] = useState('');
-  const [savingOtherVaccine, setSavingOtherVaccine] = useState(false);
-  const [otherVaccineNameError, setOtherVaccineNameError] = useState<string | null>(null);
+  // Other vaccine modal state
+  const [isOtherModalOpen, setIsOtherModalOpen] = useState(false);
+  const [editingOther, setEditingOther] = useState<OtherVaccine | null>(null);
+  const [otherShowDatePicker, setOtherShowDatePicker] = useState(false);
+  const [otherPickerDate, setOtherPickerDate] = useState(new Date());
+  const [otherName, setOtherName] = useState('');
+  const [otherDate, setOtherDate] = useState('');
+  const [otherLot, setOtherLot] = useState('');
+  const [otherCode, setOtherCode] = useState('');
+  const [otherProfName, setOtherProfName] = useState('');
+  const [otherProfId, setOtherProfId] = useState('');
+  const [savingOther, setSavingOther] = useState(false);
+  const [otherNameError, setOtherNameError] = useState<string | null>(null);
 
-  // Estados para campanhas
-  const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
-  const [availableCampaigns, setAvailableCampaigns] = useState<Campanha[]>([]);
+  // Campaign modal state
+  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<ParticipatingCampaign | null>(null);
+  const [campaignShowDatePicker, setCampaignShowDatePicker] = useState(false);
+  const [campaignPickerDate, setCampaignPickerDate] = useState(new Date());
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
   const [showCampaignPicker, setShowCampaignPicker] = useState(false);
-  useEffect(() => {
-    fetchCampaigns()
-      .then(setAvailableCampaigns)
-      .catch(() => setAvailableCampaigns([]));
-  }, []);
+  const [savingCampaign, setSavingCampaign] = useState(false);
+  const [campaignNameError, setCampaignNameError] = useState<string | null>(null);
+  const [campaignDateError, setCampaignDateError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchMandatoryVaccines()
-      .then(setMandatoryVaccineList)
-      .catch(() => setMandatoryVaccineList([]));
-  }, []);
+  const familyMembers = useMemo<FamilyMember[]>(() => {
+    if (!mainUser) return [];
+    return [mainUser, ...dependents];
+  }, [mainUser, dependents]);
+
+  const selectedProfile = useMemo<FamilyMember | null>(() => {
+    if (!mainUser) return null;
+    return familyMembers.find((p) => p.id === selectedProfileId) ?? mainUser;
+  }, [familyMembers, selectedProfileId, mainUser]);
 
   useEffect(() => {
     if (mainUser && !selectedProfileId) {
@@ -111,148 +175,93 @@ export default function Index() {
     }
   }, [mainUser]);
 
-  const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<ParticipatingCampaign | null>(null);
-  const [showCampaignDatePicker, setShowCampaignDatePicker] = useState(false);
-  const [campaignDate, setCampaignDate] = useState(new Date());
-  const [campaignName, setCampaignName] = useState('');
-  const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
-  const [savingCampaign, setSavingCampaign] = useState(false);
-  const [campaignNameError, setCampaignNameError] = useState<string | null>(null);
-  const [campaignDateError, setCampaignDateError] = useState<string | null>(null);
-
-  const loadMandatoryVaccineRecords = useCallback(async () => {
-    if (!selectedProfileId) return;
-    try {
-      const [vaccines, doses] = await Promise.all([
-        mandatoryVaccineList.length > 0 ? Promise.resolve(mandatoryVaccineList) : fetchMandatoryVaccines(),
-        fetchDosesPorPessoa(Number(selectedProfileId)),
-      ]);
-      if (mandatoryVaccineList.length === 0) setMandatoryVaccineList(vaccines);
-      const records: MandatoryVaccineRecord[] = doses.map((d) => ({
-        id: String(d.id),
-        profileId: String(d.idPessoa),
-        vaccineId: String(d.idVacina),
-        isApplied: true,
-        applicationDate: d.dataAplicacao,
-        lot: d.lote ?? undefined,
-        code: d.observacao ?? undefined,
-        professionalName: d.nomeProfissional ?? undefined,
-        professionalId: d.registroProfissional ?? undefined,
-      }));
-      setMandatoryVaccineRecords(records);
-    } catch (e) {
-      setMandatoryVaccineRecords([]);
-    }
-  }, [selectedProfileId, mandatoryVaccineList]);
-
-  const loadOtherVaccines = useCallback(async () => {
-    if (!selectedProfileId) return;
-    try {
-      const doses = await fetchOutrasVacinasPorPessoa(Number(selectedProfileId));
-      setOtherVaccines(doses.map((d) => ({
-        id: String(d.id),
-        profileId: String(d.idPessoa),
-        vaccineName: d.nomeVacina,
-        applicationDate: d.dataAplicacao ?? undefined,
-        lot: d.lote ?? undefined,
-        code: d.observacao ?? undefined,
-        professionalName: d.nomeProfissional ?? undefined,
-        professionalId: d.registroProfissional ?? undefined,
-      })));
-    } catch {
-      setOtherVaccines([]);
-    }
-  }, [selectedProfileId]);
-
-
-  const loadCampaigns = useCallback(async () => {
-    if (!selectedProfileId) return;
-    try {
-      const participacoes = await fetchParticipacoesByPessoa(Number(selectedProfileId));
-      const mapped = participacoes.map((p) => ({
-        id: String(p.id),
-        profileId: String(p.idPessoa),
-        campaignName: p.nomeCampanha ?? `Campanha #${p.idCampanha}`,
-        participationDate: p.dataParticipacao,
-      }));
-      setCampaigns(mapped);
-    } catch {
-      setCampaigns([]);
-    }
-  }, [selectedProfileId]);
-
-  // Salvar o perfil sempre que muda
   useEffect(() => {
     if (selectedProfileId) {
-      AsyncStorage.setItem(SELECTED_PROFILE_KEY, selectedProfileId).catch((error) => {
-        console.log('Erro ao salvar perfil:', error);
-      });
+      AsyncStorage.setItem(SELECTED_PROFILE_KEY, selectedProfileId).catch(() => {});
     }
   }, [selectedProfileId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadMandatoryVaccineRecords();
-      loadOtherVaccines();
-      loadCampaigns();
-    }, [loadMandatoryVaccineRecords, loadOtherVaccines, loadCampaigns])
-  );
-
-  const familyMembers = useMemo<FamilyMember[]>(() => {
-    if (!mainUser) return [];
-    return [mainUser, ...dependents];
-  }, [mainUser, dependents]);
-
-  const selectedProfile = useMemo((): FamilyMember => {
-    if (!mainUser) {
-      // Fallback: always return a FamilyMember with a valid name
-      return { id: 'unknown', userId: 'unknown', name: 'Usuário', birthDate: '', sex: 'Outro', kind: 'user' } as FamilyMember;
-    }
-    return familyMembers.find((p) => p.id === selectedProfileId) ?? mainUser;
-  }, [familyMembers, selectedProfileId, mainUser]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (mainUser && !familyMembers.some((p) => p.id === selectedProfileId)) {
-        setSelectedProfileId(mainUser.id);
-      }
-    }, [familyMembers, selectedProfileId, mainUser])
-  );
-
   useEffect(() => {
-    const updateSystemBars = async () => {
+    Promise.all([
+      fetchMandatoryVaccines().then(setMandatoryVaccineList).catch(() => setMandatoryVaccineList([])),
+      fetchCampaigns().then(setAvailableCampaigns).catch(() => setAvailableCampaigns([])),
+    ]).finally(() => setMandatoryListLoaded(true));
+  }, []);
+
+  const loadData = useCallback(async () => {
+    if (!selectedProfileId) return;
+    try {
+      const [doses, others, participacoes] = await Promise.all([
+        fetchDosesPorPessoa(Number(selectedProfileId)),
+        fetchOutrasVacinasPorPessoa(Number(selectedProfileId)).catch(() => []),
+        fetchParticipacoesByPessoa(Number(selectedProfileId)).catch(() => []),
+      ]);
+      setMandatoryRecords(
+        doses.map((d) => ({
+          id: String(d.id),
+          profileId: String(d.idPessoa),
+          vaccineId: String(d.idVacina),
+          isApplied: true,
+          applicationDate: d.dataAplicacao,
+          lot: d.lote ?? undefined,
+          code: d.observacao ?? undefined,
+          professionalName: d.nomeProfissional ?? undefined,
+          professionalId: d.registroProfissional ?? undefined,
+        }))
+      );
+      setOtherVaccines(
+        others.map((d) => ({
+          id: String(d.id),
+          profileId: String(d.idPessoa),
+          vaccineName: d.nomeVacina,
+          applicationDate: d.dataAplicacao ?? undefined,
+          lot: d.lote ?? undefined,
+          code: d.observacao ?? undefined,
+          professionalName: d.nomeProfissional ?? undefined,
+          professionalId: d.registroProfissional ?? undefined,
+        }))
+      );
+      setCampaigns(
+        participacoes.map((p) => ({
+          id: String(p.id),
+          profileId: String(p.idPessoa),
+          campaignName: p.nomeCampanha ?? `Campanha #${p.idCampanha}`,
+          participationDate: p.dataParticipacao,
+        }))
+      );
+    } catch {
+      setMandatoryRecords([]);
+      setOtherVaccines([]);
+      setCampaigns([]);
+    } finally {
+      setDataLoaded(true);
+    }
+  }, [selectedProfileId]);
+
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  const anyModalOpen = isProfileModalOpen || isMandatoryModalOpen || isOtherModalOpen || isCampaignModalOpen;
+  useEffect(() => {
+    const updateBars = async () => {
       if (Platform.OS !== 'android') return;
-      
       try {
-        if (isProfileModalOpen) {
-          // Escurece as barras do sistema quando o modal abre
-          await NavigationBar.setBackgroundColorAsync('#80000000'); // 50% preto
+        if (anyModalOpen) {
+          await NavigationBar.setBackgroundColorAsync('#80000000');
           await NavigationBar.setButtonStyleAsync('light');
           await NavigationBar.setVisibilityAsync('visible');
         } else {
-          // Restaura as barras do sistema quando o modal fecha
-          await NavigationBar.setBackgroundColorAsync('#00FFFFFF'); // Branco transparente
+          await NavigationBar.setBackgroundColorAsync('#00FFFFFF');
           await NavigationBar.setButtonStyleAsync('dark');
         }
-      } catch (error) {
-        // No Expo Go, algumas APIs podem não funcionar - isso é normal
-        console.log('NavigationBar API não disponível no Expo Go');
-      }
+      } catch {}
     };
-    updateSystemBars();
-  }, [isProfileModalOpen]);
+    updateBars();
+  }, [anyModalOpen]);
 
-  const openImagePreview = (uri?: string) => {
-    if (!uri) return;
-    setImagePreviewUri(uri);
-    setIsImageModalOpen(true);
-  };
-
-  const openMandatoryVaccineModal = (vaccineId: string) => {
-    const existingRecord = mandatoryVaccineRecords.find((r) => r.vaccineId === vaccineId);
-    setEditingMandatoryVaccine({ vaccineId, record: existingRecord });
-  
+  // ===== Mandatory handlers =====
+  const openMandatoryModal = (vaccineId: string) => {
+    const existingRecord = mandatoryRecords.find((r) => r.vaccineId === vaccineId);
+    setEditingMandatory({ vaccineId, record: existingRecord });
     if (existingRecord) {
       setMandatoryIsApplied(existingRecord.isApplied);
       setMandatoryDate(existingRecord.applicationDate || '');
@@ -261,7 +270,7 @@ export default function Index() {
       setMandatoryProfName(existingRecord.professionalName || '');
       setMandatoryProfId(existingRecord.professionalId || '');
       if (existingRecord.applicationDate) {
-        setMandatoryVaccineDate(parseDate(existingRecord.applicationDate));
+        setMandatoryPickerDate(parseDate(existingRecord.applicationDate));
       }
     } else {
       setMandatoryIsApplied(false);
@@ -270,25 +279,22 @@ export default function Index() {
       setMandatoryCode('');
       setMandatoryProfName('');
       setMandatoryProfId('');
-      setMandatoryVaccineDate(new Date());
+      setMandatoryPickerDate(new Date());
     }
-  
-    setIsMandatoryVaccineModalOpen(true);
+    setIsMandatoryModalOpen(true);
   };
 
-  const handleMandatoryDateChange = (event: any, date?: Date) => {
-    setShowMandatoryDatePicker(Platform.OS === 'ios');
+  const handleMandatoryDateChange = (_event: any, date?: Date) => {
+    setMandatoryShowDatePicker(Platform.OS === 'ios');
     if (date) {
-      setMandatoryVaccineDate(date);
-      const isoDate = date.toISOString().split('T')[0];
-      setMandatoryDate(isoDate);
+      setMandatoryPickerDate(date);
+      setMandatoryDate(date.toISOString().split('T')[0]);
     }
   };
 
-  const handleSaveMandatoryVaccine = async () => {
-    if (!editingMandatoryVaccine || savingMandatoryVaccine) return;
-
-    const { vaccineId, record } = editingMandatoryVaccine;
+  const handleSaveMandatory = async () => {
+    if (!editingMandatory || savingMandatory || !selectedProfile) return;
+    const { vaccineId, record } = editingMandatory;
     const payload = {
       idPessoa: Number(selectedProfile.id),
       idVacina: Number(vaccineId),
@@ -298,8 +304,7 @@ export default function Index() {
       nomeProfissional: mandatoryProfName.trim() || undefined,
       registroProfissional: mandatoryProfId.trim() || undefined,
     };
-
-    setSavingMandatoryVaccine(true);
+    setSavingMandatory(true);
     try {
       if (!mandatoryIsApplied && record?.id) {
         await deletarDose(Number(record.id));
@@ -308,161 +313,133 @@ export default function Index() {
       } else if (mandatoryIsApplied) {
         await registrarDose(payload);
       }
-
-      await loadMandatoryVaccineRecords();
-      setMandatoryIsApplied(false);
-      setMandatoryDate('');
-      setMandatoryLot('');
-      setMandatoryCode('');
-      setMandatoryProfName('');
-      setMandatoryProfId('');
-      setEditingMandatoryVaccine(null);
-      setIsMandatoryVaccineModalOpen(false);
+      await loadData();
+      setEditingMandatory(null);
+      setIsMandatoryModalOpen(false);
     } catch {
       Alert.alert('Erro', 'Não foi possível salvar a vacina.');
     } finally {
-      setSavingMandatoryVaccine(false);
+      setSavingMandatory(false);
     }
   };
 
-  // Outras Vacinas handlers
-  const openOtherVaccineModal = (vaccine?: OtherVaccine) => {
-    setOtherVaccineNameError(null);
+  // ===== Other vaccine handlers =====
+  const openOtherModal = (vaccine?: OtherVaccine) => {
+    setOtherNameError(null);
     if (vaccine) {
-      setEditingOtherVaccine(vaccine);
-      setOtherVaccineName(vaccine.vaccineName);
-      setOtherVaccineAppDate(vaccine.applicationDate || '');
-      setOtherVaccineLot(vaccine.lot || '');
-      setOtherVaccineCode(vaccine.code || '');
-      setOtherVaccineProfName(vaccine.professionalName || '');
-      setOtherVaccineProfId(vaccine.professionalId || '');
-      if (vaccine.applicationDate) {
-        setOtherVaccineDate(parseDate(vaccine.applicationDate));
-      }
+      setEditingOther(vaccine);
+      setOtherName(vaccine.vaccineName);
+      setOtherDate(vaccine.applicationDate || '');
+      setOtherLot(vaccine.lot || '');
+      setOtherCode(vaccine.code || '');
+      setOtherProfName(vaccine.professionalName || '');
+      setOtherProfId(vaccine.professionalId || '');
+      if (vaccine.applicationDate) setOtherPickerDate(parseDate(vaccine.applicationDate));
     } else {
-      setEditingOtherVaccine(null);
-      setOtherVaccineName('');
-      setOtherVaccineAppDate('');
-      setOtherVaccineLot('');
-      setOtherVaccineCode('');
-      setOtherVaccineProfName('');
-      setOtherVaccineProfId('');
-      setOtherVaccineDate(new Date());
+      setEditingOther(null);
+      setOtherName('');
+      setOtherDate('');
+      setOtherLot('');
+      setOtherCode('');
+      setOtherProfName('');
+      setOtherProfId('');
+      setOtherPickerDate(new Date());
     }
-    setIsOtherVaccineModalOpen(true);
+    setIsOtherModalOpen(true);
   };
 
-  const handleOtherVaccineDateChange = (event: any, date?: Date) => {
-    setShowOtherVaccineDatePicker(Platform.OS === 'ios');
+  const handleOtherDateChange = (_event: any, date?: Date) => {
+    setOtherShowDatePicker(Platform.OS === 'ios');
     if (date) {
-      setOtherVaccineDate(date);
-      const isoDate = date.toISOString().split('T')[0];
-      setOtherVaccineAppDate(isoDate);
+      setOtherPickerDate(date);
+      setOtherDate(date.toISOString().split('T')[0]);
     }
   };
 
-  const handleSaveOtherVaccine = async () => {
-    if (savingOtherVaccine) return;
-    if (!otherVaccineName.trim()) {
-      setOtherVaccineNameError('Campo obrigatório!');
+  const handleSaveOther = async () => {
+    if (savingOther || !selectedProfile) return;
+    if (!otherName.trim()) {
+      setOtherNameError('Campo obrigatório!');
       return;
     }
-    setOtherVaccineNameError(null);
-
+    setOtherNameError(null);
     const payload = {
       idPessoa: Number(selectedProfile.id),
-      nomeVacina: otherVaccineName.trim(),
-      dataAplicacao: otherVaccineAppDate || undefined,
-      lote: otherVaccineLot.trim() || undefined,
-      observacao: otherVaccineCode.trim() || undefined,
-      nomeProfissional: otherVaccineProfName.trim() || undefined,
-      registroProfissional: otherVaccineProfId.trim() || undefined,
+      nomeVacina: otherName.trim(),
+      dataAplicacao: otherDate || undefined,
+      lote: otherLot.trim() || undefined,
+      observacao: otherCode.trim() || undefined,
+      nomeProfissional: otherProfName.trim() || undefined,
+      registroProfissional: otherProfId.trim() || undefined,
     };
-
-    setSavingOtherVaccine(true);
+    setSavingOther(true);
     try {
-      if (editingOtherVaccine) {
-        await atualizarOutraVacina(Number(editingOtherVaccine.id), payload);
-      } else {
-        await registrarOutraVacina(payload);
-      }
-
-      await loadOtherVaccines();
-      setOtherVaccineName('');
-      setOtherVaccineAppDate('');
-      setOtherVaccineLot('');
-      setOtherVaccineCode('');
-      setOtherVaccineProfName('');
-      setOtherVaccineProfId('');
-      setEditingOtherVaccine(null);
-      setIsOtherVaccineModalOpen(false);
+      if (editingOther) await atualizarOutraVacina(Number(editingOther.id), payload);
+      else await registrarOutraVacina(payload);
+      await loadData();
+      setEditingOther(null);
+      setIsOtherModalOpen(false);
     } catch {
       Alert.alert('Erro', 'Não foi possível salvar a vacina.');
     } finally {
-      setSavingOtherVaccine(false);
+      setSavingOther(false);
     }
   };
 
-  const handleDeleteOtherVaccine = (vaccineId: string) => {
-    Alert.alert(
-      'Remover vacina',
-      'Deseja remover este registro de vacina?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deletarDose(Number(vaccineId));
-              await loadOtherVaccines();
-            } catch {
-              Alert.alert('Erro', 'Não foi possível remover a vacina.');
-            }
-          },
+  const handleDeleteOther = (vaccineId: string) => {
+    Alert.alert('Remover vacina', 'Deseja remover este registro de vacina?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deletarDose(Number(vaccineId));
+            await loadData();
+          } catch {
+            Alert.alert('Erro', 'Não foi possível remover a vacina.');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  // Campanhas handlers
+  // ===== Campaign handlers =====
   const openCampaignModal = (campaign?: ParticipatingCampaign) => {
-    setShowCampaignPicker(false); // sempre fecha o select ao abrir
+    setShowCampaignPicker(false);
     setCampaignNameError(null);
     setCampaignDateError(null);
     if (campaign) {
       setEditingCampaign(campaign);
       setCampaignName(campaign.campaignName);
       setCampaignParticipationDate(campaign.participationDate);
-      setCampaignDate(parseDate(campaign.participationDate));
+      setCampaignPickerDate(parseDate(campaign.participationDate));
     } else {
       setEditingCampaign(null);
       setCampaignName('');
       setCampaignParticipationDate('');
-      setCampaignDate(new Date());
+      setCampaignPickerDate(new Date());
     }
     setIsCampaignModalOpen(true);
   };
 
-  const handleCampaignDateChange = (event: any, date?: Date) => {
-    setShowCampaignDatePicker(Platform.OS === 'ios');
+  const handleCampaignDateChange = (_event: any, date?: Date) => {
+    setCampaignShowDatePicker(Platform.OS === 'ios');
     if (date) {
-      setCampaignDate(date);
-      const isoDate = date.toISOString().split('T')[0];
-      setCampaignParticipationDate(isoDate);
+      setCampaignPickerDate(date);
+      setCampaignParticipationDate(date.toISOString().split('T')[0]);
       setCampaignDateError(null);
     }
   };
 
   const handleSaveCampaign = async () => {
-    if (savingCampaign) return;
+    if (savingCampaign || !selectedProfile) return;
     let temErro = false;
-    if (!campaignName.trim()) { setCampaignNameError('Campo obrigatório!'); temErro = true; } else { setCampaignNameError(null); }
-    if (!campaignParticipationDate) { setCampaignDateError('Campo obrigatório!'); temErro = true; } else { setCampaignDateError(null); }
+    if (!campaignName.trim()) { setCampaignNameError('Campo obrigatório!'); temErro = true; }
+    if (!campaignParticipationDate) { setCampaignDateError('Campo obrigatório!'); temErro = true; }
     if (temErro) return;
-
-    const campanhaSelecionada = availableCampaigns.find((c) => c.nome === campaignName);
-    if (!campanhaSelecionada) {
+    const camp = availableCampaigns.find((c) => c.nome === campaignName);
+    if (!camp) {
       Alert.alert('Erro', 'Selecione uma campanha válida.');
       return;
     }
@@ -472,20 +449,17 @@ export default function Index() {
         await updateParticipacaoCampanha({
           id: Number(editingCampaign.id),
           idPessoa: Number(selectedProfile.id),
-          idCampanha: campanhaSelecionada.id,
+          idCampanha: camp.id,
           dataParticipacao: campaignParticipationDate,
         });
       } else {
         await addParticipacaoCampanha({
           idPessoa: Number(selectedProfile.id),
-          idCampanha: campanhaSelecionada.id,
+          idCampanha: camp.id,
           dataParticipacao: campaignParticipationDate,
         });
       }
-
-      await loadCampaigns();
-      setCampaignName('');
-      setCampaignParticipationDate('');
+      await loadData();
       setEditingCampaign(null);
       setIsCampaignModalOpen(false);
     } catch {
@@ -495,74 +469,323 @@ export default function Index() {
     }
   };
 
-  const handleDeleteCampaign = (campaignId: string) => {
-    Alert.alert(
-      'Remover campanha',
-      'Deseja remover esta participação em campanha?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteParticipacaoCampanha(Number(campaignId));
-              await loadCampaigns();
-            } catch {
-              Alert.alert('Erro', 'Não foi possível remover a participação.');
-            }
-          },
+  const handleDeleteCampaign = (id: string) => {
+    Alert.alert('Remover campanha', 'Deseja remover esta participação em campanha?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteParticipacaoCampanha(Number(id));
+            await loadData();
+          } catch {
+            Alert.alert('Erro', 'Não foi possível remover a participação.');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  if (!mainUser) return null;
+  // ===== Computed =====
+  const vaccineGroups = useMemo(() => {
+    const map = new Map<number, VacinaDTO[]>();
+    mandatoryVaccineList.forEach((v) => {
+      const key = v.idadeMinimaMeses ?? 0;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(v);
+    });
+    const sortedAges = Array.from(map.keys()).sort((a, b) => a - b);
+
+    // Primeiro grupo incompleto — todos os anteriores estão concluídos
+    let activeAge: number | null = null;
+    for (const age of sortedAges) {
+      const allApplied = map.get(age)!.every((v) =>
+        mandatoryRecords.some((r) => r.vaccineId === String(v.id) && r.isApplied)
+      );
+      if (!allApplied) { activeAge = age; break; }
+    }
+
+    // Exibe apenas grupos já concluídos + o grupo atual (bloqueia futuros)
+    const visibleAges = activeAge === null
+      ? sortedAges
+      : sortedAges.filter((a) => a <= activeAge!);
+
+    return visibleAges.map((age) => {
+      const vaccines = map.get(age)!;
+      const isCompleted = vaccines.every((v) =>
+        mandatoryRecords.some((r) => r.vaccineId === String(v.id) && r.isApplied)
+      );
+      return { age, vaccines, isCompleted, isActive: age === activeAge };
+    });
+  }, [mandatoryVaccineList, mandatoryRecords]);
+
+  const showMandatory = activeFilter === 'todas' || activeFilter === 'aplicadas' || activeFilter === 'pendentes';
+  const showOther = activeFilter === 'todas' || activeFilter === 'aplicadas';
+  const showCampaigns = activeFilter === 'todas' || activeFilter === 'campanhas';
+
+  if (!mainUser || !selectedProfile) {
+    return (
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" color={colors.brand} />
+      </View>
+    );
+  }
 
   return (
-    
     <View style={styles.container}>
-      
-      {/* Componente de construção do 
-      Header com seleção de perfil e preview de imagem */}
-      <Header
-        selectedProfile={selectedProfile}
-        onOpenProfileModal={() => setIsProfileModalOpen(true)}
-        onOpenImagePreview={openImagePreview}
+      <AppHeader
+        profile={selectedProfile}
+        onSwitch={() => setIsProfileModalOpen(true)}
       />
 
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-          {/* Componente da Carteira de Vacinação */}
-          <VaccinationCard
-            profile={selectedProfile}
-            onOpenImagePreview={openImagePreview}
-          />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero passport card */}
+        <LinearGradient
+          colors={[colors.brand, colors.brand2]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.passport}
+        >
+          <View style={styles.passportTopRow}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.passportCardLabel}>Informações de Pessoa</Text>
+              <Text style={styles.passportName} numberOfLines={2}>{selectedProfile.name}</Text>
+              <Text style={styles.passportRole}>
+                {selectedProfile.kind === 'dependent' && selectedProfile.relationship
+                  ? selectedProfile.relationship
+                  : 'Titular'} · {formatId(selectedProfile.id)}
+              </Text>
+            </View>
+            <Pressable style={styles.passportDocBtn} onPress={() => router.push('/carteira-completa')}>
+              <Ionicons name="document-text-outline" size={20} color="#fff" />
+            </Pressable>
+          </View>
 
-          {/* Componente da seção de Vacinas 
-          Obrigatórias do 1º Ano de Vida */}
-          <MandatoryVaccinesSection
-            vaccines={mandatoryVaccineList}
-            records={mandatoryVaccineRecords}
-            onOpenModal={openMandatoryVaccineModal}
-          />
+          <View style={styles.passportDivider} />
 
+          <View style={styles.passportInfoGrid}>
+            <View style={styles.passportInfoRow}>
+              <View style={styles.passportInfoItem}>
+                <Text style={styles.passportInfoLabel}>Nascimento</Text>
+                <Text style={styles.passportInfoValue}>{formatDateToBR(selectedProfile.birthDate)}</Text>
+              </View>
+              <View style={styles.passportInfoItem}>
+                <Text style={styles.passportInfoLabel}>Sexo</Text>
+                <Text style={styles.passportInfoValue}>{formatSex(selectedProfile.sex)}</Text>
+              </View>
+            </View>
 
-          {/* Componente da seção de Outras Vacinas */}
-          <OtherVaccinesSection
-            vaccines={otherVaccines}
-            onOpenModal={openOtherVaccineModal}
-            onDelete={handleDeleteOtherVaccine}
-          />
+            {(selectedProfile.city || selectedProfile.state || selectedProfile.birthPlace) && (
+              <View style={styles.passportInfoRow}>
+                {(selectedProfile.city || selectedProfile.state) ? (
+                  <View style={styles.passportInfoItem}>
+                    <Text style={styles.passportInfoLabel}>Município/UF</Text>
+                    <Text style={styles.passportInfoValue} numberOfLines={1}>
+                      {[selectedProfile.city, selectedProfile.state].filter(Boolean).join(' - ')}
+                    </Text>
+                  </View>
+                ) : null}
+                {selectedProfile.birthPlace ? (
+                  <View style={styles.passportInfoItem}>
+                    <Text style={styles.passportInfoLabel}>Local de Nasc.</Text>
+                    <Text style={styles.passportInfoValue} numberOfLines={1}>{selectedProfile.birthPlace}</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
 
-          {/* Componente da seção de Campanhas */}
-          <CampaignsSection
-            campaigns={campaigns}
-            onOpenModal={openCampaignModal}
-            onDelete={handleDeleteCampaign}
-          />
-      </ScrollView> 
+            {selectedProfile.cns ? (
+              <View style={styles.passportInfoItem}>
+                <Text style={styles.passportInfoLabel}>CNS</Text>
+                <Text style={styles.passportInfoValue}>{formatCNS(selectedProfile.cns)}</Text>
+              </View>
+            ) : null}
 
-      {/* Componente doModal de seleção de perfil */}
+            {selectedProfile.kind === 'dependent' && selectedProfile.guardianName ? (
+              <View style={styles.passportInfoItem}>
+                <Text style={styles.passportInfoLabel}>Responsável</Text>
+                <Text style={styles.passportInfoValue} numberOfLines={1}>{selectedProfile.guardianName}</Text>
+              </View>
+            ) : null}
+          </View>
+        </LinearGradient>
+
+        {/* Filter chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          {FILTERS.map((f) => {
+            const active = activeFilter === f.id;
+            return (
+              <Pressable
+                key={f.id}
+                onPress={() => setActiveFilter(f.id)}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                  {f.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {(!dataLoaded || !mandatoryListLoaded) ? (
+          <IndexSkeleton />
+        ) : (
+        <>
+        {/* Obrigatórias */}
+        {showMandatory && (
+          <View style={styles.section}>
+            <SectionHeader
+              title="Obrigatórias"
+              count={`${mandatoryRecords.length}/${mandatoryVaccineList.length}`}
+            />
+            {vaccineGroups.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>Nenhuma vacina nesta categoria.</Text>
+              </View>
+            ) : (
+              vaccineGroups.map(({ age, vaccines, isCompleted, isActive }) => {
+                const visibleVaccines = vaccines.filter((v) => {
+                  const rec = mandatoryRecords.find((r) => r.vaccineId === String(v.id));
+                  if (activeFilter === 'aplicadas') return !!rec?.isApplied;
+                  if (activeFilter === 'pendentes') return !rec?.isApplied;
+                  return true;
+                });
+                if (visibleVaccines.length === 0) return null;
+                return (
+                  <View key={age}>
+                    <View style={styles.groupHeader}>
+                      <Text style={styles.groupLabel}>{formatAge(age)}</Text>
+                      {isCompleted && (
+                        <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+                      )}
+                      {isActive && (
+                        <View style={styles.groupActiveBadge}>
+                          <Text style={styles.groupActiveBadgeText}>atual</Text>
+                        </View>
+                      )}
+                    </View>
+                    {visibleVaccines.map((v) => {
+                      const record = mandatoryRecords.find((r) => r.vaccineId === String(v.id));
+                      const applied = !!record?.isApplied;
+                      return (
+                        <Pressable
+                          key={v.id}
+                          style={styles.itemCard}
+                          onPress={() => openMandatoryModal(String(v.id))}
+                        >
+                          <View style={[styles.itemIcon, { backgroundColor: applied ? colors.successSoft : colors.bgMuted }]}>
+                            <Ionicons
+                              name={applied ? 'shield-checkmark' : 'shield-outline'}
+                              size={20}
+                              color={applied ? colors.success : colors.ink3}
+                            />
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text style={styles.itemTitle} numberOfLines={1}>{v.nome}</Text>
+                            <Text style={styles.itemSub} numberOfLines={2}>
+                              {applied && record?.applicationDate
+                                ? `Aplicada em ${formatDateToBR(record.applicationDate)}`
+                                : v.descricao}
+                            </Text>
+                          </View>
+                          <Ionicons
+                            name={applied ? 'checkmark-circle' : 'ellipse-outline'}
+                            size={22}
+                            color={applied ? colors.success : colors.ink4}
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                );
+              })
+            )}
+          </View>
+        )}
+
+        {/* Outras vacinas */}
+        {showOther && (
+          <View style={styles.section}>
+            <SectionHeader
+              title="Outras vacinas"
+              count={otherVaccines.length}
+              onAdd={() => openOtherModal()}
+            />
+            {otherVaccines.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>Nenhuma vacina adicional registrada.</Text>
+              </View>
+            ) : (
+              otherVaccines.map((v) => (
+                <View key={v.id} style={styles.itemCard}>
+                  <View style={[styles.itemIcon, { backgroundColor: colors.brandSoft }]}>
+                    <Ionicons name="medkit-outline" size={20} color={colors.brandInk} />
+                  </View>
+                  <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => openOtherModal(v)}>
+                    <Text style={styles.itemTitle} numberOfLines={1}>{v.vaccineName}</Text>
+                    {v.applicationDate && (
+                      <Text style={styles.itemSub} numberOfLines={1}>
+                        Aplicada em {formatDateToBR(v.applicationDate)}
+                      </Text>
+                    )}
+                  </Pressable>
+                  <Pressable onPress={() => handleDeleteOther(v.id)} style={styles.iconBtn}>
+                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                  </Pressable>
+                </View>
+              ))
+            )}
+          </View>
+        )}
+
+        {/* Campanhas */}
+        {showCampaigns && (
+          <View style={styles.section}>
+            <SectionHeader
+              title="Campanhas"
+              count={campaigns.length}
+              onAdd={() => openCampaignModal()}
+            />
+            {campaigns.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>Nenhuma campanha registrada.</Text>
+              </View>
+            ) : (
+              campaigns.map((c) => (
+                <View key={c.id} style={styles.itemCard}>
+                  <View style={[styles.itemIcon, { backgroundColor: colors.ochreSoft }]}>
+                    <Ionicons name="megaphone-outline" size={20} color={colors.ochreInk} />
+                  </View>
+                  <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => openCampaignModal(c)}>
+                    <Text style={styles.itemTitle} numberOfLines={1}>{c.campaignName}</Text>
+                    <Text style={styles.itemSub} numberOfLines={1}>
+                      {formatDateToBR(c.participationDate)}
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => handleDeleteCampaign(c.id)} style={styles.iconBtn}>
+                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                  </Pressable>
+                </View>
+              ))
+            )}
+          </View>
+        )}
+
+        <View style={{ height: 24 }} />
+        </>
+        )}
+      </ScrollView>
+
       <ProfileModal
         visible={isProfileModalOpen}
         familyMembers={familyMembers}
@@ -571,67 +794,61 @@ export default function Index() {
         onClose={() => setIsProfileModalOpen(false)}
       />
 
-      {/* Componente do Modal de Vacina Obrigatória 
-      tem muitas props pois seu estado se mantém vivo na index.*/}
       <MandatoryVaccineModal
-        visible={isMandatoryVaccineModalOpen}
-        vaccineId={editingMandatoryVaccine?.vaccineId ?? null}
-        vaccineName={mandatoryVaccineList.find(v => String(v.id) === editingMandatoryVaccine?.vaccineId)?.nome}
+        visible={isMandatoryModalOpen}
+        vaccineId={editingMandatory?.vaccineId ?? null}
+        vaccineName={mandatoryVaccineList.find((v) => String(v.id) === editingMandatory?.vaccineId)?.nome}
         isApplied={mandatoryIsApplied}
         date={mandatoryDate}
         lot={mandatoryLot}
         code={mandatoryCode}
         profName={mandatoryProfName}
         profId={mandatoryProfId}
-        pickerDate={mandatoryVaccineDate}
-        showDatePicker={showMandatoryDatePicker}
+        pickerDate={mandatoryPickerDate}
+        showDatePicker={mandatoryShowDatePicker}
         onToggleApplied={() => setMandatoryIsApplied(!mandatoryIsApplied)}
-        onShowDatePicker={() => setShowMandatoryDatePicker(true)}
+        onShowDatePicker={() => setMandatoryShowDatePicker(true)}
         onDateChange={handleMandatoryDateChange}
         onChangeLot={setMandatoryLot}
         onChangeCode={setMandatoryCode}
         onChangeProfName={setMandatoryProfName}
         onChangeProfId={setMandatoryProfId}
-        onSave={handleSaveMandatoryVaccine}
-        onClose={() => setIsMandatoryVaccineModalOpen(false)}
-        saving={savingMandatoryVaccine}
+        onSave={handleSaveMandatory}
+        onClose={() => setIsMandatoryModalOpen(false)}
+        saving={savingMandatory}
       />
 
-      {/* Componente do Modal de Outras Vacinas 
-      tem muitas props pois seu estado se mantém vivo na index.*/}
       <OtherVaccineModal
-        visible={isOtherVaccineModalOpen}
-        isEditing={!!editingOtherVaccine}
-        name={otherVaccineName}
-        date={otherVaccineAppDate}
-        lot={otherVaccineLot}
-        code={otherVaccineCode}
-        profName={otherVaccineProfName}
-        profId={otherVaccineProfId}
-        pickerDate={otherVaccineDate}
-        showDatePicker={showOtherVaccineDatePicker}
-        onChangeName={(v) => { setOtherVaccineName(v); if (otherVaccineNameError) setOtherVaccineNameError(null); }}
-        onShowDatePicker={() => setShowOtherVaccineDatePicker(true)}
-        onDateChange={handleOtherVaccineDateChange}
-        onChangeLot={setOtherVaccineLot}
-        onChangeCode={setOtherVaccineCode}
-        onChangeProfName={setOtherVaccineProfName}
-        onChangeProfId={setOtherVaccineProfId}
-        onSave={handleSaveOtherVaccine}
-        onClose={() => setIsOtherVaccineModalOpen(false)}
-        saving={savingOtherVaccine}
-        nameError={otherVaccineNameError ?? undefined}
+        visible={isOtherModalOpen}
+        isEditing={!!editingOther}
+        name={otherName}
+        date={otherDate}
+        lot={otherLot}
+        code={otherCode}
+        profName={otherProfName}
+        profId={otherProfId}
+        pickerDate={otherPickerDate}
+        showDatePicker={otherShowDatePicker}
+        onChangeName={(v) => { setOtherName(v); if (otherNameError) setOtherNameError(null); }}
+        onShowDatePicker={() => setOtherShowDatePicker(true)}
+        onDateChange={handleOtherDateChange}
+        onChangeLot={setOtherLot}
+        onChangeCode={setOtherCode}
+        onChangeProfName={setOtherProfName}
+        onChangeProfId={setOtherProfId}
+        onSave={handleSaveOther}
+        onClose={() => setIsOtherModalOpen(false)}
+        saving={savingOther}
+        nameError={otherNameError ?? undefined}
       />
 
-      {/* Componente do Modal de Campanhas 
-      tem muitas props pois seu estado se mantém vivo na index.*/}
       <CampaignModal
         visible={isCampaignModalOpen}
         isEditing={!!editingCampaign}
         campaignName={campaignName}
         participationDate={campaignParticipationDate}
-        pickerDate={campaignDate}
-        showDatePicker={showCampaignDatePicker}
+        pickerDate={campaignPickerDate}
+        showDatePicker={campaignShowDatePicker}
         showCampaignPicker={showCampaignPicker}
         availableCampaigns={availableCampaigns}
         onSelectCampaign={(name) => {
@@ -639,8 +856,8 @@ export default function Index() {
           setShowCampaignPicker(false);
           if (campaignNameError) setCampaignNameError(null);
         }}
-        onToggleCampaignPicker={() => setShowCampaignPicker((prev) => !prev)}
-        onShowDatePicker={() => setShowCampaignDatePicker(true)}
+        onToggleCampaignPicker={() => setShowCampaignPicker((p) => !p)}
+        onShowDatePicker={() => setCampaignShowDatePicker(true)}
         onDateChange={handleCampaignDateChange}
         onSave={handleSaveCampaign}
         onClose={() => setIsCampaignModalOpen(false)}
@@ -649,40 +866,279 @@ export default function Index() {
         participationDateError={campaignDateError ?? undefined}
       />
 
-      {/* Componente do Modal de Preview de Imagem */}
-      <ImagePreviewModal
-        visible={isImageModalOpen}
-        imageUri={imagePreviewUri}
-        onClose={() => setIsImageModalOpen(false)}
-      />
-
-      <StatusBar style={isProfileModalOpen || isImageModalOpen || isMandatoryVaccineModalOpen || isOtherVaccineModalOpen || isCampaignModalOpen ? 'light' : 'dark'} />
+      <StatusBar style={anyModalOpen ? 'light' : 'dark'} />
     </View>
+  );
+}
+
+function SectionHeader({
+  title,
+  count,
+  onAdd,
+}: {
+  title: string;
+  count: string | number;
+  onAdd?: () => void;
+}) {
+  return (
+    <View style={styles.sectionHeader}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionCount}>{count}</Text>
+      </View>
+      {onAdd && (
+        <Pressable onPress={onAdd} style={styles.addBtn}>
+          <Ionicons name="add" size={16} color="#fff" />
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function IndexSkeleton() {
+  const sectionWidths = [100, 80, 68] as const;
+  return (
+    <>
+      {sectionWidths.map((w, si) => (
+        <View key={si} style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <Skeleton width={w} height={16} radius={6} />
+              <Skeleton width={28} height={14} radius={6} />
+            </View>
+          </View>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={styles.itemCard}>
+              <Skeleton width={40} height={40} radius={10} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <Skeleton width="62%" height={14} radius={4} />
+                <Skeleton width="42%" height={11} radius={4} />
+              </View>
+              <Skeleton width={22} height={22} radius={11} />
+            </View>
+          ))}
+        </View>
+      ))}
+      <View style={{ height: 24 }} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#CAE3E2',
+    backgroundColor: colors.bg,
   },
-  content: {
+  loadingScreen: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bgMuted,
   },
-  contentContainer: {
+  scroll: {
     paddingHorizontal: 16,
-    paddingTop: 14,
     paddingBottom: 130,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#CAE3E2',
+
+  // Passport hero
+  passport: {
+    borderRadius: radii.xl,
+    padding: 20,
+    overflow: 'hidden',
+    ...shadows.lg,
   },
-  loadingText: {
-    fontSize: 16,
-    color: '#1f3322',
+  passportTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  passportCardLabel: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 10,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  passportName: {
+    ...typography.h2,
+    color: '#fff',
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  passportRole: {
+    ...typography.mono,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    marginTop: 4,
+  },
+  passportDocBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  passportDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    marginVertical: 16,
+  },
+  passportInfoGrid: {
+    gap: 12,
+  },
+  passportInfoRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  passportInfoItem: {
+    flex: 1,
+    minWidth: 0,
+  },
+  passportInfoLabel: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 10,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 3,
+  },
+  passportInfoValue: {
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '600',
+  },
+
+  // Filter chips
+  filterRow: {
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: colors.bgElev,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  filterChipActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  filterChipText: {
+    fontSize: 13,
+    color: colors.ink2,
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#fff',
+  },
+
+  // Sections
+  section: {
+    marginTop: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    ...typography.labelCap,
+    color: colors.ink2,
+  },
+  sectionCount: {
+    ...typography.mono,
+    color: colors.ink3,
+  },
+  addBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Group header
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 14,
+    marginBottom: 6,
+    paddingHorizontal: 2,
+  },
+  groupLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.ink2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  groupActiveBadge: {
+    backgroundColor: colors.brand,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  groupActiveBadgeText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+
+  // Item card
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 14,
+    marginBottom: 8,
+  },
+  itemIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ink,
+  },
+  itemSub: {
+    fontSize: 12,
+    color: colors.ink3,
+    marginTop: 2,
+  },
+  iconBtn: {
+    padding: 6,
+  },
+
+  // Empty
+  emptyCard: {
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 16,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 13,
+    color: colors.ink3,
   },
 });
