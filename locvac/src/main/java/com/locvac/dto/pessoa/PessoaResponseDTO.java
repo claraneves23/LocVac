@@ -4,6 +4,7 @@ import com.locvac.model.enums.Estado;
 import com.locvac.model.enums.Sexo;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record PessoaResponseDTO(
         Long id,
@@ -21,5 +22,6 @@ public record PessoaResponseDTO(
         String fotoUrl,
         String nomeResponsavel,
         boolean ativo,
-        String dscParentesco
+        String dscParentesco,
+        List<Long> gruposRiscoIds
 ) {}

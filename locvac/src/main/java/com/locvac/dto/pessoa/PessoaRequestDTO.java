@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record PessoaRequestDTO(
 
@@ -55,5 +56,7 @@ public record PessoaRequestDTO(
         String nomeResponsavel,
 
         @NotNull(message = "O campo ativo é obrigatório")
-        boolean ativo
+        boolean ativo,
+
+        List<Long> gruposRiscoIds
 ) {}

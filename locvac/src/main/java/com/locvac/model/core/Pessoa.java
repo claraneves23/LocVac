@@ -6,6 +6,7 @@ import com.locvac.model.enums.Sexo;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -61,6 +62,14 @@ public class Pessoa {
     @Column(nullable = false)
     private  boolean ativo;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "pessoa_grupo_risco",
+            joinColumns = @JoinColumn(name = "id_pessoa"),
+            inverseJoinColumns = @JoinColumn(name = "id_grupo_risco")
+    )
+    private List<GrupoRisco> gruposRisco = new ArrayList<>();
+
     @OneToMany(mappedBy = "pessoa", fetch = FetchType.LAZY)
     private List<UsuarioPessoa> usuarioPessoas;
 
@@ -114,6 +123,9 @@ public class Pessoa {
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
     }
+
+    public List<GrupoRisco> getGruposRisco() { return gruposRisco; }
+    public void setGruposRisco(List<GrupoRisco> gruposRisco) { this.gruposRisco = gruposRisco; }
 
     public void setUsuarioPessoas(List<UsuarioPessoa> usuarioPessoas) {
         this.usuarioPessoas = usuarioPessoas;

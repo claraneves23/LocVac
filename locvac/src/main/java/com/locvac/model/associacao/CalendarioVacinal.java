@@ -1,7 +1,11 @@
 package com.locvac.model.associacao;
 
+import com.locvac.model.core.GrupoRisco;
 import com.locvac.model.core.Vacina;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "calendario_vacinal")
@@ -36,6 +40,14 @@ public class CalendarioVacinal {
 
         @Column(name = "ordem_exibicao", length = 20)
         private String ordemExibicao;
+
+        @ManyToMany(fetch = FetchType.LAZY)
+        @JoinTable(
+                name = "calendario_vacinal_grupo_risco",
+                joinColumns = @JoinColumn(name = "id_calendario"),
+                inverseJoinColumns = @JoinColumn(name = "id_grupo_risco")
+        )
+        private List<GrupoRisco> gruposRisco = new ArrayList<>();
 
         public void setVacina(Vacina vacina) {
                 this.vacina = vacina;
@@ -104,4 +116,7 @@ public class CalendarioVacinal {
         public String getOrdemExibicao() {
                 return ordemExibicao;
         }
+
+        public List<GrupoRisco> getGruposRisco() { return gruposRisco; }
+        public void setGruposRisco(List<GrupoRisco> gruposRisco) { this.gruposRisco = gruposRisco; }
 }

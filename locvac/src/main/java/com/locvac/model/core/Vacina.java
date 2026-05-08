@@ -3,6 +3,9 @@ package com.locvac.model.core;
 import com.locvac.model.enums.TipoSecaoVacinacao;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "vacina")
 public class Vacina {
@@ -39,6 +42,14 @@ public class Vacina {
 
     @Column(name = "idade_maxima_meses")
     private Integer idadeMaximaMeses;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "vacina_grupo_risco",
+            joinColumns = @JoinColumn(name = "id_vacina"),
+            inverseJoinColumns = @JoinColumn(name = "id_grupo_risco")
+    )
+    private List<GrupoRisco> gruposRisco = new ArrayList<>();
 
     public Vacina() {}
 
@@ -121,4 +132,7 @@ public class Vacina {
     public void setIdadeMaximaMeses(Integer idadeMaximaMeses) {
         this.idadeMaximaMeses = idadeMaximaMeses;
     }
+
+    public List<GrupoRisco> getGruposRisco() { return gruposRisco; }
+    public void setGruposRisco(List<GrupoRisco> gruposRisco) { this.gruposRisco = gruposRisco; }
 }

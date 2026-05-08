@@ -4,8 +4,10 @@ import com.locvac.dto.calendarioVacinal.CalendarioVacinalRequestDTO;
 import com.locvac.dto.calendarioVacinal.CalendarioVacinalResponseDTO;
 import com.locvac.mapper.CalendarioVacinalMapper;
 import com.locvac.model.associacao.CalendarioVacinal;
+import com.locvac.model.core.GrupoRisco;
 import com.locvac.model.core.Vacina;
 import com.locvac.repository.CalendarioVacinalRepository;
+import com.locvac.repository.GrupoRiscoRepository;
 import com.locvac.repository.VacinaRepository;
 import com.locvac.service.CalendarioVacinalService;
 import jakarta.transaction.Transactional;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -21,15 +24,18 @@ public class CalendarioVacinalServiceImpl implements CalendarioVacinalService {
 
     private final CalendarioVacinalRepository repository;
     private final VacinaRepository vacinaRepository;
+    private final GrupoRiscoRepository grupoRiscoRepository;
     private final CalendarioVacinalMapper mapper;
 
     public CalendarioVacinalServiceImpl(
             CalendarioVacinalRepository repository,
             VacinaRepository vacinaRepository,
+            GrupoRiscoRepository grupoRiscoRepository,
             CalendarioVacinalMapper mapper
     ) {
         this.repository = repository;
         this.vacinaRepository = vacinaRepository;
+        this.grupoRiscoRepository = grupoRiscoRepository;
         this.mapper = mapper;
     }
 
@@ -79,5 +85,11 @@ public class CalendarioVacinalServiceImpl implements CalendarioVacinalService {
         c.setNumeroDose(dto.numeroDose());
         c.setDescricaoDose(dto.descricaoDose());
         c.setOrdemExibicao(dto.ordemExibicao());
+        c.setGruposRisco(resolverGrupos(dto.gruposRiscoIds()));
+    }
+
+    private List<GrupoRisco> resolverGrupos(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return new ArrayList<>();
+        return grupoRiscoRepository.findAllById(ids);
     }
 }

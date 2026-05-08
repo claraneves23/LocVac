@@ -1,5 +1,7 @@
 package com.locvac.dto.calendarioVacinal;
 
+import java.util.List;
+
 public record CalendarioVacinalResponseDTO(
         Long id,
         Long idVacina,
@@ -10,5 +12,6 @@ public record CalendarioVacinalResponseDTO(
         boolean obrigatoria,
         String numeroDose,
         String descricaoDose,
-        String ordemExibicao
+        String ordemExibicao,
+        List<Long> gruposRiscoIds
 ) {}

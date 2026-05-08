@@ -5,6 +5,8 @@ import com.locvac.dto.vacina.VacinaResponseDTO;
 import com.locvac.model.core.Vacina;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class VacinaMapper {
 
@@ -22,6 +24,9 @@ public class VacinaMapper {
     }
 
     public VacinaResponseDTO toResponse(Vacina vacina) {
+        List<Long> gruposRiscoIds = vacina.getGruposRisco() != null
+                ? vacina.getGruposRisco().stream().map(g -> g.getId()).toList()
+                : List.of();
         return new VacinaResponseDTO(
                 vacina.getId(),
                 vacina.getNome(),
@@ -30,7 +35,8 @@ public class VacinaMapper {
                 vacina.getCodigoPNI(),
                 vacina.getTipoSecaoVacinacao(),
                 vacina.getIdadeMinimaMeses(),
-                vacina.getIdadeMaximaMeses()
+                vacina.getIdadeMaximaMeses(),
+                gruposRiscoIds
         );
     }
 }

@@ -3,6 +3,8 @@ package com.locvac.dto.calendarioVacinal;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record CalendarioVacinalRequestDTO(
         @NotNull
         Long idVacina,
@@ -19,5 +21,6 @@ public record CalendarioVacinalRequestDTO(
         String numeroDose,
         @Size(max = 200)
         String descricaoDose,
-        String ordemExibicao
+        String ordemExibicao,
+        List<Long> gruposRiscoIds
 ) {}

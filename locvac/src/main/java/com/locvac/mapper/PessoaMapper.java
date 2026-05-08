@@ -5,6 +5,8 @@ import com.locvac.dto.pessoa.PessoaResponseDTO;
 import com.locvac.model.core.Pessoa;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class PessoaMapper {
 
@@ -27,8 +29,10 @@ public class PessoaMapper {
         return pessoa;
     }
 
-    // Novo método para dependentes, aceita parentesco
     public PessoaResponseDTO toResponse(Pessoa pessoa, String dscParentesco) {
+        List<Long> gruposRiscoIds = pessoa.getGruposRisco() != null
+                ? pessoa.getGruposRisco().stream().map(g -> g.getId()).toList()
+                : List.of();
         return new PessoaResponseDTO(
                 pessoa.getId(),
                 pessoa.getNome(),
@@ -45,11 +49,11 @@ public class PessoaMapper {
                 pessoa.getFotoUrl(),
                 pessoa.getNomeResponsavel(),
                 pessoa.isAtivo(),
-                dscParentesco
+                dscParentesco,
+                gruposRiscoIds
         );
     }
 
-    // Mantém o antigo para usos gerais
     public PessoaResponseDTO toResponse(Pessoa pessoa) {
         return toResponse(pessoa, null);
     }
