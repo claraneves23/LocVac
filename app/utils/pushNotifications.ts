@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { registrarPushToken, removerPushToken } from '../service/notificationService';
+import logger from './logger';
 
 const STORED_TOKEN_KEY = 'locvac:push:token';
 
@@ -40,7 +41,7 @@ export async function registrarTokenPushSeNecessario(): Promise<string | null> {
 }
 
 async function runRegistration(): Promise<string | null> {
-  console.log('[push] env:', {
+  logger.log('[push] env:', {
     appOwnership: Constants.appOwnership,
     executionEnvironment: Constants.executionEnvironment,
     isDevice: Device.isDevice,
@@ -49,7 +50,7 @@ async function runRegistration(): Promise<string | null> {
 
   if (!Device.isDevice) {
     registrationFailedReason = 'not-physical-device';
-    console.warn('[push] dispositivo não é físico (emulador/web) — push token não disponível');
+    logger.warn('[push] dispositivo não é físico (emulador/web) — push token não disponível');
     return null;
   }
 
@@ -62,13 +63,13 @@ async function runRegistration(): Promise<string | null> {
       status = requested.status;
     }
   } catch (e) {
-    console.error('[push] erro ao consultar/pedir permissão:', e);
+    logger.error('[push] erro ao consultar/pedir permissão:', e);
     return null;
   }
 
   if (status !== 'granted') {
     registrationFailedReason = 'permission-denied';
-    console.warn('[push] permissão de notificação não concedida (status=' + status + ')');
+    logger.warn('[push] permissão de notificação não concedida (status=' + status + ')');
     return null;
   }
 
@@ -81,7 +82,7 @@ async function runRegistration(): Promise<string | null> {
         lightColor: '#03394A',
       });
     } catch (e) {
-      console.warn('[push] falha ao configurar canal Android:', e);
+      logger.warn('[push] falha ao configurar canal Android:', e);
     }
   }
 
@@ -91,7 +92,7 @@ async function runRegistration(): Promise<string | null> {
 
   if (!projectId) {
     registrationFailedReason = 'no-project-id';
-    console.error('[push] projectId do EAS ausente em app.json (extra.eas.projectId)');
+    logger.error('[push] projectId do EAS ausente em app.json (extra.eas.projectId)');
     return null;
   }
 
@@ -99,15 +100,15 @@ async function runRegistration(): Promise<string | null> {
   try {
     const tokenResp = await Notifications.getExpoPushTokenAsync({ projectId });
     token = tokenResp.data;
-    console.log('[push] expo push token obtido:', token);
+    logger.log('[push] expo push token obtido');
   } catch (e: any) {
     const msg = String(e?.message ?? e);
     if (msg.includes('FirebaseApp is not initialized') || msg.includes('fcm-credentials')) {
       registrationFailedReason = 'fcm-not-configured';
-      console.warn('[push] FCM não configurado nesta build — push remoto desativado (configure google-services.json para habilitar)');
+      logger.warn('[push] FCM não configurado nesta build — push remoto desativado');
     } else {
       registrationFailedReason = 'token-error';
-      console.warn('[push] falha em getExpoPushTokenAsync:', msg);
+      logger.warn('[push] falha em getExpoPushTokenAsync:', msg);
     }
     return null;
   }
@@ -115,13 +116,12 @@ async function runRegistration(): Promise<string | null> {
   try {
     await registrarPushToken(token, Platform.OS);
     await AsyncStorage.setItem(STORED_TOKEN_KEY, token);
-    console.log('[push] token registrado no backend com sucesso');
+    logger.log('[push] token registrado no backend com sucesso');
     return token;
   } catch (e: any) {
-    registrationFailedReason = 'backend-error';
+    // Não cacheamos backend-error como falha permanente — permite retry na próxima navegação
     const httpStatus = e?.response?.status;
-    const data = e?.response?.data;
-    console.error('[push] falha ao registrar token no backend:', httpStatus, data, e?.message);
+    logger.error('[push] falha ao registrar token no backend: status', httpStatus);
     return null;
   }
 }
@@ -131,7 +131,7 @@ export async function descadastrarTokenPush(): Promise<void> {
     const token = await AsyncStorage.getItem(STORED_TOKEN_KEY);
     if (token) {
       await removerPushToken(token).catch((e) => {
-        console.warn('[push] falha ao remover token no backend:', e?.message);
+        logger.warn('[push] falha ao remover token no backend:', e?.message);
       });
     }
   } finally {

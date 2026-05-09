@@ -12,10 +12,13 @@ import {
   configurarHandlerNotificacao,
   registrarTokenPushSeNecessario,
 } from './utils/pushNotifications';
+import * as Notifications from 'expo-notifications';
 
 configurarHandlerNotificacao();
 
-const MAIN_TAB_ROUTES = ['index', 'hist', 'infos', 'user', 'carteira-completa'];
+const MAIN_TAB_ROUTES = ['home', 'hist', 'infos', 'user', 'carteira-completa'];
+const isMainTabRoute = (name: string) =>
+  MAIN_TAB_ROUTES.some((r) => name === r || name === `${r}/index` || name.startsWith(`${r}/`));
 const HIDE_BOTTOM_BAR_ROUTES = [
   '/login',
   '/verificar-email',
@@ -56,6 +59,13 @@ function LayoutContent() {
   }, [router]);
 
   useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+      router.push('/hist');
+    });
+    return () => sub.remove();
+  }, [router]);
+
+  useEffect(() => {
     const checkAuth = async () => {
       const token = await AsyncStorage.getItem('locvac:auth:token');
       const pessoaId = await AsyncStorage.getItem('locvac:auth:pessoaId');
@@ -76,7 +86,7 @@ function LayoutContent() {
       }
 
       if (PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular') {
-        router.replace('/');
+        router.replace('/home');
       }
 
       registrarTokenPushSeNecessario().catch(() => {});
@@ -116,7 +126,7 @@ function LayoutContent() {
       <View style={styles.contentContainer}>
         <Stack
           screenOptions={({ route }) => ({
-            animation: MAIN_TAB_ROUTES.includes(route.name)
+            animation: isMainTabRoute(route.name)
               ? getNavigationDirection() === 'left'
                 ? 'slide_from_left'
                 : 'slide_from_right'

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getPessoaId, fetchPerfil } from '../service/authService';
 import { getDependents, getUsuarioTitularIdByPessoaId } from '../service/dependentsService';
 import { FamilyMember } from '../types/vaccination';
+import logger from '../utils/logger';
 
 type AppContextType = {
   mainUser: FamilyMember | null;
@@ -73,7 +74,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setDependents(deps);
       }
     } catch (e) {
-      console.error('AppContext loadAll error:', e);
+      logger.error('AppContext loadAll error:', e);
     } finally {
       setIsLoading(false);
     }

@@ -18,7 +18,7 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { id: 'carteira',     label: 'Carteira',     icon: 'wallet-outline',           route: '/' },
+  { id: 'carteira',     label: 'Carteira',     icon: 'wallet-outline',           route: '/home' },
   { id: 'historico',    label: 'Histórico',    icon: 'time-outline',             route: '/hist' },
   { id: 'informacoes',  label: 'Informações',  icon: 'book-outline',             route: '/infos' },
   { id: 'usuario',      label: 'Perfil',       icon: 'person-outline',           route: '/user' },
@@ -30,7 +30,7 @@ export default function BottomTabs() {
   const insets = useSafeAreaInsets();
 
   const isActive = (route: string) => {
-    if (route === '/') return pathname === '/' || pathname === '/carteira-completa';
+    if (route === '/home') return pathname === '/home' || pathname === '/carteira-completa';
     return pathname === route || pathname.startsWith(route + '/');
   };
 

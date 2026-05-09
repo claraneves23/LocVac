@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Permitir acesso a fotos para adicionar imagem do dependente.",
-        "NSCameraUsageDescription": "Permitir acesso a camera para adicionar imagem do dependente."
+        "NSCameraUsageDescription": "Permitir acesso a câmera para adicionar imagem do dependente."
       }
     },
     "android": {
@@ -29,9 +29,11 @@
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
       "package": "com.devvale.LocVac",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "CAMERA",
-        "READ_MEDIA_IMAGES"
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
       ]
     },
     "androidNavigationBar": {
@@ -50,6 +52,13 @@
         {
           "icon": "./assets/images/iconLocVac.png",
           "color": "#29442d"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permitir acesso a fotos para adicionar imagem do dependente.",
+          "cameraPermission": "Permitir acesso à câmera para adicionar imagem do dependente."
         }
       ]
     ],
