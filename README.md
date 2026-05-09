@@ -135,6 +135,23 @@ erDiagram
         string  descricao
     }
 
+    %% ── Tabelas de junção many-to-many ───────────────────────────────────
+
+    VACINA_GRUPO_RISCO {
+        bigint  id_vacina         FK
+        bigint  id_grupo_risco    FK
+    }
+
+    PESSOA_GRUPO_RISCO {
+        bigint  id_pessoa         FK
+        bigint  id_grupo_risco    FK
+    }
+
+    CALENDARIO_VACINAL_GRUPO_RISCO {
+        bigint  id_calendario     FK
+        bigint  id_grupo_risco    FK
+    }
+
     CATEGORIA_VACINA {
         bigint  id_categoria      PK
         string  descricao
@@ -318,8 +335,14 @@ erDiagram
     CAMPANHA            ||--o{ NOTIFICACAO             : "referenciada em"
     CATEGORIA_VACINA    ||--o{ DOSE_APLICADA           : "classifica"
     CALENDARIO_VACINAL  ||--o{ NOTIFICACAO             : "gera"
-    CARROSSEL_ITEM      ||--o{ CARROSSEL_CONTEUDO      : "contém"
-    CARROSSEL_CONTEUDO  ||--o{ CARROSSEL_CONTEUDO_ITEM : "lista"
+    CARROSSEL_ITEM      ||--o{ CARROSSEL_CONTEUDO               : "contém"
+    CARROSSEL_CONTEUDO  ||--o{ CARROSSEL_CONTEUDO_ITEM          : "lista"
+    VACINA              ||--o{ VACINA_GRUPO_RISCO               : "pertence a"
+    GRUPO_RISCO         ||--o{ VACINA_GRUPO_RISCO               : "classifica"
+    PESSOA              ||--o{ PESSOA_GRUPO_RISCO               : "pertence a"
+    GRUPO_RISCO         ||--o{ PESSOA_GRUPO_RISCO               : "classifica"
+    CALENDARIO_VACINAL  ||--o{ CALENDARIO_VACINAL_GRUPO_RISCO   : "restrito a"
+    GRUPO_RISCO         ||--o{ CALENDARIO_VACINAL_GRUPO_RISCO   : "restringe"
 ```
 
 ---
