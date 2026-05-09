@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { FamilyMember } from '../types/vaccination';
 import logger from '../utils/logger';
+import API_BASE from './apiConfig';
 
-const API_URL = 'https://locvac-api.onrender.com';
+const API_URL = API_BASE;
 
 export async function addDependentAndLink(usuarioId: string, dependent: Omit<FamilyMember, 'id' | 'userId' | 'kind'> & { cpf?: string }): Promise<void> {
   // 1. Cria a pessoa

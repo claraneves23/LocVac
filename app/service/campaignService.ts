@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { Campanha } from '../types/vaccination';
-
-const API_BASE = 'https://locvac-api.onrender.com';
+import API_BASE from './apiConfig';
 
 export async function fetchCampaigns(): Promise<Campanha[]> {
 	const response = await axios.get(`${API_BASE}/campanhas`);

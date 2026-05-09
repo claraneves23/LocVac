@@ -1,7 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_BASE = 'https://locvac-api.onrender.com';
+import API_BASE from './apiConfig';
 
 const AUTH_TOKEN_KEY = 'locvac:auth:token';
 const REFRESH_TOKEN_KEY = 'locvac:auth:refresh';
