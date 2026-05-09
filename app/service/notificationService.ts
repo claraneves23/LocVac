@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'https://locvac-production.up.railway.app';
+const API_BASE = 'https://locvac-api.onrender.com';
 
 export type TipoNotificacao = 'PROXIMA_VACINA' | 'NOVA_CAMPANHA' | 'VACINA_ATRASADA';
 

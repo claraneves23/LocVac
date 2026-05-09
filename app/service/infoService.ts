@@ -2,7 +2,7 @@ import axios from 'axios';
 import { VacinaInformativoDTO, EfeitoColateralDTO, CarrosselItemDTO, CarrosselConteudoDTO } from '../types/info';
 import { VacinaDTO } from './mandatoryVaccineService';
 
-const API_BASE = 'https://locvac-production.up.railway.app';
+const API_BASE = 'https://locvac-api.onrender.com';
 
 export async function fetchTodasVacinas(): Promise<VacinaDTO[]> {
   const response = await axios.get(`${API_BASE}/vacinas`);

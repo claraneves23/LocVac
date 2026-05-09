@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { FamilyMember } from '../types/vaccination';
+import logger from '../utils/logger';
 
-const API_URL = 'https://locvac-production.up.railway.app';
+const API_URL = 'https://locvac-api.onrender.com';
 
 export async function addDependentAndLink(usuarioId: string, dependent: Omit<FamilyMember, 'id' | 'userId' | 'kind'> & { cpf?: string }): Promise<void> {
   // 1. Cria a pessoa
@@ -33,7 +34,7 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
     dataVinculo: new Date().toISOString().split('T')[0],
     dscParentesco: dependent.relationship || ''
   };
-  console.log('DEBUG payload novaVinculacao:', vinculoPayload);
+  logger.log('[dependents] vinculando pessoa ao usuário');
   await axios.post(`${API_URL}/usuarioPessoa/novaVinculacao`, vinculoPayload);
 }
 
@@ -65,7 +66,6 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
     `${API_URL}/pessoas/dependentes`,
     { params: { usuarioId } }
   );
-  console.log('DEBUG getDependents backend response:', response.data);
   return response.data.map(d => ({
     id: String(d.id),
     userId: usuarioId,
