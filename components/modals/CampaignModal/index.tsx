@@ -1,9 +1,11 @@
 import { View, Text, Pressable, Modal, ScrollView, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useMemo } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Campanha } from '../../../app/types/vaccination';
-import { colors, radii, spacing, typography, shadows } from '../../../app/theme/tokens';
+import { Campanha } from '../../../src/types/vaccination';
+import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
+import { useTheme } from '../../../src/context/ThemeContext';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
   if (!isoDate) return '';
@@ -50,6 +52,8 @@ export default function CampaignModal({
   campaignNameError,
   participationDateError,
 }: CampaignModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Modal
       visible={visible}
@@ -113,7 +117,7 @@ export default function CampaignModal({
                             campaignName === c.nome && styles.pickerOptionTextActive,
                           ]}
                         >
-                          {c.nome} {c.ativa ? '' : '(Inativa)'}
+                          {c.nome}
                         </Text>
                         {campaignName === c.nome && (
                           <Ionicons name="checkmark" size={18} color={colors.brand} />
@@ -178,10 +182,10 @@ export default function CampaignModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.dimDark,
+    backgroundColor: c.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
@@ -190,7 +194,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     maxHeight: '80%',
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.xl,
     padding: spacing.lg,
     ...shadows.lg,
@@ -206,7 +210,7 @@ const styles = StyleSheet.create({
   },
   modalKicker: {
     ...typography.caption,
-    color: colors.ochreInk,
+    color: c.ochreInk,
     textTransform: 'uppercase',
     fontWeight: '700',
     letterSpacing: 1,
@@ -214,13 +218,13 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -229,12 +233,12 @@ const styles = StyleSheet.create({
   },
   legend: {
     ...typography.caption,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 6,
     fontStyle: 'italic',
   },
   required: {
-    color: colors.coral,
+    color: c.coral,
     fontWeight: '700',
   },
   formField: {
@@ -244,13 +248,13 @@ const styles = StyleSheet.create({
   formLabel: {
     ...typography.small,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   dateButton: {
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     paddingHorizontal: spacing.md,
     paddingVertical: 11,
     flexDirection: 'row',
@@ -259,30 +263,30 @@ const styles = StyleSheet.create({
   },
   dateText: {
     ...typography.body,
-    color: colors.ink4,
+    color: c.ink4,
     flex: 1,
   },
   dateTextFilled: {
     ...typography.body,
-    color: colors.ink,
+    color: c.ink,
     flex: 1,
   },
   inputError: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerSoft,
+    borderColor: c.danger,
+    backgroundColor: c.dangerSoft,
   },
   errorText: {
     ...typography.caption,
-    color: colors.danger,
+    color: c.danger,
     marginTop: 4,
     fontWeight: '500',
   },
   pickerDropdown: {
     marginTop: 6,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     maxHeight: 200,
     overflow: 'hidden',
   },
@@ -296,18 +300,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderBottomColor: c.line,
   },
   pickerOptionActive: {
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
   },
   pickerOptionText: {
     ...typography.body,
-    color: colors.ink,
+    color: c.ink,
   },
   pickerOptionTextActive: {
     fontWeight: '600',
-    color: colors.brandInk,
+    color: c.brandInk,
   },
   formActions: {
     flexDirection: 'row',
@@ -320,25 +324,25 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bgElev,
+    borderColor: c.line,
+    backgroundColor: c.bgElev,
   },
   cancelButtonText: {
     ...typography.body,
     fontWeight: '600',
-    color: colors.ink2,
+    color: c.ink2,
   },
   saveButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: radii.md,
     alignItems: 'center',
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
   },
   saveButtonText: {
     ...typography.body,
     fontWeight: '600',
-    color: colors.white,
+    color: c.white,
   },
   buttonDisabled: {
     opacity: 0.6,

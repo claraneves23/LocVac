@@ -1,8 +1,10 @@
 import { View, Text, Pressable, Modal, ScrollView, StyleSheet, StyleSheet as RNStyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FamilyMember } from '../../../app/types/vaccination';
-import { colors, radii, spacing, typography, shadows, Tone } from '../../../app/theme/tokens';
+import { useMemo } from 'react';
+import { FamilyMember } from '../../../src/types/vaccination';
+import { type Colors, radii, spacing, typography, shadows, Tone } from '../../../src/theme/tokens';
+import { useTheme } from '../../../src/context/ThemeContext';
 import { Avatar } from '../../redesign';
 
 const TONES: Tone[] = ['brand', 'coral', 'ochre'];
@@ -22,6 +24,8 @@ export default function ProfileModal({
   onSelectProfile,
   onClose,
 }: ProfileModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Modal
       visible={visible}
@@ -90,10 +94,10 @@ export default function ProfileModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.dimDark,
+    backgroundColor: c.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
@@ -102,7 +106,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     maxHeight: '80%',
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.xl,
     padding: spacing.lg,
     ...shadows.lg,
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
   },
   kicker: {
     ...typography.caption,
-    color: colors.brand,
+    color: c.brand,
     textTransform: 'uppercase',
     fontWeight: '700',
     letterSpacing: 1,
@@ -127,13 +131,13 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
   },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -147,14 +151,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.md,
     borderRadius: radii.md,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     marginBottom: 8,
   },
   modalOptionActive: {
-    backgroundColor: colors.brandSoft,
-    borderColor: colors.brand,
+    backgroundColor: c.brandSoft,
+    borderColor: c.brand,
   },
   optionTextWrap: {
     flex: 1,
@@ -163,23 +167,23 @@ const styles = StyleSheet.create({
   modalOptionText: {
     ...typography.body,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   modalOptionTextActive: {
-    color: colors.brandInk,
+    color: c.brandInk,
   },
   modalOptionSub: {
     ...typography.caption,
-    color: colors.ink3,
+    color: c.ink3,
   },
   modalOptionSubActive: {
-    color: colors.brand,
+    color: c.brand,
   },
   checkBadge: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },

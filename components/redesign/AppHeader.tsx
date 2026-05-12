@@ -1,8 +1,10 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useMemo } from 'react';
 import Avatar from './Avatar';
-import { colors, typography } from '../../app/theme/tokens';
-import { FamilyMember } from '../../app/types/vaccination';
+import { type Colors, typography } from '../../src/theme/tokens';
+import { useTheme } from '../../src/context/ThemeContext';
+import { FamilyMember } from '../../src/types/vaccination';
 
 type Props = {
   profile: FamilyMember | null;
@@ -10,6 +12,8 @@ type Props = {
 };
 
 export default function AppHeader({ profile, onSwitch }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.header}>
       <View style={styles.brandRow}>
@@ -37,7 +41,7 @@ export default function AppHeader({ profile, onSwitch }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   header: {
     paddingTop: 48,
     paddingHorizontal: 20,
@@ -45,7 +49,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
   },
   brandRow: {
     flexDirection: 'row',
@@ -61,12 +65,12 @@ const styles = StyleSheet.create({
     ...typography.h2,
     fontSize: 22,
     lineHeight: 24,
-    color: colors.ink,
+    color: c.ink,
   },
   brandSub: {
     fontSize: 10,
     letterSpacing: 1,
-    color: colors.ink3,
+    color: c.ink3,
     fontWeight: '500',
     textTransform: 'uppercase',
     marginTop: 1,
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bgElev,
+    borderColor: c.line,
+    backgroundColor: c.bgElev,
   },
 });

@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, typography } from '../../app/theme/tokens';
+import { useMemo } from 'react';
+import { type Colors, typography } from '../../src/theme/tokens';
+import { useTheme } from '../../src/context/ThemeContext';
 
 type Props = {
   title: string;
@@ -9,6 +11,8 @@ type Props = {
 };
 
 export default function ScreenTitle({ title, back, trailing }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
       {back && (
@@ -24,7 +28,7 @@ export default function ScreenTitle({ title, back, trailing }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   row: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -38,13 +42,13 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bgElev,
+    borderColor: c.line,
+    backgroundColor: c.bgElev,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     ...typography.h2,
-    color: colors.ink,
+    color: c.ink,
   },
 });

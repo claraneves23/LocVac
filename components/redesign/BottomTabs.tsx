@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, shadows } from '../../app/theme/tokens';
-import { setNavigationDirection } from '../../app/navigation-direction';
+import { type Colors, shadows } from '../../src/theme/tokens';
+import { useTheme } from '../../src/context/ThemeContext';
+import { setNavigationDirection } from '../../src/navigation-direction';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -25,12 +26,13 @@ const tabs: Tab[] = [
 ];
 
 export default function BottomTabs() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
 
   const isActive = (route: string) => {
-    if (route === '/home') return pathname === '/home' || pathname === '/carteira-completa';
     return pathname === route || pathname.startsWith(route + '/');
   };
 
@@ -39,7 +41,6 @@ export default function BottomTabs() {
   const progress = useRef(
     tabs.map((_, idx) => new Animated.Value(idx === currentIdx ? 1 : 0))
   ).current;
-  // Separate Animated.Values for opacity/transform — runs on GPU thread
   const progressNative = useRef(
     tabs.map((_, idx) => new Animated.Value(idx === currentIdx ? 1 : 0))
   ).current;
@@ -80,7 +81,6 @@ export default function BottomTabs() {
             inputRange: [0, 1],
             outputRange: ['rgba(255,255,255,0)', colors.brand],
           });
-          // opacity animations use native driver (GPU thread)
           const iconInactiveOpacity = progressNative[idx].interpolate({
             inputRange: [0, 1],
             outputRange: [1, 0],
@@ -134,7 +134,7 @@ export default function BottomTabs() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   wrapper: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
@@ -143,9 +143,9 @@ const styles = StyleSheet.create({
   },
   pill: {
     flexDirection: 'row',
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     borderRadius: 999,
     padding: 6,
     ...shadows.md,

@@ -1,22 +1,22 @@
-import { Stack, usePathname, useRouter } from 'expo-router';
+﻿import { Stack, usePathname, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as NavigationBar from 'expo-navigation-bar';
 import { Animated, Image, Platform, StyleSheet, View } from 'react-native';
 import BottomTabs from '../components/redesign/BottomTabs';
-import { getNavigationDirection } from './navigation-direction';
-import { AppProvider, useAppContext } from './context/AppContext';
-import { setAuthErrorCallback } from './service/authService';
-import { colors } from './theme/tokens';
+import { getNavigationDirection } from '../src/navigation-direction';
+import { AppProvider, useAppContext } from '../src/context/AppContext';
+import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
+import { setAuthErrorCallback } from '../src/service/authService';
 import {
   configurarHandlerNotificacao,
   registrarTokenPushSeNecessario,
-} from './utils/pushNotifications';
+} from '../src/utils/pushNotifications';
 import * as Notifications from 'expo-notifications';
 
 configurarHandlerNotificacao();
 
-const MAIN_TAB_ROUTES = ['home', 'hist', 'infos', 'user', 'carteira-completa'];
+const MAIN_TAB_ROUTES = ['home', 'hist', 'infos', 'user'];
 const isMainTabRoute = (name: string) =>
   MAIN_TAB_ROUTES.some((r) => name === r || name === `${r}/index` || name.startsWith(`${r}/`));
 const HIDE_BOTTOM_BAR_ROUTES = [
@@ -25,18 +25,22 @@ const HIDE_BOTTOM_BAR_ROUTES = [
   '/cadastro-titular',
   '/esqueci-senha',
   '/redefinir-senha',
+  '/configuracoes',
 ];
 const PUBLIC_ROUTES = ['/login', '/verificar-email', '/esqueci-senha', '/redefinir-senha'];
 
 export default function Layout() {
   return (
-    <AppProvider>
-      <LayoutContent />
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <LayoutContent />
+      </AppProvider>
+    </ThemeProvider>
   );
 }
 
 function LayoutContent() {
+  const { colors } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -96,14 +100,7 @@ function LayoutContent() {
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    const configureNavigationBar = async () => {
-      try {
-        await NavigationBar.setPositionAsync('absolute');
-        await NavigationBar.setBackgroundColorAsync('#00000000');
-        await NavigationBar.setButtonStyleAsync('dark');
-      } catch {}
-    };
-    configureNavigationBar();
+    NavigationBar.setButtonStyleAsync('dark').catch(() => {});
   }, []);
 
   const hideBottomBar = HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
@@ -111,7 +108,7 @@ function LayoutContent() {
 
   if ((checkingAuth || appLoading) && !isOnPublicOrSetup) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bgMuted }]}>
         <Animated.Image
           source={require('../assets/images/logo.png')}
           style={[styles.loadingLogo, { opacity: pulseAnim }]}
@@ -122,7 +119,7 @@ function LayoutContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.contentContainer}>
         <Stack
           screenOptions={({ route }) => ({
@@ -135,7 +132,7 @@ function LayoutContent() {
             freezeOnBlur: true,
             contentStyle: {
               backgroundColor: colors.bg,
-            },
+            }, // colors from useTheme() — reactive to dark mode
           })}
         />
       </View>
@@ -147,14 +144,12 @@ function LayoutContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
   },
   contentContainer: {
     flex: 1,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: colors.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },

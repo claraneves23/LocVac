@@ -1,8 +1,10 @@
 import { View, Text, Pressable, Modal, ScrollView, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { FamilyMember } from '../../../app/types/vaccination';
-import { colors, radii, spacing, typography, shadows } from '../../../app/theme/tokens';
+import { useMemo } from 'react';
+import { FamilyMember } from '../../../src/types/vaccination';
+import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
+import { useTheme } from '../../../src/context/ThemeContext';
 import { Avatar } from '../../redesign';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
@@ -17,8 +19,8 @@ const formatSex = (sex: string) => {
   return 'Outro';
 };
 
-type InfoRowProps = { label: string; value?: string };
-function InfoRow({ label, value }: InfoRowProps) {
+type InfoRowProps = { label: string; value?: string; styles: ReturnType<typeof makeStyles> };
+function InfoRow({ label, value, styles }: InfoRowProps) {
   if (!value) return null;
   return (
     <View style={styles.infoRow}>
@@ -35,6 +37,8 @@ type DependentInfoModalProps = {
 };
 
 export default function DependentInfoModal({ visible, dependent, onClose }: DependentInfoModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   if (!dependent) return null;
 
   return (
@@ -72,17 +76,17 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
             </View>
 
             <View style={styles.infoCard}>
-              <InfoRow label="Nascimento" value={formatDateToBR(dependent.birthDate)} />
-              <InfoRow label="Sexo" value={formatSex(dependent.sex)} />
-              <InfoRow label="Local de nascimento" value={dependent.birthPlace} />
-              <InfoRow label="Responsável" value={dependent.guardianName} />
-              <InfoRow label="CNS" value={dependent.cns} />
-              <InfoRow label="Telefone" value={dependent.phone} />
-              <InfoRow label="CEP" value={dependent.zipCode} />
-              <InfoRow label="Rua" value={dependent.address} />
-              <InfoRow label="Complemento" value={dependent.complement} />
-              <InfoRow label="Município" value={dependent.city} />
-              <InfoRow label="Estado" value={dependent.state} />
+              <InfoRow label="Nascimento" value={formatDateToBR(dependent.birthDate)} styles={styles} />
+              <InfoRow label="Sexo" value={formatSex(dependent.sex)} styles={styles} />
+              <InfoRow label="Local de nascimento" value={dependent.birthPlace} styles={styles} />
+              <InfoRow label="Responsável" value={dependent.guardianName} styles={styles} />
+              <InfoRow label="CNS" value={dependent.cns} styles={styles} />
+              <InfoRow label="Telefone" value={dependent.phone} styles={styles} />
+              <InfoRow label="CEP" value={dependent.zipCode} styles={styles} />
+              <InfoRow label="Rua" value={dependent.address} styles={styles} />
+              <InfoRow label="Complemento" value={dependent.complement} styles={styles} />
+              <InfoRow label="Município" value={dependent.city} styles={styles} />
+              <InfoRow label="Estado" value={dependent.state} styles={styles} />
             </View>
           </ScrollView>
 
@@ -95,10 +99,10 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: colors.dimDark,
+    backgroundColor: c.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
@@ -107,7 +111,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     maxHeight: '85%',
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.xl,
     padding: spacing.lg,
     ...shadows.lg,
@@ -123,7 +127,7 @@ const styles = StyleSheet.create({
   },
   kicker: {
     ...typography.caption,
-    color: colors.brand,
+    color: c.brand,
     textTransform: 'uppercase',
     fontWeight: '700',
     letterSpacing: 1,
@@ -131,13 +135,13 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
   },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -151,25 +155,25 @@ const styles = StyleSheet.create({
   },
   dependentName: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
     marginTop: 6,
   },
   relationshipPill: {
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
     borderRadius: radii.pill,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
   relationshipText: {
     ...typography.caption,
-    color: colors.brandInk,
+    color: c.brandInk,
     fontWeight: '600',
   },
   infoCard: {
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     padding: spacing.sm,
   },
   infoRow: {
@@ -179,24 +183,24 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 6,
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderBottomColor: c.line,
     gap: spacing.md,
   },
   infoLabel: {
     ...typography.small,
     fontWeight: '600',
-    color: colors.ink3,
+    color: c.ink3,
     flexShrink: 0,
   },
   infoValue: {
     ...typography.small,
-    color: colors.ink,
+    color: c.ink,
     textAlign: 'right',
     flex: 1,
   },
   primaryButton: {
     marginTop: spacing.md,
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
     paddingVertical: 12,
     borderRadius: radii.md,
     alignItems: 'center',
@@ -204,6 +208,6 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     ...typography.body,
     fontWeight: '600',
-    color: colors.white,
+    color: c.white,
   },
 });

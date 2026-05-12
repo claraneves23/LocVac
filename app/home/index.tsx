@@ -1,4 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -26,22 +25,22 @@ import {
   registrarOutraVacina,
   atualizarOutraVacina,
   VacinaDTO,
-} from '../service/mandatoryVaccineService';
+} from '../../src/service/mandatoryVaccineService';
 import {
   fetchCampaigns,
   fetchParticipacoesByPessoa,
   addParticipacaoCampanha,
   updateParticipacaoCampanha,
   deleteParticipacaoCampanha,
-} from '../service/campaignService';
-import { useAppContext } from '../context/AppContext';
+} from '../../src/service/campaignService';
+import { useAppContext } from '../../src/context/AppContext';
 import {
   Campanha,
   FamilyMember,
   MandatoryVaccineRecord,
   OtherVaccine,
   ParticipatingCampaign,
-} from '../types/vaccination';
+} from '../../src/types/vaccination';
 
 import AppHeader from '../../components/redesign/AppHeader';
 import Skeleton from '../../components/redesign/Skeleton';
@@ -49,8 +48,8 @@ import ProfileModal from '../../components/modals/ProfileModal';
 import MandatoryVaccineModal from '../../components/modals/MandatoryVaccineModal';
 import OtherVaccineModal from '../../components/modals/OtherVaccineModal';
 import CampaignModal from '../../components/modals/CampaignModal';
-import { colors } from '../theme/tokens';
-import styles from './styles';
+import { makeStyles } from '../../src/styles/home';
+import { useTheme } from '../../src/context/ThemeContext';
 
 const SELECTED_PROFILE_KEY = 'selectedProfileId';
 
@@ -106,7 +105,8 @@ const parseDate = (dateStr: string): Date => {
 };
 
 export default function Index() {
-  const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { mainUser, dependents } = useAppContext();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -184,7 +184,7 @@ export default function Index() {
   useEffect(() => {
     Promise.all([
       fetchMandatoryVaccines().then(setMandatoryVaccineList).catch(() => setMandatoryVaccineList([])),
-      fetchCampaigns().then(setAvailableCampaigns).catch(() => setAvailableCampaigns([])),
+      fetchCampaigns().then(cs => setAvailableCampaigns(cs.filter(c => c.ativa))).catch(() => setAvailableCampaigns([])),
     ]).finally(() => setMandatoryListLoaded(true));
   }, []);
 
@@ -246,11 +246,9 @@ export default function Index() {
       if (Platform.OS !== 'android') return;
       try {
         if (anyModalOpen) {
-          await NavigationBar.setBackgroundColorAsync('#80000000');
           await NavigationBar.setButtonStyleAsync('light');
           await NavigationBar.setVisibilityAsync('visible');
         } else {
-          await NavigationBar.setBackgroundColorAsync('#00FFFFFF');
           await NavigationBar.setButtonStyleAsync('dark');
         }
       } catch {}
@@ -561,9 +559,6 @@ export default function Index() {
                   : 'Titular'} · {formatId(selectedProfile.id)}
               </Text>
             </View>
-            <Pressable style={styles.passportDocBtn} onPress={() => router.push('/carteira-completa')}>
-              <Ionicons name="document-text-outline" size={20} color="#fff" />
-            </Pressable>
           </View>
 
           <View style={styles.passportDivider} />
@@ -880,6 +875,8 @@ function SectionHeader({
   count: string | number;
   onAdd?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.sectionHeader}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
@@ -896,6 +893,8 @@ function SectionHeader({
 }
 
 function IndexSkeleton() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const sectionWidths = [100, 80, 68] as const;
   return (
     <>

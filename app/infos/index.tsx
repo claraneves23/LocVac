@@ -1,4 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import {
   FlatList,
   Image,
@@ -15,12 +15,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as NavigationBar from 'expo-navigation-bar';
-import { fetchCarrosselAtivos, fetchTodasVacinas } from '../service/infoService';
-import { CarrosselItemDTO } from '../types/info';
-import { VacinaDTO } from '../service/mandatoryVaccineService';
-import { colors } from '../theme/tokens';
+import { fetchCarrosselAtivos, fetchTodasVacinas } from '../../src/service/infoService';
+import { CarrosselItemDTO } from '../../src/types/info';
+import { VacinaDTO } from '../../src/service/mandatoryVaccineService';
+import { makeStyles } from '../../src/styles/infos';
+import { useTheme } from '../../src/context/ThemeContext';
 import Skeleton from '../../components/redesign/Skeleton';
-import styles from './styles';
 
 type AgeGroupId = 'all' | 'baby' | 'child' | 'teen' | 'adult' | 'senior' | 'pregnant';
 
@@ -43,17 +43,6 @@ const AGE_GROUPS: AgeGroup[] = [
   { id: 'senior',   label: 'Idosos',       sub: '60 anos ou mais', icon: 'person-outline',  tone: 'coral', minMonths: 720,  maxMonths: null },
   { id: 'pregnant', label: 'Gestantes',    sub: 'Pré-natal',       icon: 'heart-outline',   tone: 'coral', minMonths: null, maxMonths: null },
 ];
-
-const TONE_BG: Record<string, string> = {
-  brand: colors.brandSoft,
-  coral: colors.coralSoft,
-  ochre: colors.ochreSoft,
-};
-const TONE_INK: Record<string, string> = {
-  brand: colors.brandInk,
-  coral: colors.coralInk,
-  ochre: colors.ochreInk,
-};
 
 const getDoseLabel = (dose: string | null | undefined): string => {
   if (!dose) return '';
@@ -83,6 +72,10 @@ const overlapsGroup = (vaccine: VacinaDTO, group: AgeGroup): boolean => {
 };
 
 export default function Infos() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const TONE_BG: Record<string, string> = { brand: colors.brandSoft, coral: colors.coralSoft, ochre: colors.ochreSoft };
+  const TONE_INK: Record<string, string> = { brand: colors.brandInk, coral: colors.coralInk, ochre: colors.ochreInk };
   const router = useRouter();
   const [helpVisible, setHelpVisible] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
@@ -115,11 +108,9 @@ export default function Infos() {
       if (Platform.OS !== 'android') return;
       try {
         if (helpVisible || filterVisible) {
-          await NavigationBar.setBackgroundColorAsync('#80000000');
           await NavigationBar.setButtonStyleAsync('light');
           await NavigationBar.setVisibilityAsync('visible');
         } else {
-          await NavigationBar.setBackgroundColorAsync('#00FFFFFF');
           await NavigationBar.setButtonStyleAsync('dark');
         }
       } catch {}
