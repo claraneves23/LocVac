@@ -1,4 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import {
   Image,
   Text,
@@ -18,9 +18,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import { cadastrarTitular, logout } from '../service/authService';
-import { useAppContext } from '../context/AppContext';
-import { colors } from '../theme/tokens';
+import { cadastrarTitular, logout } from '../../src/service/authService';
+import { useAppContext } from '../../src/context/AppContext';
+import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
 const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
@@ -338,6 +338,7 @@ export default function CadastroTitular() {
                 onFocus={focusFor(nomeRef)}
                 placeholder="Digite seu nome"
                 placeholderTextColor={colors.ink3}
+                maxLength={100}
                 autoCapitalize="words"
               />
               {errors.nome && <Text style={styles.errorText}>{errors.nome}</Text>}
@@ -458,6 +459,7 @@ export default function CadastroTitular() {
                 onChangeText={setRua}
                 placeholder="Rua e número"
                 placeholderTextColor={colors.ink3}
+                maxLength={200}
               />
             </View>
 
@@ -469,6 +471,7 @@ export default function CadastroTitular() {
                 onChangeText={setComplemento}
                 placeholder="Apto, bloco, etc."
                 placeholderTextColor={colors.ink3}
+                maxLength={100}
               />
             </View>
 
@@ -480,6 +483,7 @@ export default function CadastroTitular() {
                 onChangeText={setMunicipio}
                 placeholder="Nome da cidade"
                 placeholderTextColor={colors.ink3}
+                maxLength={100}
               />
             </View>
 
@@ -523,6 +527,7 @@ export default function CadastroTitular() {
                 onFocus={focusFor(telefoneRef)}
                 placeholder="(00) 00000-0000"
                 placeholderTextColor={colors.ink3}
+                maxLength={15}
                 keyboardType="phone-pad"
               />
               {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}

@@ -1,4 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import {
   Text,
   View,
@@ -15,8 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { solicitarRecuperacaoSenha } from '../service/authService';
-import { colors } from '../theme/tokens';
+import { solicitarRecuperacaoSenha } from '../../src/service/authService';
+import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
 export default function EsqueciSenha() {
@@ -88,6 +88,7 @@ export default function EsqueciSenha() {
                   onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(null); }}
                   placeholder="seu@email.com"
                   placeholderTextColor={colors.ink3}
+                  maxLength={254}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}

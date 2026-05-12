@@ -1,4 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import {
   Animated,
   Easing,
@@ -18,9 +18,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { login, iniciarCadastro } from '../service/authService';
-import { useAppContext } from '../context/AppContext';
-import { colors } from '../theme/tokens';
+import { login, iniciarCadastro } from '../../src/service/authService';
+import { useAppContext } from '../../src/context/AppContext';
+import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
 type Mode = 'login' | 'cadastro';
@@ -255,6 +255,7 @@ export default function Login() {
                   onFocus={focusFor(emailRef)}
                   placeholder="seu@email.com"
                   placeholderTextColor={colors.ink3}
+                  maxLength={254}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -275,6 +276,7 @@ export default function Login() {
                   onFocus={focusFor(senhaRef)}
                   placeholder="••••••••"
                   placeholderTextColor={colors.ink3}
+                  maxLength={72}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
@@ -322,6 +324,7 @@ export default function Login() {
                     onFocus={focusFor(confirmarSenhaRef)}
                     placeholder="Repita a senha"
                     placeholderTextColor={colors.ink3}
+                    maxLength={72}
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
                     editable={mode === 'cadastro'}

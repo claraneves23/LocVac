@@ -1,4 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import {
   Text,
   View,
@@ -14,9 +14,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from '../service/authService';
+import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from '../../src/service/authService';
 import LVMark from '../../components/redesign/LVMark';
-import { colors } from '../theme/tokens';
+import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
 const RESEND_COOLDOWN = 60;
@@ -195,6 +195,7 @@ export default function RedefinirSenha() {
                   onChangeText={(v) => { setNovaSenha(v); clearError('novaSenha'); }}
                   placeholder="Mínimo 6 caracteres"
                   placeholderTextColor={colors.ink3}
+                  maxLength={72}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
@@ -222,6 +223,7 @@ export default function RedefinirSenha() {
                   onChangeText={(v) => { setConfirmarSenha(v); clearError('confirmarSenha'); }}
                   placeholder="Repita a senha"
                   placeholderTextColor={colors.ink3}
+                  maxLength={72}
                   secureTextEntry={!showConfirmPassword}
                   autoCapitalize="none"
                 />
