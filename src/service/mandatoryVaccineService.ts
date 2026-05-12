@@ -1,5 +1,5 @@
 import axios from 'axios';
-import API_BASE from './apiConfig';
+import { API_BASE } from './apiConfig';
 
 export type VacinaDTO = {
   id: number;

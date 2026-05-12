@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { colors, radii, shadows, typography } from '../theme/tokens';
+import { type Colors, radii, shadows, typography } from '../theme/tokens';
 
-export default StyleSheet.create({
+export const makeStyles = (c: Colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     paddingTop: 48,
   },
   header: {
@@ -19,8 +19,8 @@ export default StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bgElev,
+    borderColor: c.line,
+    backgroundColor: c.bgElev,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -28,17 +28,17 @@ export default StyleSheet.create({
     marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   searchInput: {
     flex: 1,
     paddingVertical: 12,
     paddingRight: 12,
     fontSize: 14,
-    color: colors.ink,
+    color: c.ink,
   },
 
   sectionHeader: {
@@ -50,7 +50,7 @@ export default StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h2,
-    color: colors.ink,
+    color: c.ink,
   },
   filterButton: {
     flexDirection: 'row',
@@ -59,14 +59,14 @@ export default StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     maxWidth: 180,
   },
   filterButtonActive: {
-    backgroundColor: colors.brand,
-    borderColor: colors.brand,
+    backgroundColor: c.brand,
+    borderColor: c.brand,
   },
   filterButtonText: {
     color: '#fff',
@@ -76,11 +76,11 @@ export default StyleSheet.create({
 
   sheetOverlay: {
     flex: 1,
-    backgroundColor: colors.dimDark,
+    backgroundColor: 'transparent',
     justifyContent: 'flex-end',
   },
   sheetContent: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     paddingHorizontal: 20,
@@ -93,7 +93,7 @@ export default StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.lineStrong,
+    backgroundColor: c.lineStrong,
     marginBottom: 12,
   },
   sheetHeader: {
@@ -104,7 +104,7 @@ export default StyleSheet.create({
   },
   sheetTitle: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
   },
   filterOption: {
     flexDirection: 'row',
@@ -116,16 +116,16 @@ export default StyleSheet.create({
     marginVertical: 2,
   },
   filterOptionActive: {
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
   },
   filterOptionLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   filterOptionSub: {
     fontSize: 12,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 2,
   },
 
@@ -145,14 +145,14 @@ export default StyleSheet.create({
     marginRight: 12,
     borderRadius: radii.lg,
     overflow: 'hidden',
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   carrosselImage: {
     width: '100%',
     height: 140,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
   },
   carrosselContent: {
     padding: 12,
@@ -160,12 +160,12 @@ export default StyleSheet.create({
   carrosselTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.ink,
+    color: c.ink,
     marginBottom: 4,
   },
   carrosselDescription: {
     fontSize: 12,
-    color: colors.ink2,
+    color: c.ink2,
   },
   indicators: {
     flexDirection: 'row',
@@ -178,10 +178,10 @@ export default StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.lineStrong,
+    backgroundColor: c.lineStrong,
   },
   indicatorActive: {
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
     width: 24,
   },
 
@@ -203,11 +203,11 @@ export default StyleSheet.create({
   },
   groupLabel: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
   },
   groupSub: {
     fontSize: 11,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
@@ -217,9 +217,9 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     borderRadius: radii.md,
     padding: 12,
     marginBottom: 6,
@@ -234,11 +234,11 @@ export default StyleSheet.create({
   vaccineName: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   vaccineSub: {
     fontSize: 12,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 2,
   },
 
@@ -248,23 +248,23 @@ export default StyleSheet.create({
     borderRadius: radii.lg,
     borderStyle: 'dashed',
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: c.lineStrong,
     alignItems: 'center',
   },
   emptyText: {
-    color: colors.ink3,
+    color: c.ink3,
     fontSize: 13,
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.dimDark,
+    backgroundColor: c.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
   modalContent: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.xl,
     paddingHorizontal: 22,
     paddingTop: 18,
@@ -280,27 +280,27 @@ export default StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bgMuted,
+    borderColor: c.line,
+    backgroundColor: c.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalTitle: {
     ...typography.h2,
-    color: colors.ink,
+    color: c.ink,
     textAlign: 'center',
     marginTop: 20,
     marginBottom: 14,
   },
   modalText: {
     fontSize: 13,
-    color: colors.ink2,
+    color: c.ink2,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 26,
   },
   modalCta: {
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
     borderRadius: radii.md,
     paddingVertical: 14,
     alignItems: 'center',

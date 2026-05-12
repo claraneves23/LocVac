@@ -115,6 +115,3 @@ export interface Campanha {
   publicoAlvo: string;
   ativa: boolean;
 }
-
-
-

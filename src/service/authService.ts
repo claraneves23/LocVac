@@ -1,6 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API_BASE from './apiConfig';
+import { API_BASE } from './apiConfig';
 
 const AUTH_TOKEN_KEY = 'locvac:auth:token';
 const REFRESH_TOKEN_KEY = 'locvac:auth:refresh';
@@ -110,6 +110,37 @@ export async function cadastrarTitular(data: CadastroTitularRequest): Promise<{ 
 	return { id: idPessoa };
 }
 
+export interface UpdateTitularRequest {
+	nome: string;
+	dataNascimento: string;
+	sexoBiologico: 'MASCULINO' | 'FEMININO';
+	cns?: string;
+	cep: string;
+	rua?: string;
+	complemento?: string;
+	municipio?: string;
+	estado?: string;
+	telefone: string;
+	fotoUrl?: string;
+}
+
+export async function updateTitular(pessoaId: string, data: UpdateTitularRequest): Promise<void> {
+	await axios.put(`${API_BASE}/pessoas/${pessoaId}`, {
+		nome: data.nome,
+		dataNascimento: data.dataNascimento,
+		sexoBiologico: data.sexoBiologico,
+		cns: data.cns || null,
+		cep: data.cep,
+		rua: data.rua || '',
+		complemento: data.complemento || '',
+		municipio: data.municipio || '',
+		estado: data.estado || null,
+		telefone: data.telefone,
+		fotoUrl: data.fotoUrl || null,
+		ativo: true,
+	});
+}
+
 export async function refreshToken(): Promise<AuthResponse> {
 	const refresh = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
 	const response = await axios.post<AuthResponse>(`${API_BASE}/auth/refresh`, {
@@ -156,7 +187,7 @@ export async function fetchPerfil(idPessoa: number) {
   const response = await axios.get(`${API_BASE}/pessoas/perfil`, {
     params: { idPessoa },
   });
-  return response.data; // PessoaResponseDTO
+  return response.data;
 }
 
 async function clearTokens(): Promise<void> {

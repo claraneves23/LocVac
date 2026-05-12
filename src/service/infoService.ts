@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { VacinaInformativoDTO, EfeitoColateralDTO, CarrosselItemDTO, CarrosselConteudoDTO } from '../types/info';
 import { VacinaDTO } from './mandatoryVaccineService';
-import API_BASE from './apiConfig';
+import { API_BASE } from './apiConfig';
 
 export async function fetchTodasVacinas(): Promise<VacinaDTO[]> {
   const response = await axios.get(`${API_BASE}/vacinas`);

@@ -12,6 +12,7 @@ type AppContextType = {
   isLoading: boolean;
   loadAll: () => Promise<void>;
   refreshDependents: () => Promise<void>;
+  refreshMainUser: () => Promise<void>;
   reset: () => void;
 };
 
@@ -22,6 +23,7 @@ const AppContext = createContext<AppContextType>({
   isLoading: true,
   loadAll: async () => {},
   refreshDependents: async () => {},
+  refreshMainUser: async () => {},
   reset: () => {},
 });
 
@@ -34,6 +36,24 @@ const mapSexo = (sexo: string): 'M' | 'F' | 'Outro' => {
   if (sexo === 'FEMININO') return 'F';
   return 'Outro';
 };
+
+const mapPerfil = (perfil: any): FamilyMember => ({
+  id: String(perfil.id),
+  userId: String(perfil.id),
+  name: perfil.nome,
+  birthDate: perfil.dataNascimento,
+  sex: mapSexo(perfil.sexoBiologico),
+  kind: 'user',
+  cns: perfil.cns || undefined,
+  zipCode: perfil.cep || undefined,
+  address: perfil.rua || undefined,
+  complement: perfil.complemento || undefined,
+  city: perfil.municipio || undefined,
+  state: perfil.estado || undefined,
+  phone: perfil.telefone || undefined,
+  email: perfil.email,
+  photoUri: perfil.fotoUrl || undefined,
+});
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [mainUser, setMainUser] = useState<FamilyMember | null>(null);
@@ -50,18 +70,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const perfil = await fetchPerfil(idPessoa);
-      setMainUser({
-        id: String(perfil.id),
-        userId: String(perfil.id),
-        name: perfil.nome,
-        birthDate: perfil.dataNascimento,
-        sex: mapSexo(perfil.sexoBiologico),
-        kind: 'user',
-        zipCode: perfil.cep,
-        phone: perfil.telefone,
-        email: perfil.email,
-        photoUri: perfil.fotoUrl || undefined,
-      });
+      setMainUser(mapPerfil(perfil));
 
       let uid: string | null = perfil.idUsuario || null;
       if (!uid) {
@@ -86,6 +95,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDependents(deps);
   }, [usuarioId]);
 
+  const refreshMainUser = useCallback(async () => {
+    try {
+      const idPessoa = await getPessoaId();
+      if (!idPessoa) return;
+      const perfil = await fetchPerfil(idPessoa);
+      setMainUser(mapPerfil(perfil));
+    } catch (e) {
+      logger.error('AppContext refreshMainUser error:', e);
+    }
+  }, []);
+
   const reset = useCallback(() => {
     setMainUser(null);
     setDependents([]);
@@ -106,7 +126,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AppContext.Provider value={{ mainUser, dependents, usuarioId, isLoading, loadAll, refreshDependents, reset }}>
+    <AppContext.Provider value={{ mainUser, dependents, usuarioId, isLoading, loadAll, refreshDependents, refreshMainUser, reset }}>
       {children}
     </AppContext.Provider>
   );

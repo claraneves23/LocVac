@@ -1,42 +1,39 @@
-// LocVac — Design tokens (React Native)
-// Fonte de verdade visual do redesign: cores, raios, espaçamentos, tipografia, sombras.
-
 import { TextStyle } from 'react-native';
 
-export const colors = {
-  // Backgrounds
+export type Colors = {
+  bg: string; bgElev: string; bgMuted: string; bgSheet: string;
+  ink: string; ink2: string; ink3: string; ink4: string;
+  line: string; lineStrong: string;
+  brand: string; brand2: string; brandSoft: string; brandInk: string;
+  coral: string; coralSoft: string; coralInk: string;
+  ochre: string; ochreSoft: string; ochreInk: string;
+  success: string; successSoft: string; successInk: string;
+  warn: string; warnSoft: string; warnInk: string;
+  danger: string; dangerSoft: string; dangerInk: string;
+  dimDark: string; white: string;
+};
+
+export const colors: Colors = {
   bg:        'rgba(255, 255, 255, 0.4)',
   bgElev:    '#FFFFFF',
   bgMuted:   '#F1F5F4',
   bgSheet:   '#F4F8F7',
-
-  // Ink (texto)
   ink:   '#1A2422',
   ink2:  '#525E5C',
   ink3:  '#7C8786',
   ink4:  '#A8B2B1',
-
-  // Linhas
   line:        '#E1E8E6',
   lineStrong:  '#CDD7D5',
-
-  // Brand — azul profundo
   brand:     '#03394A',
   brand2:    '#022D3C',
   brandSoft: '#E5EEF2',
   brandInk:  '#03394A',
-
-  // Coral — urgência / pendências / atrasadas
   coral:     '#D27457',
   coralSoft: '#F8E9E2',
   coralInk:  '#7A3A23',
-
-  // Ochre — campanhas / acentos quentes
   ochre:     '#C8A14A',
   ochreSoft: '#F6EFD9',
   ochreInk:  '#6E5419',
-
-  // Estados
   success:     '#4F9A6E',
   successSoft: '#DEF1E5',
   successInk:  '#03394A',
@@ -46,8 +43,6 @@ export const colors = {
   danger:      '#C84A38',
   dangerSoft:  '#F6D9D2',
   dangerInk:   '#5C2418',
-
-  // Overlay
   dimDark: 'rgba(15, 30, 25, 0.45)',
   white:   '#FFFFFF',
 };
@@ -71,8 +66,6 @@ export const spacing = {
   xxxl: 32,
 };
 
-// Famílias — Inter (sans, sistema) e Instrument Serif (display, registrar via expo-font).
-// Fallback: serif do sistema. Quando InstrumentSerif não estiver carregado o RN usa fallback.
 export const fontFamily = {
   display: 'InstrumentSerif',
   sans:    'System',
@@ -114,6 +107,40 @@ export const shadows = {
     shadowRadius: 32,
     elevation: 8,
   },
+};
+
+export const darkColors: Colors = {
+  bg:        'rgba(13, 26, 24, 0.95)',
+  bgElev:    '#162824',
+  bgMuted:   '#1C3330',
+  bgSheet:   '#1A302D',
+  ink:   '#E8F3F0',
+  ink2:  '#A8C5C0',
+  ink3:  '#6B8E8A',
+  ink4:  '#3D5E5A',
+  line:        '#2A3E3B',
+  lineStrong:  '#365450',
+  brand:     '#03394A',
+  brand2:    '#022D3C',
+  brandSoft: '#0D2830',
+  brandInk:  '#5ABED8',
+  coral:     '#D27457',
+  coralSoft: '#2A1510',
+  coralInk:  '#E8A890',
+  ochre:     '#C8A14A',
+  ochreSoft: '#2A2010',
+  ochreInk:  '#D4B870',
+  success:     '#4F9A6E',
+  successSoft: '#0E2820',
+  successInk:  '#6DC898',
+  warn:        '#D49C3A',
+  warnSoft:    '#2A2010',
+  warnInk:     '#D4B060',
+  danger:      '#C84A38',
+  dangerSoft:  '#280E0A',
+  dangerInk:   '#E07868',
+  dimDark: 'rgba(0, 0, 0, 0.75)',
+  white:   '#FFFFFF',
 };
 
 export type Tone = 'brand' | 'coral' | 'ochre' | 'success' | 'warn' | 'danger' | 'neutral';

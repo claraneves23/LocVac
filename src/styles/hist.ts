@@ -1,16 +1,16 @@
 import { StyleSheet } from 'react-native';
-import { colors, radii, typography } from '../theme/tokens';
+import { type Colors, radii, typography } from '../theme/tokens';
 
-export default StyleSheet.create({
+export const makeStyles = (c: Colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     paddingTop: 48,
   },
   tabRow: {
     flexDirection: 'row',
     marginHorizontal: 20,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     borderRadius: radii.md,
     padding: 4,
     marginBottom: 10,
@@ -25,21 +25,21 @@ export default StyleSheet.create({
     gap: 6,
   },
   tabActive: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.ink3,
+    color: c.ink3,
   },
   tabTextActive: {
-    color: colors.brand,
+    color: c.brand,
   },
   tabDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     marginLeft: 2,
   },
   filterRow: {
@@ -53,18 +53,18 @@ export default StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   filterChipActive: {
-    backgroundColor: colors.brand,
-    borderColor: colors.brand,
+    backgroundColor: c.brand,
+    borderColor: c.brand,
   },
   filterChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.ink2,
+    color: c.ink2,
     lineHeight: 16,
     includeFontPadding: false,
   },
@@ -83,21 +83,21 @@ export default StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     paddingVertical: 12,
     alignItems: 'center',
   },
   statValue: {
     ...typography.h2,
     fontSize: 22,
-    color: colors.brand,
+    color: c.brand,
   },
   statLabel: {
     fontSize: 11,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 2,
     fontWeight: '500',
     letterSpacing: 0.4,
@@ -120,20 +120,20 @@ export default StyleSheet.create({
     borderRadius: 5,
     marginTop: 18,
     borderWidth: 2,
-    borderColor: colors.bg,
+    borderColor: c.bg,
   },
   timelineLine: {
     flex: 1,
     width: 2,
-    backgroundColor: colors.line,
+    backgroundColor: c.line,
     marginTop: 4,
   },
   timelineCard: {
     flex: 1,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     padding: 12,
     marginBottom: 10,
   },
@@ -146,7 +146,7 @@ export default StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '700',
-    color: colors.ink,
+    color: c.ink,
   },
   timelineMeta: {
     flexDirection: 'row',
@@ -157,22 +157,22 @@ export default StyleSheet.create({
   },
   timelineMetaText: {
     fontSize: 11,
-    color: colors.ink3,
+    color: c.ink3,
     fontWeight: '500',
   },
   timelineDetail: {
     marginTop: 6,
     fontSize: 12,
-    color: colors.ink2,
+    color: c.ink2,
     lineHeight: 17,
   },
 
   // Pending
   pendingCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     borderLeftWidth: 3,
     padding: 12,
     marginBottom: 8,
@@ -186,7 +186,7 @@ export default StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '700',
-    color: colors.ink,
+    color: c.ink,
   },
   unreadDot: {
     width: 8,
@@ -204,11 +204,11 @@ export default StyleSheet.create({
   emptyTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.ink2,
+    color: c.ink2,
   },
   emptySub: {
     fontSize: 12,
-    color: colors.ink3,
+    color: c.ink3,
     textAlign: 'center',
     paddingHorizontal: 40,
   },

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Campanha } from '../types/vaccination';
-import API_BASE from './apiConfig';
+import { API_BASE } from './apiConfig';
 
 export async function fetchCampaigns(): Promise<Campanha[]> {
 	const response = await axios.get(`${API_BASE}/campanhas`);

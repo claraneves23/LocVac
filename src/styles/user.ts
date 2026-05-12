@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { colors, radii, spacing, typography, shadows } from '../theme/tokens';
+import { type Colors, radii, spacing, typography, shadows } from '../theme/tokens';
 
-export default StyleSheet.create({
+export const makeStyles = (c: Colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     paddingTop: '5%',
   },
   scroll: {
@@ -20,11 +20,11 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     marginVertical: spacing.xl,
     ...shadows.sm,
   },
@@ -35,7 +35,7 @@ export default StyleSheet.create({
   },
   profileName: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
   },
   profileTagRow: {
     flexDirection: 'row',
@@ -45,7 +45,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
     borderRadius: radii.pill,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -53,12 +53,12 @@ export default StyleSheet.create({
   },
   profileTagText: {
     ...typography.caption,
-    color: colors.brandInk,
+    color: c.brandInk,
     fontWeight: '600',
   },
   profileEmail: {
     ...typography.small,
-    color: colors.ink3,
+    color: c.ink3,
   },
   section: {
     marginBottom: spacing.xl,
@@ -71,34 +71,34 @@ export default StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
     marginBottom: 2,
   },
   sectionSub: {
     ...typography.small,
-    color: colors.ink3,
+    color: c.ink3,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: 8,
   },
   addButtonText: {
     ...typography.small,
-    color: colors.white,
+    color: c.white,
     fontWeight: '600',
   },
 
   emptyCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     alignItems: 'center',
     gap: spacing.sm,
   },
@@ -106,18 +106,18 @@ export default StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyTitle: {
     ...typography.bodyLg,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   emptySub: {
     ...typography.small,
-    color: colors.ink3,
+    color: c.ink3,
     textAlign: 'center',
   },
 
@@ -125,11 +125,11 @@ export default StyleSheet.create({
     gap: spacing.sm,
   },
   dependentCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -146,11 +146,11 @@ export default StyleSheet.create({
   dependentName: {
     ...typography.body,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   dependentMeta: {
     ...typography.small,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 2,
   },
   dependentActions: {
@@ -161,16 +161,16 @@ export default StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: radii.md,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   menuCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     overflow: 'hidden',
   },
   menuItem: {
@@ -184,18 +184,18 @@ export default StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radii.md,
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuLabel: {
     ...typography.body,
-    color: colors.ink,
+    color: c.ink,
     flex: 1,
   },
   menuDivider: {
     height: 1,
-    backgroundColor: colors.line,
+    backgroundColor: c.line,
     marginLeft: spacing.md + 32 + spacing.md,
   },
 
@@ -204,21 +204,21 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.coralSoft,
+    backgroundColor: c.coralSoft,
     borderRadius: radii.lg,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: colors.coralSoft,
+    borderColor: c.coralSoft,
   },
   logoutText: {
     ...typography.body,
-    color: colors.coralInk,
+    color: c.coralInk,
     fontWeight: '600',
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.dimDark,
+    backgroundColor: c.dimDark,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
@@ -227,7 +227,7 @@ export default StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     maxHeight: '85%',
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.xl,
     padding: spacing.lg,
     flexDirection: 'column',
@@ -240,13 +240,13 @@ export default StyleSheet.create({
   },
   modalTitle: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
   },
   modalClose: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -255,22 +255,22 @@ export default StyleSheet.create({
   },
   legend: {
     ...typography.caption,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 4,
     fontStyle: 'italic',
   },
   required: {
-    color: colors.coral,
+    color: c.coral,
     fontWeight: '700',
   },
   inputError: {
     borderWidth: 1,
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerSoft,
+    borderColor: c.danger,
+    backgroundColor: c.dangerSoft,
   },
   errorText: {
     ...typography.caption,
-    color: colors.danger,
+    color: c.danger,
     marginTop: 4,
     fontWeight: '500',
   },
@@ -290,7 +290,7 @@ export default StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -307,20 +307,20 @@ export default StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 7,
     borderRadius: radii.pill,
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
   },
   photoButtonGhost: {
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   photoButtonText: {
     ...typography.small,
     fontWeight: '600',
-    color: colors.white,
+    color: c.white,
   },
   photoButtonTextGhost: {
-    color: colors.ink2,
+    color: c.ink2,
   },
 
   fieldGroup: {
@@ -330,17 +330,17 @@ export default StyleSheet.create({
   label: {
     ...typography.small,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   input: {
-    backgroundColor: colors.bgMuted,
-    borderRadius: radii.sm + 3, // 11
+    backgroundColor: c.bgMuted,
+    borderRadius: radii.sm + 3,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 14,
-    color: colors.ink,
+    color: c.ink,
   },
   sexRow: {
     flexDirection: 'row',
@@ -351,27 +351,27 @@ export default StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderRadius: radii.sm + 3,
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   sexChipActive: {
-    backgroundColor: colors.brand,
-    borderColor: colors.brand,
+    backgroundColor: c.brand,
+    borderColor: c.brand,
   },
   sexChipText: {
     ...typography.small,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   sexChipTextActive: {
-    color: colors.white,
+    color: c.white,
   },
   dateButton: {
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
     borderRadius: radii.sm + 3,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     paddingHorizontal: spacing.md,
     paddingVertical: 11,
     flexDirection: 'row',
@@ -380,18 +380,18 @@ export default StyleSheet.create({
   },
   dateButtonText: {
     ...typography.body,
-    color: colors.ink4,
+    color: c.ink4,
   },
   dateButtonTextFilled: {
     ...typography.body,
-    color: colors.ink,
+    color: c.ink,
   },
   pickerDropdown: {
     marginTop: 6,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     maxHeight: 200,
     overflow: 'hidden',
   },
@@ -405,18 +405,18 @@ export default StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    borderBottomColor: c.line,
   },
   pickerOptionActive: {
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
   },
   pickerOptionText: {
     ...typography.body,
-    color: colors.ink,
+    color: c.ink,
   },
   pickerOptionTextActive: {
     fontWeight: '600',
-    color: colors.brandInk,
+    color: c.brandInk,
   },
   modalActions: {
     flexDirection: 'row',
@@ -429,27 +429,86 @@ export default StyleSheet.create({
     paddingVertical: 12,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bgElev,
+    borderColor: c.line,
+    backgroundColor: c.bgElev,
   },
   cancelButtonText: {
     ...typography.body,
     fontWeight: '600',
-    color: colors.ink2,
+    color: c.ink2,
   },
   saveButton: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
     borderRadius: radii.md,
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
   },
   saveButtonText: {
     ...typography.body,
     fontWeight: '600',
-    color: colors.white,
+    color: c.white,
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+
+  helpSection: {
+    marginBottom: spacing.lg,
+  },
+  helpIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: 6,
+  },
+  helpSectionTitle: {
+    ...typography.body,
+    fontWeight: '600' as const,
+    color: c.ink,
+  },
+  helpText: {
+    ...typography.small,
+    color: c.ink2,
+    lineHeight: 20,
+  },
+
+  settingsLogoRow: {
+    alignItems: 'center' as const,
+    gap: 6,
+    paddingVertical: spacing.lg,
+  },
+  settingsAppName: {
+    ...typography.h3,
+    fontSize: 22,
+    color: c.ink,
+  },
+  settingsVersion: {
+    ...typography.small,
+    color: c.ink3,
+  },
+  settingsDescription: {
+    ...typography.body,
+    color: c.ink2,
+    textAlign: 'center' as const,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  settingsDivider: {
+    height: 1,
+    backgroundColor: c.line,
+    marginVertical: spacing.md,
+  },
+  settingsInfoRow: {
+    flexDirection: 'row' as const,
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    alignItems: 'flex-start' as const,
+  },
+  settingsInfoText: {
+    ...typography.small,
+    color: c.ink3,
+    flex: 1,
+    lineHeight: 18,
   },
 });

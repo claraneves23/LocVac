@@ -119,7 +119,6 @@ async function runRegistration(): Promise<string | null> {
     logger.log('[push] token registrado no backend com sucesso');
     return token;
   } catch (e: any) {
-    // Não cacheamos backend-error como falha permanente — permite retry na próxima navegação
     const httpStatus = e?.response?.status;
     logger.error('[push] falha ao registrar token no backend: status', httpStatus);
     return null;

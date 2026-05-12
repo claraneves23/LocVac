@@ -1,12 +1,11 @@
 import axios from 'axios';
 import { FamilyMember } from '../types/vaccination';
 import logger from '../utils/logger';
-import API_BASE from './apiConfig';
+import { API_BASE } from './apiConfig';
 
 const API_URL = API_BASE;
 
 export async function addDependentAndLink(usuarioId: string, dependent: Omit<FamilyMember, 'id' | 'userId' | 'kind'> & { cpf?: string }): Promise<void> {
-  // 1. Cria a pessoa
   const pessoaResponse = await axios.post(`${API_URL}/pessoas`, {
     nome: dependent.name,
     dataNascimento: dependent.birthDate,
@@ -25,7 +24,6 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
   });
   const pessoaId = pessoaResponse.data.id;
 
-  // 2. Vincula ao usuário
   const vinculoPayload = {
     idUsuario: usuarioId,
     idPessoa: pessoaId,
@@ -110,10 +108,8 @@ export async function deleteDependent(id: string): Promise<void> {
   await axios.delete(`${API_URL}/pessoas/${id}`);
 }
 
-// Busca o UUID do usuário titular associado a uma pessoa
 export async function getUsuarioTitularIdByPessoaId(pessoaId: number): Promise<string | null> {
   const response = await axios.get(`${API_URL}/usuarioPessoa/por-pessoa`, { params: { idPessoa: pessoaId } });
-  // Espera-se um array de vinculações, pega a do tipo TITULAR
   const vinculoTitular = response.data.find((v: any) => v.tipoVinculo === 'TITULAR');
   return vinculoTitular && vinculoTitular.idUsuario ? vinculoTitular.idUsuario : null;
 }

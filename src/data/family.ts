@@ -1,9 +1,7 @@
 import { Dependent, FamilyMember, UserProfile, VaccineApplication } from '../types/vaccination';
 
-// ATENÇÃO: O id do usuário principal (titular) deve ser preenchido dinamicamente com o UUID real do usuário logado.
-// Não use valor fixo! Busque o UUID via serviço de autenticação (ex: getUserId() ou getUsuarioUuid()).
 export const MAIN_USER: UserProfile = {
-  id: '', // Preencher dinamicamente após login
+  id: '',
   name: 'João da Silva',
   birthDate: '1992-06-18',
   birthPlace: 'São Paulo - SP',

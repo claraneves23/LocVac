@@ -1,16 +1,16 @@
 import { StyleSheet } from 'react-native';
-import { colors, radii, shadows, typography } from '../theme/tokens';
+import { type Colors, radii, shadows, typography } from '../theme/tokens';
 
-export default StyleSheet.create({
+export const makeStyles = (c: Colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
   },
   loadingScreen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgMuted,
+    backgroundColor: c.bgMuted,
   },
   scroll: {
     paddingHorizontal: 16,
@@ -98,17 +98,17 @@ export default StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
   },
   filterChipActive: {
-    backgroundColor: colors.brand,
-    borderColor: colors.brand,
+    backgroundColor: c.brand,
+    borderColor: c.brand,
   },
   filterChipText: {
     fontSize: 13,
-    color: colors.ink2,
+    color: c.ink2,
     fontWeight: '500',
   },
   filterChipTextActive: {
@@ -127,17 +127,17 @@ export default StyleSheet.create({
   },
   sectionTitle: {
     ...typography.labelCap,
-    color: colors.ink2,
+    color: c.ink2,
   },
   sectionCount: {
     ...typography.mono,
-    color: colors.ink3,
+    color: c.ink3,
   },
   addBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -154,12 +154,12 @@ export default StyleSheet.create({
   groupLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.ink2,
+    color: c.ink2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   groupActiveBadge: {
-    backgroundColor: colors.brand,
+    backgroundColor: c.brand,
     borderRadius: 999,
     paddingHorizontal: 7,
     paddingVertical: 2,
@@ -177,10 +177,10 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     padding: 14,
     marginBottom: 8,
   },
@@ -194,11 +194,11 @@ export default StyleSheet.create({
   itemTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   itemSub: {
     fontSize: 12,
-    color: colors.ink3,
+    color: c.ink3,
     marginTop: 2,
   },
   iconBtn: {
@@ -207,15 +207,15 @@ export default StyleSheet.create({
 
   // Empty
   emptyCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     padding: 16,
     alignItems: 'center',
   },
   emptyText: {
     fontSize: 13,
-    color: colors.ink3,
+    color: c.ink3,
   },
 });
