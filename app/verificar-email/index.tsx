@@ -1,4 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import {
   Text,
   View,
@@ -13,8 +13,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { confirmarCadastro, reenviarCodigo } from '../service/authService';
-import { colors } from '../theme/tokens';
+import { confirmarCadastro, reenviarCodigo } from '../../src/service/authService';
+import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
 const RESEND_COOLDOWN = 60;

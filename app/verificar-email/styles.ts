@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
-import { colors, radii, shadows, typography } from '../theme/tokens';
+﻿import { StyleSheet } from 'react-native';
+import { colors, radii, shadows, typography } from '../../src/theme/tokens';
 
 export default StyleSheet.create({
   container: {

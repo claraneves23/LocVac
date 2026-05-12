@@ -1,32 +1,32 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import Skeleton from '../../components/redesign/Skeleton';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Notifications from 'expo-notifications';
-import { useAppContext } from '../context/AppContext';
-import { FamilyMember, Campanha } from '../types/vaccination';
+import { useAppContext } from '../../src/context/AppContext';
+import { FamilyMember, Campanha } from '../../src/types/vaccination';
 import {
   fetchDosesPorPessoa,
   fetchOutrasVacinasPorPessoa,
   fetchMandatoryVaccines,
   DoseAplicadaDTO,
   VacinaDTO,
-} from '../service/mandatoryVaccineService';
+} from '../../src/service/mandatoryVaccineService';
 import {
   fetchCampaigns,
   fetchParticipacoesByPessoa,
   ParticipacaoDTO,
-} from '../service/campaignService';
+} from '../../src/service/campaignService';
 import {
   fetchNotificacoes,
   marcarNotificacaoComoLida,
   NotificacaoDTO,
-} from '../service/notificationService';
+} from '../../src/service/notificationService';
 import Tag from '../../components/redesign/Tag';
-import { colors } from '../theme/tokens';
-import styles from './styles';
+import { makeStyles } from '../../src/styles/hist';
+import { useTheme } from '../../src/context/ThemeContext';
 
 type ActiveTab = 'history' | 'pending';
 type EntryType = 'mandatory' | 'other' | 'campaign';
@@ -94,6 +94,8 @@ const TYPE_LABEL: Record<EntryType, string> = {
 };
 
 export default function Search() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { mainUser, dependents } = useAppContext();
   const [activeTab, setActiveTab] = useState<ActiveTab>('history');
   const [filterProfile, setFilterProfile] = useState<string | null>(null);

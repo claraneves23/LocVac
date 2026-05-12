@@ -1,12 +1,12 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Skeleton from '../../components/redesign/Skeleton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
-import { fetchInformativosPorVacina, fetchEfeitosColateraisPorVacina } from '../service/infoService';
-import { VacinaInformativoDTO, EfeitoColateralDTO } from '../types/info';
-import { colors, radii, shadows, spacing, typography, tonePairs, Tone } from '../theme/tokens';
+import { fetchInformativosPorVacina, fetchEfeitosColateraisPorVacina } from '../../src/service/infoService';
+import { VacinaInformativoDTO, EfeitoColateralDTO } from '../../src/types/info';
+import { colors, radii, shadows, spacing, typography, tonePairs, Tone } from '../../src/theme/tokens';
 import { ScreenTitle } from '../../components/redesign';
 
 const SEVERIDADE_TONE: Record<EfeitoColateralDTO['severidade'], Tone> = {

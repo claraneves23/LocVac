@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ParticipatingCampaign } from '../../app/types/vaccination';
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ParticipatingCampaign } from '../types/vaccination';
 
 const CAMPAIGNS_KEY = 'campaigns';
 

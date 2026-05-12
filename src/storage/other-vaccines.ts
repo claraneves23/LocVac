@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OtherVaccine } from '../../app/types/vaccination';
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
+import { OtherVaccine } from '../types/vaccination';
 
 const OTHER_VACCINES_KEY = 'otherVaccines';
 

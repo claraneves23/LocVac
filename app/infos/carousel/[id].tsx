@@ -1,11 +1,11 @@
-import { StatusBar } from 'expo-status-bar';
+﻿import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Skeleton from '../../../components/redesign/Skeleton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { fetchCarrosselConteudo } from '../../service/infoService';
-import { CarrosselConteudoDTO } from '../../types/info';
-import { colors, radii, shadows, spacing, typography } from '../../theme/tokens';
+import { fetchCarrosselConteudo } from '../../../src/service/infoService';
+import { CarrosselConteudoDTO } from '../../../src/types/info';
+import { colors, radii, shadows, spacing, typography } from '../../../src/theme/tokens';
 import { ScreenTitle } from '../../../components/redesign';
 
 export default function CarrosselDetalhe() {

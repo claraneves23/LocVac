@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Dependent } from '../../app/types/vaccination';
-import { DEFAULT_DEPENDENTS, MAIN_USER } from '../../app/data/family';
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Dependent } from '../types/vaccination';
+import { DEFAULT_DEPENDENTS, MAIN_USER } from '../data/family';
 
 const STORAGE_KEY = 'locvac:dependents:v1';
 

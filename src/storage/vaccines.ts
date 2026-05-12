@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { VaccineApplication } from '../../app/types/vaccination';
-import { APPLICATIONS } from '../../app/data/family';
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
+import { VaccineApplication } from '../types/vaccination';
+import { APPLICATIONS } from '../data/family';
 
 const STORAGE_KEY = 'locvac:vaccines:v1';
 
