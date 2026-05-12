@@ -4,7 +4,8 @@ public enum TipoNotificacao {
 
     PROXIMA_VACINA(1),
     NOVA_CAMPANHA(2),
-    VACINA_ATRASADA(3);
+    VACINA_ATRASADA(3),
+    RESUMO_PENDENCIAS(4);
 
     private final int codigo;
 

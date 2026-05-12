@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -53,17 +54,17 @@ public class NotificacaoServiceImpl implements NotificacaoService {
     }
 
     @Override
-    public void notificarVacinaProxima(Pessoa pessoa, CalendarioVacinal calendario, LocalDate dataPrevista, int diasOffset) {
+    public Optional<Notificacao> notificarVacinaProxima(Pessoa pessoa, CalendarioVacinal calendario, LocalDate dataPrevista, int diasOffset) {
         LocalDate hoje = LocalDate.now();
         TipoNotificacao tipo = TipoNotificacao.PROXIMA_VACINA;
 
         if (notificacaoRepository.existsByPessoaAndCalendarioAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
                 pessoa, calendario, tipo, diasOffset, hoje)) {
-            return;
+            return Optional.empty();
         }
 
         Usuario usuario = donoDePessoa(pessoa);
-        if (usuario == null) return;
+        if (usuario == null) return Optional.empty();
 
         String nomeVacina = calendario.getVacina() != null ? calendario.getVacina().getNome() : "vacina";
         String titulo;
@@ -78,22 +79,21 @@ public class NotificacaoServiceImpl implements NotificacaoService {
         }
 
         boolean persistente = diasOffset == 0;
-        Notificacao n = persistir(usuario, pessoa, calendario, null, tipo, diasOffset, titulo, mensagem, persistente);
-        dispararPush(usuario, n);
+        return Optional.of(persistir(usuario, pessoa, calendario, null, tipo, diasOffset, titulo, mensagem, persistente));
     }
 
     @Override
-    public void notificarVacinaAtrasada(Pessoa pessoa, CalendarioVacinal calendario, LocalDate dataPrevista, int diasOffset) {
+    public Optional<Notificacao> notificarVacinaAtrasada(Pessoa pessoa, CalendarioVacinal calendario, LocalDate dataPrevista, int diasOffset) {
         LocalDate hoje = LocalDate.now();
         TipoNotificacao tipo = TipoNotificacao.VACINA_ATRASADA;
 
         if (notificacaoRepository.existsByPessoaAndCalendarioAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
                 pessoa, calendario, tipo, diasOffset, hoje)) {
-            return;
+            return Optional.empty();
         }
 
         Usuario usuario = donoDePessoa(pessoa);
-        if (usuario == null) return;
+        if (usuario == null) return Optional.empty();
 
         String nomeVacina = calendario.getVacina() != null ? calendario.getVacina().getNome() : "vacina";
         int diasAtraso = Math.abs(diasOffset);
@@ -101,18 +101,17 @@ public class NotificacaoServiceImpl implements NotificacaoService {
         String titulo = "Vacina em atraso";
         String mensagem = "A vacina \"" + nomeVacina + "\" de " + pessoa.getNome() + " está atrasada há " + diasAtraso + " dia(s).";
 
-        Notificacao n = persistir(usuario, pessoa, calendario, null, tipo, diasOffset, titulo, mensagem, true);
-        dispararPush(usuario, n);
+        return Optional.of(persistir(usuario, pessoa, calendario, null, tipo, diasOffset, titulo, mensagem, true));
     }
 
     @Override
-    public void notificarCampanha(Usuario usuario, Campanha campanha, int diasOffset) {
+    public Optional<Notificacao> notificarCampanha(Usuario usuario, Campanha campanha, int diasOffset) {
         LocalDate hoje = LocalDate.now();
         TipoNotificacao tipo = TipoNotificacao.NOVA_CAMPANHA;
 
         if (notificacaoRepository.existsByUsuarioAndCampanhaAndTipoNotificacaoAndDiasOffsetAndDataCriacao(
                 usuario, campanha, tipo, diasOffset, hoje)) {
-            return;
+            return Optional.empty();
         }
 
         String titulo;
@@ -126,7 +125,30 @@ public class NotificacaoServiceImpl implements NotificacaoService {
         }
 
         boolean persistente = diasOffset == 0;
-        Notificacao n = persistir(usuario, null, null, campanha, tipo, diasOffset, titulo, mensagem, persistente);
+        return Optional.of(persistir(usuario, null, null, campanha, tipo, diasOffset, titulo, mensagem, persistente));
+    }
+
+    @Override
+    public void dispararPushIndividual(Notificacao notificacao) {
+        dispararPush(notificacao.getUsuario(), notificacao);
+    }
+
+    @Override
+    public void dispararResumoPendencias(Usuario usuario, long totalPendentes) {
+        LocalDate hoje = LocalDate.now();
+        TipoNotificacao tipo = TipoNotificacao.RESUMO_PENDENCIAS;
+
+        if (notificacaoRepository.existsByUsuarioAndTipoNotificacaoAndDataCriacao(usuario, tipo, hoje)) {
+            return;
+        }
+
+        String titulo = "Você tem pendências!";
+        String mensagem = "Você tem " + totalPendentes + " pendência(s) de vacinação. Abra o app para conferir.";
+
+        Notificacao n = persistir(usuario, null, null, null, tipo, 0, titulo, mensagem, false);
+        n.setLida(true);
+        notificacaoRepository.save(n);
+
         dispararPush(usuario, n);
     }
 

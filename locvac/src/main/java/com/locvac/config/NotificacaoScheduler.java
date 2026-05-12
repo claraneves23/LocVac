@@ -24,8 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Component
 public class NotificacaoScheduler {
@@ -65,20 +70,24 @@ public class NotificacaoScheduler {
     }
 
     @Scheduled(cron = "0 0 7 * * *", zone = "America/Sao_Paulo")
-    @Scheduled(cron = "0 40 18 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 40 11 * * *", zone = "America/Sao_Paulo")
     @Transactional
     public void executar() {
         log.info("Iniciando varredura diária de notificações");
         LocalDate hoje = LocalDate.now();
 
-        processarVacinas(hoje);
-        processarCampanhas(hoje);
+        Map<UUID, Usuario> usuariosAfetados = new LinkedHashMap<>();
+        Map<UUID, List<Notificacao>> novasPorUsuario = new LinkedHashMap<>();
+
+        processarVacinas(hoje, usuariosAfetados, novasPorUsuario);
+        processarCampanhas(hoje, usuariosAfetados, novasPorUsuario);
         cleanupPersistentes(hoje);
+        despacharNotificacoes(usuariosAfetados, novasPorUsuario, hoje);
 
         log.info("Varredura de notificações finalizada");
     }
 
-    private void processarVacinas(LocalDate hoje) {
+    private void processarVacinas(LocalDate hoje, Map<UUID, Usuario> afetados, Map<UUID, List<Notificacao>> novasPorUsuario) {
         List<Pessoa> pessoas = pessoaRepository.findAll();
         List<CalendarioVacinal> calendario = calendarioRepository.findAll();
 
@@ -103,16 +112,19 @@ public class NotificacaoScheduler {
 
                 long dias = ChronoUnit.DAYS.between(hoje, dataPrevista);
 
+                Optional<Notificacao> criada = Optional.empty();
                 if (dias >= 0 && OFFSETS_VACINA_PROXIMA.contains((int) dias)) {
-                    notificacaoService.notificarVacinaProxima(p, c, dataPrevista, (int) dias);
+                    criada = notificacaoService.notificarVacinaProxima(p, c, dataPrevista, (int) dias);
                 } else if (dias < 0 && Math.abs(dias) % 7 == 0) {
-                    notificacaoService.notificarVacinaAtrasada(p, c, dataPrevista, (int) dias);
+                    criada = notificacaoService.notificarVacinaAtrasada(p, c, dataPrevista, (int) dias);
                 }
+
+                criada.ifPresent(n -> registrarNova(n, afetados, novasPorUsuario));
             }
         }
     }
 
-    private void processarCampanhas(LocalDate hoje) {
+    private void processarCampanhas(LocalDate hoje, Map<UUID, Usuario> afetados, Map<UUID, List<Notificacao>> novasPorUsuario) {
         List<Campanha> ativas = campanhaRepository.findByAtivaTrueAndDataFimGreaterThanEqual(hoje);
 
         for (Campanha c : ativas) {
@@ -124,7 +136,41 @@ public class NotificacaoScheduler {
             PublicoAlvo alvo = c.getPublicoAlvo();
             for (Usuario u : usuarioRepository.findAll()) {
                 if (alvo != PublicoAlvo.TODOS && !usuarioTemPessoaNoAlvo(u, alvo)) continue;
-                notificacaoService.notificarCampanha(u, c, (int) dias);
+                notificacaoService.notificarCampanha(u, c, (int) dias)
+                        .ifPresent(n -> registrarNova(n, afetados, novasPorUsuario));
+            }
+        }
+    }
+
+    private void registrarNova(Notificacao n, Map<UUID, Usuario> afetados, Map<UUID, List<Notificacao>> novasPorUsuario) {
+        UUID id = n.getUsuario().getId();
+        afetados.put(id, n.getUsuario());
+        novasPorUsuario.computeIfAbsent(id, k -> new ArrayList<>()).add(n);
+    }
+
+    private void despacharNotificacoes(Map<UUID, Usuario> afetados, Map<UUID, List<Notificacao>> novasPorUsuario, LocalDate hoje) {
+        // Usuários que receberam novas notificações nesta rodada
+        for (Map.Entry<UUID, Usuario> entry : afetados.entrySet()) {
+            Usuario usuario = entry.getValue();
+            List<Notificacao> novas = novasPorUsuario.getOrDefault(entry.getKey(), List.of());
+            long pendentesAnteriores = notificacaoRepository.contarPendentesAnteriores(usuario, hoje);
+            long total = novas.size() + pendentesAnteriores;
+
+            if (total == 0) continue;
+
+            if (novas.size() == 1 && pendentesAnteriores == 0) {
+                notificacaoService.dispararPushIndividual(novas.get(0));
+            } else {
+                notificacaoService.dispararResumoPendencias(usuario, total);
+            }
+        }
+
+        // Usuários sem novas notificações hoje mas com pendências anteriores (lembrete diário)
+        for (Usuario usuario : usuarioRepository.findAll()) {
+            if (afetados.containsKey(usuario.getId())) continue;
+            long pendentesAnteriores = notificacaoRepository.contarPendentesAnteriores(usuario, hoje);
+            if (pendentesAnteriores > 0) {
+                notificacaoService.dispararResumoPendencias(usuario, pendentesAnteriores);
             }
         }
     }

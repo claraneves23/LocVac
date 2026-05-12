@@ -7,6 +7,8 @@ import com.locvac.model.core.Pessoa;
 import com.locvac.model.core.Usuario;
 import com.locvac.model.enums.TipoNotificacao;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,4 +40,12 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, Long> 
     List<Notificacao> findByPessoaId(Long idPessoa);
 
     List<Notificacao> findByCampanhaId(Long idCampanha);
+
+    long countByUsuarioAndDataCriacao(Usuario usuario, LocalDate dataCriacao);
+
+    boolean existsByUsuarioAndTipoNotificacaoAndDataCriacao(
+            Usuario usuario, TipoNotificacao tipo, LocalDate dataCriacao);
+
+    @Query("SELECT COUNT(n) FROM Notificacao n WHERE n.usuario = :u AND n.dataCriacao < :hoje AND (n.lida = false OR n.persistente = true)")
+    long contarPendentesAnteriores(@Param("u") Usuario u, @Param("hoje") LocalDate hoje);
 }

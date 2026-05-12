@@ -2,6 +2,7 @@
   "expo": {
     "name": "LocVac",
     "slug": "LocVac",
+    "scheme": "locvac",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/iconLocVac.png",
@@ -60,7 +61,8 @@
           "photosPermission": "Permitir acesso a fotos para adicionar imagem do dependente.",
           "cameraPermission": "Permitir acesso à câmera para adicionar imagem do dependente."
         }
-      ]
+      ],
+      "./plugins/withTransparentNavBar"
     ],
     "extra": {
       "router": {},
