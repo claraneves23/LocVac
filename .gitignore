@@ -33,6 +33,11 @@ yarn-error.*
 # local env files
 .env*.local
 
+# secrets / credenciais de SDKs
+assets/adi-registration.properties
+google-services.json
+GoogleService-Info.plist
+
 # typescript
 *.tsbuildinfo
 

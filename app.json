@@ -62,7 +62,8 @@
           "cameraPermission": "Permitir acesso à câmera para adicionar imagem do dependente."
         }
       ],
-      "./plugins/withTransparentNavBar"
+      "./plugins/withTransparentNavBar",
+      "./plugins/withAdiRegistration"
     ],
     "extra": {
       "router": {},

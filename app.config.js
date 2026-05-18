@@ -29,11 +29,11 @@ module.exports = {
         foregroundImage: "./assets/images/iconLocVac.png",
         backgroundColor: "#ffffff",
       },
-      edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       softwareKeyboardLayoutMode: "resize",
       package: IS_DEV ? "com.devvale.LocVac.dev" : "com.devvale.LocVac",
-      permissions: ["CAMERA", "READ_MEDIA_IMAGES"],
+      googleServicesFile: "./google-services.json",
+      permissions: ["CAMERA", "READ_MEDIA_IMAGES", "POST_NOTIFICATIONS"],
     },
     androidNavigationBar: {
       backgroundColor: "#00000000",
@@ -53,6 +53,15 @@ module.exports = {
           color: "#29442d",
         },
       ],
+      [
+        "expo-image-picker",
+        {
+          photosPermission: "Permitir acesso a fotos para adicionar imagem do dependente.",
+          cameraPermission: "Permitir acesso à câmera para adicionar imagem do dependente.",
+        },
+      ],
+      "./plugins/withTransparentNavBar",
+      "./plugins/withAdiRegistration",
     ],
     extra: {
       router: {},
