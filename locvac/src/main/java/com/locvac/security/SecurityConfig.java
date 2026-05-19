@@ -17,12 +17,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
-    private final HostFilter hostFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(JwtFilter jwtFilter, HostFilter hostFilter, CorsConfigurationSource corsConfigurationSource) {
+    public SecurityConfig(JwtFilter jwtFilter, CorsConfigurationSource corsConfigurationSource) {
         this.jwtFilter = jwtFilter;
-        this.hostFilter = hostFilter;
         this.corsConfigurationSource = corsConfigurationSource;
     }
 
@@ -60,9 +58,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
 
-            // HostFilter roda antes de tudo — bloqueia rotas não-públicas no domínio principal
-            .addFilterBefore(hostFilter, JwtFilter.class)
             // Adiciona o filtro JWT antes do filtro padrão do Spring Security
+            // (HostFilter roda como servlet filter externo, antes da cadeia inteira do Spring Security)
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
