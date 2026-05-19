@@ -290,10 +290,12 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   },
   modalCard: {
     width: '100%',
-    backgroundColor: c.bg,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     padding: spacing.lg,
     gap: spacing.md,
+    borderWidth: 1,
+    borderColor: c.line,
   },
   modalTitle: {
     ...typography.h3,
@@ -310,7 +312,7 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
     color: c.ink,
-    backgroundColor: c.bgElev,
+    backgroundColor: c.bgMuted,
     fontSize: 16,
   },
   erroText: {
@@ -330,7 +332,7 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     justifyContent: 'center',
   },
   modalCancel: {
-    backgroundColor: c.bgElev,
+    backgroundColor: c.bgMuted,
     borderWidth: 1,
     borderColor: c.line,
   },
