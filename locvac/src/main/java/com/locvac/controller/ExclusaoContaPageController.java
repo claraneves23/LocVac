@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ExclusaoContaPageController {
 
-    @GetMapping(value = "/excluir-conta", produces = MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = "/excluir", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> paginaExclusaoConta() {
         return ResponseEntity.ok(HTML);
     }

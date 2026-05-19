@@ -24,7 +24,7 @@ public class HostFilter extends OncePerRequestFilter {
     );
 
     private static final Set<String> ALLOWED_PATHS_ON_MAIN_DOMAIN = Set.of(
-            "/excluir-conta",
+            "/excluir",
             "/logo.png",
             "/favicon.ico"
     );
@@ -152,7 +152,7 @@ public class HostFilter extends OncePerRequestFilter {
     <p>Estamos trabalhando para trazer mais conteúdo em breve aqui no site oficial do LocVac.</p>
     <div class="divider"></div>
     <p>Enquanto isso, o aplicativo está disponível na Google Play Store.</p>
-    <p class="small">Precisa solicitar exclusão de conta ou dados? <a href="/excluir-conta">Clique aqui</a>.</p>
+    <p class="small">Precisa solicitar exclusão de conta ou dados? <a href="/excluir">Clique aqui</a>.</p>
   </div>
 </body>
 </html>

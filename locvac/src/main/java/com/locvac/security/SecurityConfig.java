@@ -48,7 +48,7 @@ public class SecurityConfig {
                     "/usuarios/senha/esqueci",
                     "/usuarios/senha/reenviar",
                     "/usuarios/senha/redefinir",
-                    "/excluir-conta",
+                    "/excluir",
                     "/logo.png",
                     "/favicon.ico",
                     "/error"
