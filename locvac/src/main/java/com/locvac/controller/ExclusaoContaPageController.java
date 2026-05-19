@@ -19,7 +19,7 @@ public class ExclusaoContaPageController {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Excluir conta — LocVac</title>
+<title>Excluir dados e conta — LocVac</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -43,35 +43,81 @@ public class ExclusaoContaPageController {
 <body>
 <div class="container">
   <header>
-    <h1>Excluir conta e dados — LocVac</h1>
+    <h1>Excluir dados e conta — LocVac</h1>
     <p class="sub">Caderneta de vacinação digital · Desenvolvedor: João Vitor Vale (devvale)</p>
   </header>
 
-  <h2>Como solicitar a exclusão</h2>
-  <p>Você pode excluir sua conta e seus dados de duas formas:</p>
+  <p>O LocVac permite que você exclua <strong>dados específicos</strong> (uma vacina, uma participação em campanha, um dependente) sem precisar apagar a conta inteira, e também permite a <strong>exclusão completa da conta</strong> com todos os dados associados. Em todas as listas do app, o ícone de <strong>lixeira</strong> representa "excluir" e o ícone de <strong>lápis</strong> representa "editar".</p>
+
+  <h2>1. Excluir dados específicos (sem apagar a conta)</h2>
 
   <div class="card">
-    <strong>1. Pelo próprio aplicativo (recomendado)</strong>
+    <strong>Remover uma vacina registrada manualmente ("Outras vacinas")</strong>
+    <ol>
+      <li>Abra o app e vá para a tela <span class="mono">Início</span>.</li>
+      <li>Role até a seção <strong>"Outras vacinas"</strong> (ou use o filtro <em>Aplicadas</em>).</li>
+      <li>Toque no ícone de <strong>lixeira</strong> ao lado da vacina que deseja apagar.</li>
+      <li>Confirme em <strong>"Remover"</strong>. O registro é apagado imediatamente.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <strong>Remover uma participação em campanha de vacinação</strong>
+    <ol>
+      <li>Abra o app e vá para a tela <span class="mono">Início</span>.</li>
+      <li>Toque no filtro <strong>"Campanhas"</strong> no topo da lista.</li>
+      <li>Localize a campanha e toque no ícone de <strong>lixeira</strong>.</li>
+      <li>Confirme em <strong>"Remover"</strong>. A participação é apagada imediatamente.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <strong>Remover um dependente (e os dados de saúde dele)</strong>
+    <ol>
+      <li>Abra o app e vá para a tela <span class="mono">Perfil</span>.</li>
+      <li>Na seção <strong>"Dependentes"</strong>, localize a pessoa.</li>
+      <li>Toque no ícone de <strong>lixeira</strong> ao lado do dependente.</li>
+      <li>Confirme. O dependente e o histórico de vacinação dele são apagados (a menos que ele também esteja vinculado a outra conta — nesse caso, apenas o vínculo com a sua conta é removido).</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <strong>Editar / limpar dados de perfil (titular ou dependente)</strong>
+    <ol>
+      <li>Abra o app e vá para a tela <span class="mono">Perfil</span>.</li>
+      <li>Para editar o <strong>titular</strong>: toque no ícone de <strong>lápis</strong> no card do seu nome (topo da tela).</li>
+      <li>Para editar um <strong>dependente</strong>: toque no ícone de <strong>lápis</strong> ao lado do nome dele na lista.</li>
+      <li>Atualize os campos (nome, telefone, endereço, foto, etc.) e salve. Campos opcionais podem ser deixados em branco.</li>
+    </ol>
+  </div>
+
+  <h2>2. Excluir a conta inteira (todos os dados)</h2>
+
+  <div class="card">
+    <strong>Pelo próprio aplicativo (recomendado)</strong>
     <ol>
       <li>Abra o app LocVac e faça login.</li>
-      <li>Vá em <span class="mono">Perfil → Configurações</span>.</li>
-      <li>Na seção <strong>Conta</strong>, toque em <strong>Excluir conta</strong>.</li>
+      <li>Vá em <span class="mono">Perfil → Configurações</span> (ícone de engrenagem na seção "Conta").</li>
+      <li>Na seção <strong>Conta</strong>, toque em <strong>"Excluir conta"</strong>.</li>
       <li>Confirme a ação e informe sua senha atual.</li>
       <li>A exclusão é imediata e irreversível.</li>
     </ol>
   </div>
 
   <div class="card">
-    <strong>2. Por e-mail (se você perdeu acesso ao app)</strong>
+    <strong>Por e-mail (se você perdeu acesso ao app)</strong>
     <ol>
-      <li>Envie um e-mail para <a href="mailto:joaovitorvalec@gmail.com">joaovitorvalec@gmail.com</a> a partir do mesmo e-mail cadastrado no LocVac.</li>
+      <li>Envie um e-mail para <a href="mailto:contato@locvac.com.br">contato@locvac.com.br</a> a partir do mesmo e-mail cadastrado no LocVac.</li>
       <li>Use o assunto: <span class="mono">Exclusão de conta LocVac</span>.</li>
       <li>O pedido é processado em até <strong>7 dias úteis</strong>. Você receberá uma confirmação.</li>
     </ol>
   </div>
 
-  <h2>Dados que serão excluídos</h2>
-  <p>Após a exclusão da conta, os seguintes dados são <strong>permanentemente apagados</strong> dos nossos servidores:</p>
+  <h2>Quais dados são apagados em cada caso</h2>
+
+  <p><strong>Ao excluir um item específico</strong> (vacina, campanha, dependente): apenas o registro selecionado é apagado. Os demais dados da sua conta continuam intactos.</p>
+
+  <p><strong>Ao excluir a conta inteira</strong>, os seguintes dados são <strong>permanentemente apagados</strong> dos nossos servidores:</p>
   <ul>
     <li>Identificação da conta (nome, e-mail, telefone, senha)</li>
     <li>Dados de saúde: registros de vacinação, doses aplicadas, lotes, datas e profissionais</li>
@@ -84,18 +130,18 @@ public class ExclusaoContaPageController {
 
   <h2>Dados retidos</h2>
   <div class="card warn">
-    Nenhum dado pessoal seu é retido após a exclusão. <strong>Não mantemos backups dos seus dados de saúde</strong> além do prazo técnico de retenção do provedor de banco (até 30 dias em rotinas automatizadas de backup do provedor, sem acesso humano), após o qual os dados são definitivamente descartados.
+    Nenhum dado pessoal seu é retido após a exclusão (parcial ou total). <strong>Não mantemos backups dos seus dados de saúde</strong> além do prazo técnico de retenção do provedor de banco (até 30 dias em rotinas automatizadas de backup do provedor, sem acesso humano), após o qual os dados são definitivamente descartados.
   </div>
 
   <h2>Observações importantes</h2>
   <ul>
-    <li>A exclusão é <strong>irreversível</strong>. Não há como recuperar a conta nem os registros de vacinação após a confirmação.</li>
+    <li>Toda exclusão (parcial ou total) é <strong>irreversível</strong>. Não há como recuperar registros apagados.</li>
     <li>Se algum dependente cadastrado também estiver vinculado a outra conta (ex.: outro responsável que também usa o LocVac), o cadastro do dependente é preservado apenas para a outra conta. Os dados de saúde compartilhados continuam acessíveis para o outro responsável.</li>
     <li>Não vendemos nem compartilhamos seus dados com terceiros para fins de marketing.</li>
   </ul>
 
   <footer>
-    LocVac · Última atualização: 18/05/2026 · Em caso de dúvida, escreva para <a href="mailto:joaovitorvalec@gmail.com">joaovitorvalec@gmail.com</a>.
+    LocVac · Última atualização: 18/05/2026 · Em caso de dúvida, escreva para <a href="mailto:contato@locvac.com.br">contato@locvac.com.br</a>.
   </footer>
 </div>
 </body>
