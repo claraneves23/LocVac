@@ -48,6 +48,7 @@ public class SecurityConfig {
                     "/usuarios/senha/esqueci",
                     "/usuarios/senha/reenviar",
                     "/usuarios/senha/redefinir",
+                    "/excluir-conta",
                     "/error"
                 ).permitAll()
 

@@ -14,4 +14,6 @@ public interface ParticipacaoCampanhaRepository extends JpaRepository<Participac
 
 	List<ParticipacaoCampanha> findByCampanhaId(Long idCampanha);
 
+	void deleteAllByPessoaId(Long idPessoa);
+
 }

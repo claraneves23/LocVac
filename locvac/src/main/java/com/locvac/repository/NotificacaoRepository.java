@@ -48,4 +48,8 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, Long> 
 
     @Query("SELECT COUNT(n) FROM Notificacao n WHERE n.usuario = :u AND n.dataCriacao < :hoje AND (n.lida = false OR n.persistente = true)")
     long contarPendentesAnteriores(@Param("u") Usuario u, @Param("hoje") LocalDate hoje);
+
+    void deleteAllByUsuarioId(java.util.UUID usuarioId);
+
+    void deleteAllByPessoaId(Long idPessoa);
 }

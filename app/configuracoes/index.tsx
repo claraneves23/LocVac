@@ -1,11 +1,24 @@
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, Switch, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Switch,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAppContext } from '../../src/context/AppContext';
-import { logout } from '../../src/service/authService';
+import { logout, excluirConta } from '../../src/service/authService';
 import { radii, spacing, typography, type Colors } from '../../src/theme/tokens';
 
 export default function Configuracoes() {
@@ -14,10 +27,67 @@ export default function Configuracoes() {
   const router = useRouter();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const [senha, setSenha] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
   const handleLogout = async () => {
     await logout();
     reset();
     router.replace('/login');
+  };
+
+  const abrirConfirmacaoExclusao = () => {
+    Alert.alert(
+      'Excluir conta',
+      'Esta ação é irreversível. Todos os seus dados, registros de vacinação e dependentes vinculados apenas à sua conta serão permanentemente apagados. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Continuar',
+          style: 'destructive',
+          onPress: () => {
+            setSenha('');
+            setErro(null);
+            setModalVisivel(true);
+          },
+        },
+      ],
+    );
+  };
+
+  const confirmarExclusao = async () => {
+    if (!senha.trim()) {
+      setErro('Informe sua senha.');
+      return;
+    }
+    setEnviando(true);
+    setErro(null);
+    try {
+      await excluirConta(senha);
+      setModalVisivel(false);
+      reset();
+      Alert.alert('Conta excluída', 'Sua conta e seus dados foram apagados.', [
+        { text: 'OK', onPress: () => router.replace('/login') },
+      ]);
+    } catch (e: any) {
+      const status = e?.response?.status;
+      if (status === 401) {
+        setErro('Senha incorreta.');
+      } else {
+        setErro('Não foi possível excluir a conta. Tente novamente.');
+      }
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const fecharModal = () => {
+    if (enviando) return;
+    setModalVisivel(false);
+    setSenha('');
+    setErro(null);
   };
 
   return (
@@ -53,8 +123,74 @@ export default function Configuracoes() {
             <Ionicons name="log-out-outline" size={20} color={colors.coralInk} />
             <Text style={styles.logoutText}>Sair da conta</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteRow}
+            onPress={abrirConfirmacaoExclusao}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="trash-outline" size={20} color={colors.coralInk} />
+            <Text style={styles.deleteText}>Excluir conta</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={modalVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={fecharModal}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Confirmar exclusão</Text>
+            <Text style={styles.modalText}>
+              Para confirmar, informe sua senha atual. Após esta etapa, sua conta será apagada
+              imediatamente.
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Senha atual"
+              placeholderTextColor={colors.ink3}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={senha}
+              onChangeText={(v) => {
+                setSenha(v);
+                if (erro) setErro(null);
+              }}
+              editable={!enviando}
+            />
+            {erro ? <Text style={styles.erroText}>{erro}</Text> : null}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalCancel]}
+                onPress={fecharModal}
+                disabled={enviando}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalConfirm]}
+                onPress={confirmarExclusao}
+                disabled={enviando}
+                activeOpacity={0.8}
+              >
+                {enviando ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Excluir</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -127,6 +263,88 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   logoutText: {
     ...typography.body,
     color: c.coralInk,
+    fontWeight: '600',
+  },
+  deleteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'transparent',
+    borderRadius: radii.lg,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: c.coralInk,
+  },
+  deleteText: {
+    ...typography.body,
+    color: c.coralInk,
+    fontWeight: '600',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: c.bg,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    ...typography.h3,
+    color: c.ink,
+  },
+  modalText: {
+    ...typography.body,
+    color: c.ink2,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: c.line,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    color: c.ink,
+    backgroundColor: c.bgElev,
+    fontSize: 16,
+  },
+  erroText: {
+    color: c.coralInk,
+    fontSize: 13,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancel: {
+    backgroundColor: c.bgElev,
+    borderWidth: 1,
+    borderColor: c.line,
+  },
+  modalCancelText: {
+    ...typography.body,
+    color: c.ink,
+    fontWeight: '600',
+  },
+  modalConfirm: {
+    backgroundColor: c.coralInk,
+  },
+  modalConfirmText: {
+    ...typography.body,
+    color: c.white,
     fontWeight: '600',
   },
 });

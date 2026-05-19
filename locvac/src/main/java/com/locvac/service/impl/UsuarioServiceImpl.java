@@ -2,15 +2,25 @@ package com.locvac.service.impl;
 
 import com.locvac.dto.auth.AuthResponse;
 import com.locvac.dto.usuario.ConfirmarCadastroDTO;
+import com.locvac.dto.usuario.ExcluirContaDTO;
 import com.locvac.dto.usuario.IniciarCadastroDTO;
 import com.locvac.dto.usuario.RedefinirSenhaDTO;
 import com.locvac.dto.usuario.ReenviarCodigoDTO;
 import com.locvac.dto.usuario.SolicitarRecuperacaoSenhaDTO;
+import com.locvac.model.associacao.UsuarioPessoa;
 import com.locvac.model.core.EmailVerificacao;
+import com.locvac.model.core.Pessoa;
 import com.locvac.model.core.RecuperacaoSenha;
 import com.locvac.model.core.Usuario;
+import com.locvac.repository.DoseAplicadaRepository;
 import com.locvac.repository.EmailVerificacaoRepository;
+import com.locvac.repository.ExpoPushTokenRepository;
+import com.locvac.repository.NotificacaoRepository;
+import com.locvac.repository.ParticipacaoCampanhaRepository;
+import com.locvac.repository.PessoaRepository;
 import com.locvac.repository.RecuperacaoSenhaRepository;
+import com.locvac.repository.RefreshTokenRepository;
+import com.locvac.repository.UsuarioPessoaRepository;
 import com.locvac.repository.UsuarioRepository;
 import com.locvac.service.AuthService;
 import com.locvac.service.EmailService;
@@ -24,6 +34,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -34,6 +46,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final EmailVerificacaoRepository emailVerificacaoRepository;
     private final RecuperacaoSenhaRepository recuperacaoSenhaRepository;
+    private final UsuarioPessoaRepository usuarioPessoaRepository;
+    private final PessoaRepository pessoaRepository;
+    private final DoseAplicadaRepository doseAplicadaRepository;
+    private final ParticipacaoCampanhaRepository participacaoCampanhaRepository;
+    private final NotificacaoRepository notificacaoRepository;
+    private final ExpoPushTokenRepository expoPushTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AuthService authService;
@@ -45,6 +64,13 @@ public class UsuarioServiceImpl implements UsuarioService {
             UsuarioRepository usuarioRepository,
             EmailVerificacaoRepository emailVerificacaoRepository,
             RecuperacaoSenhaRepository recuperacaoSenhaRepository,
+            UsuarioPessoaRepository usuarioPessoaRepository,
+            PessoaRepository pessoaRepository,
+            DoseAplicadaRepository doseAplicadaRepository,
+            ParticipacaoCampanhaRepository participacaoCampanhaRepository,
+            NotificacaoRepository notificacaoRepository,
+            ExpoPushTokenRepository expoPushTokenRepository,
+            RefreshTokenRepository refreshTokenRepository,
             PasswordEncoder passwordEncoder,
             EmailService emailService,
             AuthService authService,
@@ -55,6 +81,13 @@ public class UsuarioServiceImpl implements UsuarioService {
         this.usuarioRepository = usuarioRepository;
         this.emailVerificacaoRepository = emailVerificacaoRepository;
         this.recuperacaoSenhaRepository = recuperacaoSenhaRepository;
+        this.usuarioPessoaRepository = usuarioPessoaRepository;
+        this.pessoaRepository = pessoaRepository;
+        this.doseAplicadaRepository = doseAplicadaRepository;
+        this.participacaoCampanhaRepository = participacaoCampanhaRepository;
+        this.notificacaoRepository = notificacaoRepository;
+        this.expoPushTokenRepository = expoPushTokenRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.authService = authService;
@@ -241,6 +274,42 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         recuperacaoSenhaRepository.delete(recuperacao);
         authService.logoutTodos(usuario.getId());
+    }
+
+    @Override
+    public void excluirContaAutenticada(UUID usuarioId, ExcluirContaDTO dto) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
+
+        if (!passwordEncoder.matches(dto.senha(), usuario.getSenhaHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha incorreta.");
+        }
+
+        List<UsuarioPessoa> vinculos = usuarioPessoaRepository.findByUsuarioId(usuarioId);
+        List<Long> pessoaIds = vinculos.stream().map(v -> v.getPessoa().getId()).toList();
+
+        notificacaoRepository.deleteAllByUsuarioId(usuarioId);
+        expoPushTokenRepository.deleteAllByUsuario(usuario);
+        refreshTokenRepository.deleteAllByUsuario(usuario);
+        usuarioPessoaRepository.deleteAllByUsuarioId(usuarioId);
+
+        for (Long pessoaId : pessoaIds) {
+            List<UsuarioPessoa> outrosVinculos = usuarioPessoaRepository.findByPessoaId(pessoaId);
+            if (outrosVinculos.isEmpty()) {
+                doseAplicadaRepository.deleteAllByPessoaId(pessoaId);
+                participacaoCampanhaRepository.deleteAllByPessoaId(pessoaId);
+                notificacaoRepository.deleteAllByPessoaId(pessoaId);
+                pessoaRepository.findById(pessoaId).ifPresent(p -> {
+                    p.getGruposRisco().clear();
+                    pessoaRepository.delete(p);
+                });
+            }
+        }
+
+        emailVerificacaoRepository.deleteByEmail(usuario.getEmail());
+        recuperacaoSenhaRepository.deleteByEmail(usuario.getEmail());
+
+        usuarioRepository.delete(usuario);
     }
 
     private String gerarCodigo() {

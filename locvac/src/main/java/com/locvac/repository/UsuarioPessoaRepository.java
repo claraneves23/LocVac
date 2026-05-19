@@ -17,4 +17,6 @@ public interface UsuarioPessoaRepository extends JpaRepository<UsuarioPessoa, St
 
 	// Novo método para buscar por idPessoa
 	List<UsuarioPessoa> findByPessoaId(Long idPessoa);
+
+	void deleteAllByUsuarioId(UUID usuarioId);
 }

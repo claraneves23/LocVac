@@ -14,4 +14,6 @@ public interface ExpoPushTokenRepository extends JpaRepository<ExpoPushToken, Lo
     List<ExpoPushToken> findByUsuario(Usuario usuario);
 
     void deleteByToken(String token);
+
+    void deleteAllByUsuario(Usuario usuario);
 }

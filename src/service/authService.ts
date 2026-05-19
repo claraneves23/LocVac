@@ -161,6 +161,15 @@ export async function logout(): Promise<void> {
 	}
 }
 
+export async function excluirConta(senha: string): Promise<void> {
+	try {
+		const { descadastrarTokenPush } = await import('../utils/pushNotifications');
+		await descadastrarTokenPush().catch(() => {});
+	} catch {}
+	await axios.delete(`${API_BASE}/usuarios/me`, { data: { senha } });
+	await clearTokens();
+}
+
 export async function getAccessToken(): Promise<string | null> {
 	return AsyncStorage.getItem(AUTH_TOKEN_KEY);
 }

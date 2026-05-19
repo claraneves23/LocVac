@@ -1,7 +1,9 @@
 package com.locvac.controller;
 
 import com.locvac.dto.auth.AuthResponse;
+import com.locvac.dto.auth.TokenData;
 import com.locvac.dto.usuario.ConfirmarCadastroDTO;
+import com.locvac.dto.usuario.ExcluirContaDTO;
 import com.locvac.dto.usuario.IniciarCadastroDTO;
 import com.locvac.dto.usuario.RedefinirSenhaDTO;
 import com.locvac.dto.usuario.ReenviarCodigoDTO;
@@ -10,7 +12,9 @@ import com.locvac.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -54,6 +58,18 @@ public class UsuarioController {
     @PostMapping("/senha/redefinir")
     public ResponseEntity<Void> redefinirSenha(@RequestBody @Valid RedefinirSenhaDTO dto) {
         usuarioService.redefinirSenha(dto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> excluirConta(
+            @AuthenticationPrincipal TokenData tokenData,
+            @RequestBody @Valid ExcluirContaDTO dto
+    ) {
+        if (tokenData == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Autenticação necessária.");
+        }
+        usuarioService.excluirContaAutenticada(tokenData.usuarioId(), dto);
         return ResponseEntity.noContent().build();
     }
 }
