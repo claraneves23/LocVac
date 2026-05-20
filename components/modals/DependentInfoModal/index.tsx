@@ -127,7 +127,7 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   },
   kicker: {
     ...typography.caption,
-    color: c.brand,
+    color: c.brandInk,
     textTransform: 'uppercase',
     fontWeight: '700',
     letterSpacing: 1,

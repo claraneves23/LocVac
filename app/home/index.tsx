@@ -525,7 +525,7 @@ export default function Index() {
   if (!mainUser || !selectedProfile) {
     return (
       <View style={styles.loadingScreen}>
-        <ActivityIndicator size="large" color={colors.brand} />
+        <ActivityIndicator size="large" color={colors.brandInk} />
       </View>
     );
   }

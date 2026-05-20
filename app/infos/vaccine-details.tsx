@@ -92,7 +92,7 @@ export default function VaccineDetails() {
         <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
           <View style={styles.heroCard}>
             <View style={styles.heroIcon}>
-              <Ionicons name="shield-checkmark" size={28} color={colors.brand} />
+              <Ionicons name="shield-checkmark" size={28} color={colors.brandInk} />
             </View>
             <Text style={styles.heroTitle}>{vaccineName}</Text>
             <Text style={styles.heroSub}>Informações oficiais e reações conhecidas</Text>
@@ -101,7 +101,7 @@ export default function VaccineDetails() {
           {informativos.length === 0 && efeitos.length === 0 ? (
             <View style={styles.emptyBox}>
               <View style={styles.emptyIcon}>
-                <Ionicons name="information-circle-outline" size={28} color={colors.brand} />
+                <Ionicons name="information-circle-outline" size={28} color={colors.brandInk} />
               </View>
               <Text style={styles.emptyTitle}>Sem informações</Text>
               <Text style={styles.emptyText}>Nenhuma informação cadastrada para esta vacina ainda.</Text>

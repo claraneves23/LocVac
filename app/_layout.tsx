@@ -40,7 +40,7 @@ export default function Layout() {
 }
 
 function LayoutContent() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -110,7 +110,7 @@ function LayoutContent() {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.bgMuted }]}>
         <Animated.Image
-          source={require('../assets/images/logo.png')}
+          source={isDark ? require('../assets/images/logodark.png') : require('../assets/images/logo.png')}
           style={[styles.loadingLogo, { opacity: pulseAnim }]}
           resizeMode="contain"
         />

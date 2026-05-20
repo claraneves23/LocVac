@@ -290,14 +290,14 @@ export default function Search() {
           style={[styles.tab, activeTab === 'history' && styles.tabActive]}
           onPress={() => setActiveTab('history')}
         >
-          <Ionicons name="document-text-outline" size={16} color={activeTab === 'history' ? colors.brand : colors.ink3} />
+          <Ionicons name="document-text-outline" size={16} color={activeTab === 'history' ? colors.brandInk : colors.ink3} />
           <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>Registros</Text>
         </Pressable>
         <Pressable
           style={[styles.tab, activeTab === 'pending' && styles.tabActive]}
           onPress={() => setActiveTab('pending')}
         >
-          <Ionicons name="alert-circle-outline" size={16} color={activeTab === 'pending' ? colors.brand : colors.ink3} />
+          <Ionicons name="alert-circle-outline" size={16} color={activeTab === 'pending' ? colors.brandInk : colors.ink3} />
           <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Pendências</Text>
           {pendingCount > 0 && (
             <View style={styles.tabDot} />
@@ -395,7 +395,7 @@ export default function Search() {
                         styles.timelineDot,
                         {
                           backgroundColor:
-                            tone === 'brand' ? colors.brand : tone === 'ochre' ? colors.ochre : colors.ink3,
+                            tone === 'brand' ? colors.brandInk : tone === 'ochre' ? colors.ochre : colors.ink3,
                         },
                       ]} />
                       {!isLast && <View style={styles.timelineLine} />}
@@ -405,7 +405,7 @@ export default function Search() {
                         <Ionicons
                           name={TYPE_ICON[entry.type]}
                           size={18}
-                          color={tone === 'brand' ? colors.brand : tone === 'ochre' ? colors.ochre : colors.ink2}
+                          color={tone === 'brand' ? colors.brandInk : tone === 'ochre' ? colors.ochre : colors.ink2}
                         />
                         <Text style={styles.timelineName} numberOfLines={1}>{entry.name}</Text>
                       </View>

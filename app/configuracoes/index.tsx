@@ -105,7 +105,7 @@ export default function Configuracoes() {
           <Text style={styles.sectionLabel}>Aparência</Text>
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <Ionicons name={isDark ? 'moon' : 'sunny-outline'} size={20} color={colors.brand} />
+              <Ionicons name={isDark ? 'moon' : 'sunny-outline'} size={20} color={colors.brandInk} />
               <Text style={styles.rowLabel}>Modo escuro</Text>
             </View>
             <Switch

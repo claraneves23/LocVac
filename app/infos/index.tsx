@@ -343,7 +343,7 @@ export default function Infos() {
               <Ionicons name="close" size={22} color={colors.ink2} />
             </Pressable>
             <View style={[styles.groupIcon, { backgroundColor: colors.brandSoft, alignSelf: 'center', marginTop: 8 }]}>
-              <Ionicons name="help-circle-outline" size={22} color={colors.brand} />
+              <Ionicons name="help-circle-outline" size={22} color={colors.brandInk} />
             </View>
             <Text style={styles.modalTitle}>O que é a Biblioteca?</Text>
             <Text style={styles.modalText}>
@@ -389,7 +389,7 @@ export default function Infos() {
                   <Text style={styles.filterOptionSub}>Mostrar todas as vacinas</Text>
                 </View>
                 {activeGroup === 'all' && (
-                  <Ionicons name="checkmark-circle" size={22} color={colors.brand} />
+                  <Ionicons name="checkmark-circle" size={22} color={colors.brandInk} />
                 )}
               </Pressable>
               {AGE_GROUPS.map((g) => {
@@ -408,7 +408,7 @@ export default function Infos() {
                       {g.sub ? <Text style={styles.filterOptionSub}>{g.sub}</Text> : null}
                     </View>
                     {selected && (
-                      <Ionicons name="checkmark-circle" size={22} color={colors.brand} />
+                      <Ionicons name="checkmark-circle" size={22} color={colors.brandInk} />
                     )}
                   </Pressable>
                 );

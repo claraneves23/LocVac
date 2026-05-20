@@ -123,7 +123,7 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   },
   kicker: {
     ...typography.caption,
-    color: c.brand,
+    color: c.brandInk,
     textTransform: 'uppercase',
     fontWeight: '700',
     letterSpacing: 1,
@@ -177,7 +177,7 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     color: c.ink3,
   },
   modalOptionSubActive: {
-    color: c.brand,
+    color: c.brandInk,
   },
   checkBadge: {
     width: 22,

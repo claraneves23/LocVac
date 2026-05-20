@@ -95,7 +95,7 @@ export default function CampaignModal({
                 <Text style={campaignName ? styles.dateTextFilled : styles.dateText} numberOfLines={1}>
                   {campaignName || 'Selecione uma campanha'}
                 </Text>
-                <Ionicons name="chevron-down" size={18} color={colors.brand} />
+                <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
               </Pressable>
               {campaignNameError && <Text style={styles.errorText}>{campaignNameError}</Text>}
 
@@ -120,7 +120,7 @@ export default function CampaignModal({
                           {c.nome}
                         </Text>
                         {campaignName === c.nome && (
-                          <Ionicons name="checkmark" size={18} color={colors.brand} />
+                          <Ionicons name="checkmark" size={18} color={colors.brandInk} />
                         )}
                       </Pressable>
                     ))}
@@ -140,7 +140,7 @@ export default function CampaignModal({
                 <Text style={participationDate ? styles.dateTextFilled : styles.dateText}>
                   {participationDate ? formatDateToBR(participationDate) : 'Selecione a data'}
                 </Text>
-                <Ionicons name="calendar-outline" size={18} color={colors.brand} />
+                <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
               </Pressable>
               {participationDateError && <Text style={styles.errorText}>{participationDateError}</Text>}
               {showDatePicker && (

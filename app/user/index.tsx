@@ -444,7 +444,7 @@ export default function User() {
               <Text style={styles.profileEmail} numberOfLines={1}>{mainUser.email}</Text>
             </View>
             <Pressable style={styles.iconButton} onPress={openEditTitular} hitSlop={8}>
-              <Ionicons name="create-outline" size={18} color={colors.brand} />
+              <Ionicons name="create-outline" size={18} color={colors.brandInk} />
             </Pressable>
           </View>
         )}
@@ -464,7 +464,7 @@ export default function User() {
           {dependents.length === 0 ? (
             <View style={styles.emptyCard}>
               <View style={styles.emptyIcon}>
-                <Ionicons name="people-outline" size={22} color={colors.brand} />
+                <Ionicons name="people-outline" size={22} color={colors.brandInk} />
               </View>
               <Text style={styles.emptyTitle}>Nenhum dependente</Text>
               <Text style={styles.emptySub}>Adicione filhos, idosos ou outros familiares para acompanhar a vacinação deles.</Text>
@@ -486,7 +486,7 @@ export default function User() {
                     </Pressable>
                     <View style={styles.dependentActions}>
                       <Pressable style={styles.iconButton} onPress={() => openEdit(dependent)}>
-                        <Ionicons name="create-outline" size={18} color={colors.brand} />
+                        <Ionicons name="create-outline" size={18} color={colors.brandInk} />
                       </Pressable>
                       <Pressable style={styles.iconButton} onPress={() => handleRemove(dependent)}>
                         <Ionicons name="trash-outline" size={18} color={colors.coral} />
@@ -504,7 +504,7 @@ export default function User() {
           <View style={styles.menuCard}>
             <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/configuracoes')}>
               <View style={styles.menuIconWrap}>
-                <Ionicons name="settings-outline" size={18} color={colors.brand} />
+                <Ionicons name="settings-outline" size={18} color={colors.brandInk} />
               </View>
               <Text style={styles.menuLabel}>Configurações</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.ink4} />
@@ -512,7 +512,7 @@ export default function User() {
             <View style={styles.menuDivider} />
             <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => setIsHelpModalOpen(true)}>
               <View style={styles.menuIconWrap}>
-                <Ionicons name="help-circle-outline" size={18} color={colors.brand} />
+                <Ionicons name="help-circle-outline" size={18} color={colors.brandInk} />
               </View>
               <Text style={styles.menuLabel}>Ajuda</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.ink4} />
@@ -552,7 +552,7 @@ export default function User() {
                   <Image source={{ uri: titularDraft.photoUri }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <Ionicons name="person" size={24} color={colors.brand} />
+                    <Ionicons name="person" size={24} color={colors.brandInk} />
                   </View>
                 )}
                 <View style={styles.photoActions}>
@@ -597,7 +597,7 @@ export default function User() {
                   <Text style={titularDraft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {titularDraft.birthDate ? formatDateToBR(titularDraft.birthDate) : 'Selecionar data'}
                   </Text>
-                  <Ionicons name="calendar-outline" size={18} color={colors.brand} />
+                  <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
                 </Pressable>
                 {titularErrors.birthDate && <Text style={styles.errorText}>{titularErrors.birthDate}</Text>}
                 {showTitularDatePicker && (
@@ -714,7 +714,7 @@ export default function User() {
                   <Text style={titularDraft.state ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {titularDraft.state || 'Selecionar estado'}
                   </Text>
-                  <Ionicons name="chevron-down" size={18} color={colors.brand} />
+                  <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
                 </Pressable>
                 {showTitularStatePicker && (
                   <View style={styles.pickerDropdown}>
@@ -726,7 +726,7 @@ export default function User() {
                           onPress={() => { setTitularDraft((c) => ({ ...c, state: uf })); setShowTitularStatePicker(false); }}
                         >
                           <Text style={[styles.pickerOptionText, titularDraft.state === uf && styles.pickerOptionTextActive]}>{uf}</Text>
-                          {titularDraft.state === uf && <Ionicons name="checkmark" size={18} color={colors.brand} />}
+                          {titularDraft.state === uf && <Ionicons name="checkmark" size={18} color={colors.brandInk} />}
                         </Pressable>
                       ))}
                     </ScrollView>
@@ -811,7 +811,7 @@ export default function User() {
                   <Image source={{ uri: draft.photoUri }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <Ionicons name="person" size={24} color={colors.brand} />
+                    <Ionicons name="person" size={24} color={colors.brandInk} />
                   </View>
                 )}
                 <View style={styles.photoActions}>
@@ -858,7 +858,7 @@ export default function User() {
                   <Text style={draft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {draft.birthDate ? formatDateToBR(draft.birthDate) : 'Selecionar data'}
                   </Text>
-                  <Ionicons name="calendar-outline" size={18} color={colors.brand} />
+                  <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
                 </Pressable>
                 {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate}</Text>}
                 {showDatePicker && (
@@ -889,7 +889,7 @@ export default function User() {
                   <Text style={draft.relationship ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {draft.relationship || 'Selecionar parentesco'}
                   </Text>
-                  <Ionicons name="chevron-down" size={18} color={colors.brand} />
+                  <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
                 </Pressable>
                 {errors.relationship && <Text style={styles.errorText}>{errors.relationship}</Text>}
                 {showRelationshipPicker && (
@@ -902,7 +902,7 @@ export default function User() {
                           onPress={() => { setDraft((c) => ({ ...c, relationship: option })); setShowRelationshipPicker(false); clearError('relationship'); }}
                         >
                           <Text style={[styles.pickerOptionText, draft.relationship === option && styles.pickerOptionTextActive]}>{option}</Text>
-                          {draft.relationship === option && <Ionicons name="checkmark" size={18} color={colors.brand} />}
+                          {draft.relationship === option && <Ionicons name="checkmark" size={18} color={colors.brandInk} />}
                         </Pressable>
                       ))}
                     </ScrollView>
@@ -1024,7 +1024,7 @@ export default function User() {
                   <Text style={draft.state ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {draft.state || 'Selecionar estado'}
                   </Text>
-                  <Ionicons name="chevron-down" size={18} color={colors.brand} />
+                  <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
                 </Pressable>
                 {showStatePicker && (
                   <View style={styles.pickerDropdown}>
@@ -1036,7 +1036,7 @@ export default function User() {
                           onPress={() => { setDraft((c) => ({ ...c, state: uf })); setShowStatePicker(false); }}
                         >
                           <Text style={[styles.pickerOptionText, draft.state === uf && styles.pickerOptionTextActive]}>{uf}</Text>
-                          {draft.state === uf && <Ionicons name="checkmark" size={18} color={colors.brand} />}
+                          {draft.state === uf && <Ionicons name="checkmark" size={18} color={colors.brandInk} />}
                         </Pressable>
                       ))}
                     </ScrollView>
@@ -1112,7 +1112,7 @@ export default function User() {
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="wallet-outline" size={20} color={colors.brand} />
+                  <Ionicons name="wallet-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Carteira de vacinação</Text>
                 </View>
                 <Text style={styles.helpText}>
@@ -1121,7 +1121,7 @@ export default function User() {
               </View>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="time-outline" size={20} color={colors.brand} />
+                  <Ionicons name="time-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Histórico</Text>
                 </View>
                 <Text style={styles.helpText}>
@@ -1130,7 +1130,7 @@ export default function User() {
               </View>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="book-outline" size={20} color={colors.brand} />
+                  <Ionicons name="book-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Informações</Text>
                 </View>
                 <Text style={styles.helpText}>
@@ -1139,7 +1139,7 @@ export default function User() {
               </View>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="people-outline" size={20} color={colors.brand} />
+                  <Ionicons name="people-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Dependentes</Text>
                 </View>
                 <Text style={styles.helpText}>
@@ -1148,7 +1148,7 @@ export default function User() {
               </View>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="person-outline" size={20} color={colors.brand} />
+                  <Ionicons name="person-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Perfis</Text>
                 </View>
                 <Text style={styles.helpText}>
@@ -1157,7 +1157,7 @@ export default function User() {
               </View>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="shield-checkmark-outline" size={20} color={colors.brand} />
+                  <Ionicons name="shield-checkmark-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Política de Privacidade</Text>
                 </View>
                 <Text style={styles.helpText}>
@@ -1172,7 +1172,7 @@ export default function User() {
               </View>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="mail-outline" size={20} color={colors.brand} />
+                  <Ionicons name="mail-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Contato</Text>
                 </View>
                 <Text style={styles.helpText}>

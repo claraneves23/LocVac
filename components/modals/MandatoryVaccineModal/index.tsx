@@ -105,7 +105,7 @@ export default function MandatoryVaccineModal({
                     <Text style={date ? styles.dateTextFilled : styles.dateText}>
                       {date ? formatDateToBR(date) : 'Selecione a data'}
                     </Text>
-                    <Ionicons name="calendar-outline" size={18} color={colors.brand} />
+                    <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
                   </Pressable>
                   {showDatePicker && (
                     <DateTimePicker
@@ -220,7 +220,7 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   },
   modalKicker: {
     ...typography.caption,
-    color: c.brand,
+    color: c.brandInk,
     textTransform: 'uppercase',
     fontWeight: '700',
     letterSpacing: 1,

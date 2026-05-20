@@ -33,7 +33,7 @@ export const makeStyles = (c: Colors) => StyleSheet.create({
     color: c.ink3,
   },
   tabTextActive: {
-    color: c.brand,
+    color: c.brandInk,
   },
   tabDot: {
     width: 8,
@@ -93,7 +93,7 @@ export const makeStyles = (c: Colors) => StyleSheet.create({
   statValue: {
     ...typography.h2,
     fontSize: 22,
-    color: c.brand,
+    color: c.brandInk,
   },
   statLabel: {
     fontSize: 11,

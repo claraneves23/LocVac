@@ -12,13 +12,13 @@ type Props = {
 };
 
 export default function AppHeader({ profile, onSwitch }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.header}>
       <View style={styles.brandRow}>
         <Image
-          source={require('../../assets/images/logo.png')}
+          source={isDark ? require('../../assets/images/logodark.png') : require('../../assets/images/logo.png')}
           style={styles.brandLogo}
           resizeMode="contain"
         />
