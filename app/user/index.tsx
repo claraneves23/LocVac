@@ -13,6 +13,7 @@ import {
   TextInput,
   ActivityIndicator,
   Dimensions,
+  Linking,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -1152,6 +1153,21 @@ export default function User() {
                 </View>
                 <Text style={styles.helpText}>
                   Na carteira de vacinação, toque no ícone de perfil no cabeçalho para alternar entre o seu perfil e o de dependentes cadastrados.
+                </Text>
+              </View>
+              <View style={styles.helpSection}>
+                <View style={styles.helpIconRow}>
+                  <Ionicons name="shield-checkmark-outline" size={20} color={colors.brand} />
+                  <Text style={styles.helpSectionTitle}>Política de Privacidade</Text>
+                </View>
+                <Text style={styles.helpText}>
+                  Saiba como tratamos seus dados pessoais e de saúde, em conformidade com a LGPD. Acesse a política completa em{' '}
+                  <Text
+                    style={{ color: colors.brandInk, fontWeight: '600' }}
+                    onPress={() => Linking.openURL('https://locvac.com.br/privacidade')}
+                  >
+                    locvac.com.br/privacidade
+                  </Text>
                 </Text>
               </View>
               <View style={styles.helpSection}>
