@@ -14,6 +14,7 @@ public interface DoseAplicadaService {
     void deletar(Long idDose);
     List<DoseAplicadaResponseDTO> listarPorPessoa(Long idPessoa);
     List<DoseAplicadaResponseDTO> listarPorPessoaETipo(Long idPessoa, TipoSecaoVacinacao tipo);
+    List<DoseAplicadaResponseDTO> listarOutrasVacinasPorPessoa(Long idPessoa);
     DoseAplicadaResponseDTO registrarOutraVacina(OutraVacinaRequestDTO dto);
     DoseAplicadaResponseDTO atualizarOutraVacina(Long idDose, OutraVacinaRequestDTO dto);
 }

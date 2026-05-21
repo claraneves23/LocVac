@@ -26,14 +26,14 @@ export type DoseAplicadaDTO = {
 
 export async function fetchMandatoryVaccines(): Promise<VacinaDTO[]> {
   const response = await axios.get(`${API_BASE}/vacinas`, {
-    params: { tipo: 'OBRIGATORIAS_PRIMEIRO_ANO' },
+    params: { tipo: 'CRIANCA' },
   });
   return response.data;
 }
 
 export async function fetchDosesPorPessoa(idPessoa: number): Promise<DoseAplicadaDTO[]> {
   const response = await axios.get(
-    `${API_BASE}/doses/por-pessoa/${idPessoa}/tipo/OBRIGATORIAS_PRIMEIRO_ANO`
+    `${API_BASE}/doses/por-pessoa/${idPessoa}/tipo/CRIANCA`
   );
   return response.data;
 }
@@ -75,7 +75,7 @@ export async function deletarDose(idDose: number): Promise<void> {
 
 export async function fetchOutrasVacinasPorPessoa(idPessoa: number): Promise<DoseAplicadaDTO[]> {
   const response = await axios.get(
-    `${API_BASE}/doses/por-pessoa/${idPessoa}/tipo/OUTRAS_VACINAS`
+    `${API_BASE}/doses/por-pessoa/${idPessoa}/outras-cadastradas`
   );
   return response.data;
 }

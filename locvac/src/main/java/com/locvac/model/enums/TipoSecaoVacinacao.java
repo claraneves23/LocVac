@@ -4,9 +4,11 @@ import java.util.Map;
 import java.util.HashMap;
 
 public enum TipoSecaoVacinacao {
-    OBRIGATORIAS_PRIMEIRO_ANO(1, "Vacinas Obrigatórias - Primeiro Ano de Vida"),
-    OUTRAS_VACINAS(2, "Outras Vacinas"),
-    CAMPANHAS(3, "Campanhas");
+    GESTANTE(1, "Gestante"),
+    CRIANCA(2, "Criança"),
+    ADOLESCENTE_JOVEM(3, "Adolescente e Jovem"),
+    ADULTO(4, "Adulto"),
+    IDOSO(5, "Idoso");
 
     private final int codigo;
     private final String descricao;

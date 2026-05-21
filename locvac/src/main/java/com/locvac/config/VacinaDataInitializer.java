@@ -50,7 +50,7 @@ public class VacinaDataInitializer implements ApplicationRunner {
                 v.setDescricao(seed.descricao());
                 v.setDose(seed.dose());
                 v.setAtiva(true);
-                v.setTipoSecaoVacinacao(TipoSecaoVacinacao.OBRIGATORIAS_PRIMEIRO_ANO);
+                v.setTipoSecaoVacinacao(TipoSecaoVacinacao.CRIANCA);
                 v.setIdadeMinimaMeses(seed.idadeMinimaMeses());
                 repository.save(v);
             } else if (v.getIdadeMinimaMeses() == null) {

@@ -51,6 +51,11 @@ public class DoseAplicadaController {
         return service.listarPorPessoaETipo(idPessoa, tipo);
     }
 
+    @GetMapping("/por-pessoa/{idPessoa}/outras-cadastradas")
+    public List<DoseAplicadaResponseDTO> listarOutrasVacinasPorPessoa(@PathVariable Long idPessoa) {
+        return service.listarOutrasVacinasPorPessoa(idPessoa);
+    }
+
     @PostMapping("/outras-vacinas")
     public ResponseEntity<DoseAplicadaResponseDTO> registrarOutraVacina(@RequestBody @Valid OutraVacinaRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarOutraVacina(dto));
