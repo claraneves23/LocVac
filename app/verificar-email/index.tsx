@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { confirmarCadastro, reenviarCodigo } from '../../src/service/authService';
+import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
 import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
@@ -48,6 +49,7 @@ export default function VerificarEmail() {
     try {
       await confirmarCadastro({ email, codigo });
       router.replace('/cadastro-titular');
+      notificarBoasVindasSeNecessario(email).catch(() => {});
     } catch (error: any) {
       const status = error?.response?.status;
       const message =
