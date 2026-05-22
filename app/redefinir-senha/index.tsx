@@ -9,13 +9,13 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from '../../src/service/authService';
-import LVMark from '../../components/redesign/LVMark';
 import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
@@ -145,9 +145,11 @@ export default function RedefinirSenha() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoContainer}>
-            <View style={styles.logoCard}>
-              <LVMark size={36} color={colors.brand} />
-            </View>
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.brandTitle}>Redefinir senha</Text>
             <Text style={styles.brandSub}>
               Código enviado para <Text style={styles.email}>{email}</Text>

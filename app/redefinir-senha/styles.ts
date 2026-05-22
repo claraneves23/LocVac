@@ -18,15 +18,10 @@ export default StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  logoCard: {
-    width: 64,
-    height: 64,
-    borderRadius: radii.xl,
-    backgroundColor: colors.bgElev,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 80,
+    height: 80,
     marginBottom: 14,
-    ...shadows.md,
   },
   brandTitle: {
     ...typography.h2,
