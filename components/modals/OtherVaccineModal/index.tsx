@@ -34,6 +34,7 @@ type OtherVaccineModalProps = {
   onClose: () => void;
   saving?: boolean;
   nameError?: string;
+  dateError?: string;
 };
 
 export default function OtherVaccineModal({
@@ -58,6 +59,7 @@ export default function OtherVaccineModal({
   onClose,
   saving = false,
   nameError,
+  dateError,
 }: OtherVaccineModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -106,13 +108,19 @@ export default function OtherVaccineModal({
             </View>
 
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Data de aplicação</Text>
-              <Pressable style={styles.dateButton} onPress={onShowDatePicker}>
+              <Text style={styles.formLabel}>
+                Data de aplicação <Text style={styles.required}>*</Text>
+              </Text>
+              <Pressable
+                style={[styles.dateButton, dateError && styles.inputError]}
+                onPress={onShowDatePicker}
+              >
                 <Text style={date ? styles.dateTextFilled : styles.dateText}>
                   {date ? formatDateToBR(date) : 'Selecione a data'}
                 </Text>
                 <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
               </Pressable>
+              {dateError && <Text style={styles.errorText}>{dateError}</Text>}
               {showDatePicker && (
                 <DateTimePicker
                   value={pickerDate}

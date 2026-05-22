@@ -143,6 +143,7 @@ export default function Index() {
   const [otherProfId, setOtherProfId] = useState('');
   const [savingOther, setSavingOther] = useState(false);
   const [otherNameError, setOtherNameError] = useState<string | null>(null);
+  const [otherDateError, setOtherDateError] = useState<string | null>(null);
 
   // Campaign modal state
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
@@ -313,6 +314,7 @@ export default function Index() {
   // ===== Other vaccine handlers =====
   const openOtherModal = (vaccine?: OtherVaccine) => {
     setOtherNameError(null);
+    setOtherDateError(null);
     if (vaccine) {
       setEditingOther(vaccine);
       setOtherName(vaccine.vaccineName);
@@ -340,20 +342,30 @@ export default function Index() {
     if (date) {
       setOtherPickerDate(date);
       setOtherDate(date.toISOString().split('T')[0]);
+      setOtherDateError(null);
     }
   };
 
   const handleSaveOther = async () => {
     if (savingOther || !selectedProfile) return;
+    let temErro = false;
     if (!otherName.trim()) {
       setOtherNameError('Campo obrigatório!');
-      return;
+      temErro = true;
+    } else {
+      setOtherNameError(null);
     }
-    setOtherNameError(null);
+    if (!otherDate) {
+      setOtherDateError('Campo obrigatório!');
+      temErro = true;
+    } else {
+      setOtherDateError(null);
+    }
+    if (temErro) return;
     const payload = {
       idPessoa: Number(selectedProfile.id),
       nomeVacina: otherName.trim(),
-      dataAplicacao: otherDate || undefined,
+      dataAplicacao: otherDate,
       lote: otherLot.trim() || undefined,
       observacao: otherCode.trim() || undefined,
       nomeProfissional: otherProfName.trim() || undefined,
@@ -820,6 +832,7 @@ export default function Index() {
         onClose={() => setIsOtherModalOpen(false)}
         saving={savingOther}
         nameError={otherNameError ?? undefined}
+        dateError={otherDateError ?? undefined}
       />
 
       <CampaignModal
