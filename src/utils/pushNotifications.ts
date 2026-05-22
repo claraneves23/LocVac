@@ -125,6 +125,60 @@ async function runRegistration(): Promise<string | null> {
   }
 }
 
+export async function notificarBoasVindasSeNecessario(email: string): Promise<void> {
+  const key = `locvac:welcomed:${email.toLowerCase()}`;
+  try {
+    const already = await AsyncStorage.getItem(key);
+    if (already) return;
+  } catch (e) {
+    logger.warn('[push] falha ao consultar flag de boas-vindas:', e);
+    return;
+  }
+
+  let status: Notifications.PermissionStatus;
+  try {
+    const existing = await Notifications.getPermissionsAsync();
+    status = existing.status;
+    if (status !== 'granted') {
+      const requested = await Notifications.requestPermissionsAsync();
+      status = requested.status;
+    }
+  } catch (e) {
+    logger.error('[push] erro ao pedir permissão para boas-vindas:', e);
+    return;
+  }
+  if (status !== 'granted') {
+    logger.warn('[push] permissão negada — boas-vindas não exibida');
+    return;
+  }
+
+  if (Platform.OS === 'android') {
+    try {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#03394A',
+      });
+    } catch (e) {
+      logger.warn('[push] falha ao configurar canal Android (boas-vindas):', e);
+    }
+  }
+
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Bem-vindo ao LocVac!',
+        body: 'Obrigado por participar do teste fechado. Seu feedback será de extremo valor ;)',
+      },
+      trigger: null,
+    });
+    await AsyncStorage.setItem(key, '1');
+  } catch (e) {
+    logger.error('[push] falha ao exibir notificação de boas-vindas:', e);
+  }
+}
+
 export async function descadastrarTokenPush(): Promise<void> {
   try {
     const token = await AsyncStorage.getItem(STORED_TOKEN_KEY);
