@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { login, iniciarCadastro } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
+import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
 import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
@@ -132,6 +133,7 @@ export default function Login() {
       await login({ email: email.trim(), senha });
       await loadAll();
       router.replace('/home');
+      notificarBoasVindasSeNecessario(email.trim()).catch(() => {});
     } catch (error: any) {
       const message =
         error?.response?.status === 401

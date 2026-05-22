@@ -1,9 +1,8 @@
-import { View, Text, Pressable, Modal, ScrollView, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, StyleSheet, Platform, ActivityIndicator, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Campanha } from '../../../src/types/vaccination';
 import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
 
@@ -20,10 +19,7 @@ type CampaignModalProps = {
   participationDate: string;
   pickerDate: Date;
   showDatePicker: boolean;
-  showCampaignPicker: boolean;
-  availableCampaigns: Campanha[];
-  onSelectCampaign: (name: string) => void;
-  onToggleCampaignPicker: () => void;
+  onChangeCampaignName: (text: string) => void;
   onShowDatePicker: () => void;
   onDateChange: (event: any, date?: Date) => void;
   onSave: () => void;
@@ -40,10 +36,7 @@ export default function CampaignModal({
   participationDate,
   pickerDate,
   showDatePicker,
-  showCampaignPicker,
-  availableCampaigns,
-  onSelectCampaign,
-  onToggleCampaignPicker,
+  onChangeCampaignName,
   onShowDatePicker,
   onDateChange,
   onSave,
@@ -88,45 +81,17 @@ export default function CampaignModal({
               <Text style={styles.formLabel}>
                 Nome da campanha <Text style={styles.required}>*</Text>
               </Text>
-              <Pressable
-                style={[styles.dateButton, campaignNameError && styles.inputError]}
-                onPress={onToggleCampaignPicker}
-              >
-                <Text style={campaignName ? styles.dateTextFilled : styles.dateText} numberOfLines={1}>
-                  {campaignName || 'Selecione uma campanha'}
-                </Text>
-                <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
-              </Pressable>
+              <View style={[styles.textInputWrap, campaignNameError && styles.inputError]}>
+                <TextInput
+                  style={styles.textInput}
+                  value={campaignName}
+                  onChangeText={onChangeCampaignName}
+                  placeholder="Ex: Campanha de Gripe 2024"
+                  placeholderTextColor={colors.ink4}
+                  maxLength={120}
+                />
+              </View>
               {campaignNameError && <Text style={styles.errorText}>{campaignNameError}</Text>}
-
-              {showCampaignPicker && (
-                <View style={styles.pickerDropdown}>
-                  <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
-                    {availableCampaigns.map((c) => (
-                      <Pressable
-                        key={c.id}
-                        style={[
-                          styles.pickerOption,
-                          campaignName === c.nome && styles.pickerOptionActive,
-                        ]}
-                        onPress={() => onSelectCampaign(c.nome)}
-                      >
-                        <Text
-                          style={[
-                            styles.pickerOptionText,
-                            campaignName === c.nome && styles.pickerOptionTextActive,
-                          ]}
-                        >
-                          {c.nome}
-                        </Text>
-                        {campaignName === c.nome && (
-                          <Ionicons name="checkmark" size={18} color={colors.brandInk} />
-                        )}
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
             </View>
 
             <View style={styles.formField}>
@@ -281,37 +246,18 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
-  pickerDropdown: {
-    marginTop: 6,
-    backgroundColor: c.bgElev,
-    borderRadius: radii.md,
+  textInputWrap: {
+    backgroundColor: c.bgMuted,
+    borderRadius: 11,
     borderWidth: 1,
     borderColor: c.line,
-    maxHeight: 200,
-    overflow: 'hidden',
-  },
-  pickerScroll: {
-    maxHeight: 200,
-  },
-  pickerOption: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: c.line,
+    paddingVertical: 4,
   },
-  pickerOptionActive: {
-    backgroundColor: c.brandSoft,
-  },
-  pickerOptionText: {
+  textInput: {
     ...typography.body,
     color: c.ink,
-  },
-  pickerOptionTextActive: {
-    fontWeight: '600',
-    color: c.brandInk,
+    paddingVertical: 8,
   },
   formActions: {
     flexDirection: 'row',

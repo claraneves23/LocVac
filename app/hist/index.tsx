@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Notifications from 'expo-notifications';
 import { useAppContext } from '../../src/context/AppContext';
-import { FamilyMember, Campanha } from '../../src/types/vaccination';
+import { FamilyMember, ParticipatingCampaign } from '../../src/types/vaccination';
 import {
   fetchDosesPorPessoa,
   fetchOutrasVacinasPorPessoa,
@@ -14,11 +14,7 @@ import {
   DoseAplicadaDTO,
   VacinaDTO,
 } from '../../src/service/mandatoryVaccineService';
-import {
-  fetchCampaigns,
-  fetchParticipacoesByPessoa,
-  ParticipacaoDTO,
-} from '../../src/service/campaignService';
+import { getCampaignsByProfile } from '../../src/storage/campaigns';
 import {
   fetchNotificacoes,
   marcarNotificacaoComoLida,
@@ -35,7 +31,7 @@ type ProfileData = {
   member: FamilyMember;
   applied: DoseAplicadaDTO[];
   other: DoseAplicadaDTO[];
-  participacoes: ParticipacaoDTO[];
+  participacoes: ParticipatingCampaign[];
 };
 
 type HistoryEntry = {
@@ -100,7 +96,6 @@ export default function Search() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('history');
   const [filterProfile, setFilterProfile] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campanha[]>([]);
   const [mandatoryVaccines, setMandatoryVaccines] = useState<VacinaDTO[]>([]);
   const [profilesData, setProfilesData] = useState<ProfileData[]>([]);
   const [notificacoes, setNotificacoes] = useState<NotificacaoDTO[]>([]);
@@ -117,9 +112,8 @@ export default function Search() {
       setLoading(true);
 
       const fetchAll = async () => {
-        const [mandatories, camps, notifs] = await Promise.all([
+        const [mandatories, notifs] = await Promise.all([
           fetchMandatoryVaccines().catch(() => [] as VacinaDTO[]),
-          fetchCampaigns(),
           fetchNotificacoes().catch(() => [] as NotificacaoDTO[]),
         ]);
         setMandatoryVaccines(mandatories);
@@ -128,12 +122,11 @@ export default function Search() {
             const [applied, other, participacoes] = await Promise.all([
               fetchDosesPorPessoa(Number(member.id)),
               fetchOutrasVacinasPorPessoa(Number(member.id)),
-              fetchParticipacoesByPessoa(Number(member.id)),
+              getCampaignsByProfile(member.id),
             ]);
             return { member, applied, other, participacoes };
           })
         );
-        setCampaigns(camps);
         setProfilesData(data);
         setNotificacoes(notifs);
       };
@@ -177,12 +170,11 @@ export default function Search() {
         });
       });
       participacoes.forEach((p) => {
-        const camp = campaigns.find((c) => c.id === p.idCampanha);
         entries.push({
           key: `camp-${p.id}`,
           type: 'campaign',
-          name: camp?.nome ?? p.nomeCampanha ?? `Campanha #${p.idCampanha}`,
-          date: p.dataParticipacao,
+          name: p.campaignName,
+          date: p.participationDate,
           member,
         });
       });
@@ -193,7 +185,7 @@ export default function Search() {
       if (!b.date) return -1;
       return b.date.localeCompare(a.date);
     });
-  }, [profilesData, campaigns]);
+  }, [profilesData]);
 
   const pendingEntries = useMemo<PendingEntry[]>(() => {
     const entries: PendingEntry[] = [];

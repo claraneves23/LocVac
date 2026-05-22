@@ -27,15 +27,13 @@ import {
   VacinaDTO,
 } from '../../src/service/mandatoryVaccineService';
 import {
-  fetchCampaigns,
-  fetchParticipacoesByPessoa,
-  addParticipacaoCampanha,
-  updateParticipacaoCampanha,
-  deleteParticipacaoCampanha,
-} from '../../src/service/campaignService';
+  addCampaign,
+  updateCampaign,
+  deleteCampaign,
+  getCampaignsByProfile,
+} from '../../src/storage/campaigns';
 import { useAppContext } from '../../src/context/AppContext';
 import {
-  Campanha,
   FamilyMember,
   MandatoryVaccineRecord,
   OtherVaccine,
@@ -116,7 +114,6 @@ export default function Index() {
   const [mandatoryRecords, setMandatoryRecords] = useState<MandatoryVaccineRecord[]>([]);
   const [otherVaccines, setOtherVaccines] = useState<OtherVaccine[]>([]);
   const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
-  const [availableCampaigns, setAvailableCampaigns] = useState<Campanha[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [mandatoryListLoaded, setMandatoryListLoaded] = useState(false);
 
@@ -154,7 +151,6 @@ export default function Index() {
   const [campaignPickerDate, setCampaignPickerDate] = useState(new Date());
   const [campaignName, setCampaignName] = useState('');
   const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
-  const [showCampaignPicker, setShowCampaignPicker] = useState(false);
   const [savingCampaign, setSavingCampaign] = useState(false);
   const [campaignNameError, setCampaignNameError] = useState<string | null>(null);
   const [campaignDateError, setCampaignDateError] = useState<string | null>(null);
@@ -182,19 +178,19 @@ export default function Index() {
   }, [selectedProfileId]);
 
   useEffect(() => {
-    Promise.all([
-      fetchMandatoryVaccines().then(setMandatoryVaccineList).catch(() => setMandatoryVaccineList([])),
-      fetchCampaigns().then(cs => setAvailableCampaigns(cs.filter(c => c.ativa))).catch(() => setAvailableCampaigns([])),
-    ]).finally(() => setMandatoryListLoaded(true));
+    fetchMandatoryVaccines()
+      .then(setMandatoryVaccineList)
+      .catch(() => setMandatoryVaccineList([]))
+      .finally(() => setMandatoryListLoaded(true));
   }, []);
 
   const loadData = useCallback(async () => {
     if (!selectedProfileId) return;
     try {
-      const [doses, others, participacoes] = await Promise.all([
+      const [doses, others, localCampaigns] = await Promise.all([
         fetchDosesPorPessoa(Number(selectedProfileId)),
         fetchOutrasVacinasPorPessoa(Number(selectedProfileId)).catch(() => []),
-        fetchParticipacoesByPessoa(Number(selectedProfileId)).catch(() => []),
+        getCampaignsByProfile(selectedProfileId),
       ]);
       setMandatoryRecords(
         doses.map((d) => ({
@@ -221,14 +217,7 @@ export default function Index() {
           professionalId: d.registroProfissional ?? undefined,
         }))
       );
-      setCampaigns(
-        participacoes.map((p) => ({
-          id: String(p.id),
-          profileId: String(p.idPessoa),
-          campaignName: p.nomeCampanha ?? `Campanha #${p.idCampanha}`,
-          participationDate: p.dataParticipacao,
-        }))
-      );
+      setCampaigns(localCampaigns);
     } catch {
       setMandatoryRecords([]);
       setOtherVaccines([]);
@@ -404,7 +393,6 @@ export default function Index() {
 
   // ===== Campaign handlers =====
   const openCampaignModal = (campaign?: ParticipatingCampaign) => {
-    setShowCampaignPicker(false);
     setCampaignNameError(null);
     setCampaignDateError(null);
     if (campaign) {
@@ -433,28 +421,25 @@ export default function Index() {
   const handleSaveCampaign = async () => {
     if (savingCampaign || !selectedProfile) return;
     let temErro = false;
-    if (!campaignName.trim()) { setCampaignNameError('Campo obrigatório!'); temErro = true; }
+    const nomeTrim = campaignName.trim();
+    if (!nomeTrim) { setCampaignNameError('Campo obrigatório!'); temErro = true; }
     if (!campaignParticipationDate) { setCampaignDateError('Campo obrigatório!'); temErro = true; }
     if (temErro) return;
-    const camp = availableCampaigns.find((c) => c.nome === campaignName);
-    if (!camp) {
-      Alert.alert('Erro', 'Selecione uma campanha válida.');
-      return;
-    }
     setSavingCampaign(true);
     try {
       if (editingCampaign) {
-        await updateParticipacaoCampanha({
-          id: Number(editingCampaign.id),
-          idPessoa: Number(selectedProfile.id),
-          idCampanha: camp.id,
-          dataParticipacao: campaignParticipationDate,
+        await updateCampaign({
+          id: editingCampaign.id,
+          profileId: selectedProfile.id,
+          campaignName: nomeTrim,
+          participationDate: campaignParticipationDate,
         });
       } else {
-        await addParticipacaoCampanha({
-          idPessoa: Number(selectedProfile.id),
-          idCampanha: camp.id,
-          dataParticipacao: campaignParticipationDate,
+        await addCampaign({
+          id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          profileId: selectedProfile.id,
+          campaignName: nomeTrim,
+          participationDate: campaignParticipationDate,
         });
       }
       await loadData();
@@ -475,7 +460,7 @@ export default function Index() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await deleteParticipacaoCampanha(Number(id));
+            await deleteCampaign(id);
             await loadData();
           } catch {
             Alert.alert('Erro', 'Não foi possível remover a participação.');
@@ -844,14 +829,10 @@ export default function Index() {
         participationDate={campaignParticipationDate}
         pickerDate={campaignPickerDate}
         showDatePicker={campaignShowDatePicker}
-        showCampaignPicker={showCampaignPicker}
-        availableCampaigns={availableCampaigns}
-        onSelectCampaign={(name) => {
+        onChangeCampaignName={(name) => {
           setCampaignName(name);
-          setShowCampaignPicker(false);
           if (campaignNameError) setCampaignNameError(null);
         }}
-        onToggleCampaignPicker={() => setShowCampaignPicker((p) => !p)}
         onShowDatePicker={() => setCampaignShowDatePicker(true)}
         onDateChange={handleCampaignDateChange}
         onSave={handleSaveCampaign}
