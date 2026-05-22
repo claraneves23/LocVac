@@ -20,6 +20,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { cadastrarTitular, logout } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
+import { joinAddress } from '../../src/utils/address';
 import { colors } from '../../src/theme/tokens';
 import styles from './styles';
 
@@ -40,6 +41,7 @@ export default function CadastroTitular() {
   const [sexoBiologico, setSexoBiologico] = useState<'MASCULINO' | 'FEMININO' | ''>('');
   const [cep, setCep] = useState('');
   const [rua, setRua] = useState('');
+  const [numero, setNumero] = useState('');
   const [complemento, setComplemento] = useState('');
   const [municipio, setMunicipio] = useState('');
   const [estado, setEstado] = useState<EstadoUF | ''>('');
@@ -263,7 +265,7 @@ export default function CadastroTitular() {
         cns: cnsDigits || undefined,
         sexoBiologico: sexoBiologico as 'MASCULINO' | 'FEMININO',
         cep: cep.replace(/\D/g, ''),
-        rua: rua.trim(),
+        rua: joinAddress(rua, numero),
         complemento: complemento.trim(),
         municipio: municipio.trim(),
         estado: estado || undefined,
@@ -457,9 +459,22 @@ export default function CadastroTitular() {
                 style={styles.input}
                 value={rua}
                 onChangeText={setRua}
-                placeholder="Rua e número"
+                placeholder="Nome da rua"
                 placeholderTextColor={colors.ink3}
                 maxLength={200}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Número</Text>
+              <TextInput
+                style={styles.input}
+                value={numero}
+                onChangeText={setNumero}
+                placeholder="Ex: 123"
+                placeholderTextColor={colors.ink3}
+                maxLength={20}
+                keyboardType="default"
               />
             </View>
 

@@ -26,6 +26,7 @@ import { FamilyMember } from '../../src/types/vaccination';
 import { addDependentAndLink, updateDependent, deleteDependent } from '../../src/service/dependentsService';
 import { updateTitular } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
+import { joinAddress, splitAddress } from '../../src/utils/address';
 import logger from '../../src/utils/logger';
 import DependentInfoModal from '../../components/modals/DependentInfoModal';
 import { radii, spacing, typography, shadows, Tone } from '../../src/theme/tokens';
@@ -52,6 +53,7 @@ type DraftDependent = {
   cns?: string;
   zipCode?: string;
   address?: string;
+  addressNumber?: string;
   complement?: string;
   city?: string;
   state?: EstadoUF | '';
@@ -66,6 +68,7 @@ type DraftTitular = {
   cns?: string;
   zipCode?: string;
   address?: string;
+  addressNumber?: string;
   complement?: string;
   city?: string;
   state?: EstadoUF | '';
@@ -88,7 +91,7 @@ export default function User() {
   const [draft, setDraft] = useState<DraftDependent>({
     name: '', birthDate: '', birthPlace: '', relationship: '',
     guardianName: '', sex: '', photoUri: undefined,
-    address: '', city: '', state: '', zipCode: '', phone: '',
+    address: '', addressNumber: '', city: '', state: '', zipCode: '', phone: '',
   });
   type DepFieldKey = 'name' | 'birthDate' | 'relationship' | 'sex' | 'zipCode' | 'phone';
   const [errors, setErrors] = useState<Partial<Record<DepFieldKey, string>>>({});
@@ -100,7 +103,7 @@ export default function User() {
   const [showTitularStatePicker, setShowTitularStatePicker] = useState(false);
   const [titularDraft, setTitularDraft] = useState<DraftTitular>({
     name: '', birthDate: '', sex: '', photoUri: undefined,
-    cns: '', zipCode: '', address: '', complement: '', city: '', state: '', phone: '',
+    cns: '', zipCode: '', address: '', addressNumber: '', complement: '', city: '', state: '', phone: '',
   });
   type TitularFieldKey = 'name' | 'birthDate' | 'sex' | 'zipCode' | 'phone';
   const [titularErrors, setTitularErrors] = useState<Partial<Record<TitularFieldKey, string>>>({});
@@ -169,7 +172,7 @@ export default function User() {
     if (!data) return;
     setDraft((c) => ({
       ...c,
-      ...(data.logradouro && { address: data.logradouro }),
+      ...(data.logradouro && { address: data.logradouro, addressNumber: '' }),
       ...(data.localidade && { city: data.localidade }),
       ...(data.uf && { state: data.uf as EstadoUF }),
     }));
@@ -180,7 +183,7 @@ export default function User() {
     if (!data) return;
     setTitularDraft((c) => ({
       ...c,
-      ...(data.logradouro && { address: data.logradouro }),
+      ...(data.logradouro && { address: data.logradouro, addressNumber: '' }),
       ...(data.localidade && { city: data.localidade }),
       ...(data.uf && { state: data.uf as EstadoUF }),
     }));
@@ -277,7 +280,7 @@ export default function User() {
 
   const resetDraft = () => {
     setDraft({ name: '', birthDate: '', birthPlace: '', relationship: '', guardianName: '', sex: '',
-      photoUri: undefined, cns: '', zipCode: '', address: '', complement: '', city: '', state: '', phone: '' });
+      photoUri: undefined, cns: '', zipCode: '', address: '', addressNumber: '', complement: '', city: '', state: '', phone: '' });
     setShowDatePicker(false);
     setShowRelationshipPicker(false);
     setShowStatePicker(false);
@@ -287,6 +290,7 @@ export default function User() {
   const openCreate = () => { resetDraft(); modalScrollY.current = 0; setIsModalOpen(true); };
 
   const openEdit = (dependent: FamilyMember) => {
+    const { rua: depRua, numero: depNumero } = splitAddress(dependent.address);
     setDraft({
       id: dependent.id,
       name: dependent.name,
@@ -298,7 +302,8 @@ export default function User() {
       photoUri: dependent.photoUri,
       cns: dependent.cns ? formatCns(dependent.cns) : '',
       zipCode: dependent.zipCode ? formatCep(dependent.zipCode) : '',
-      address: dependent.address || '',
+      address: depRua,
+      addressNumber: depNumero,
       complement: dependent.complement || '',
       city: dependent.city || '',
       state: (dependent.state as EstadoUF) || '',
@@ -321,6 +326,7 @@ export default function User() {
         sex: draft.sex as 'M' | 'F',
         cns: draft.cns?.replace(/\D/g, '') || undefined,
         zipCode: draft.zipCode?.replace(/\D/g, '') || undefined,
+        address: joinAddress(draft.address || '', draft.addressNumber || ''),
       };
       if (draft.id) {
         await updateDependent(draft.id, payload);
@@ -379,6 +385,7 @@ export default function User() {
 
   const openEditTitular = () => {
     if (!mainUser) return;
+    const { rua: titRua, numero: titNumero } = splitAddress(mainUser.address);
     setTitularDraft({
       name: mainUser.name,
       birthDate: mainUser.birthDate,
@@ -386,7 +393,8 @@ export default function User() {
       photoUri: mainUser.photoUri,
       cns: mainUser.cns ? formatCns(mainUser.cns) : '',
       zipCode: mainUser.zipCode ? formatCep(mainUser.zipCode) : '',
-      address: mainUser.address || '',
+      address: titRua,
+      addressNumber: titNumero,
       complement: mainUser.complement || '',
       city: mainUser.city || '',
       state: (mainUser.state as EstadoUF) || '',
@@ -409,7 +417,7 @@ export default function User() {
         sexoBiologico: titularDraft.sex === 'M' ? 'MASCULINO' : 'FEMININO',
         cns: titularDraft.cns?.replace(/\D/g, '') || undefined,
         cep: titularDraft.zipCode?.replace(/\D/g, '') || '',
-        rua: titularDraft.address,
+        rua: joinAddress(titularDraft.address || '', titularDraft.addressNumber || ''),
         complemento: titularDraft.complement,
         municipio: titularDraft.city,
         estado: titularDraft.state || undefined,
@@ -675,9 +683,22 @@ export default function User() {
                   style={styles.input}
                   value={titularDraft.address}
                   onChangeText={(v) => setTitularDraft((c) => ({ ...c, address: v }))}
-                  placeholder="Rua e número"
+                  placeholder="Nome da rua"
                   placeholderTextColor={colors.ink4}
                   maxLength={200}
+                />
+              </View>
+
+              {/* número */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Número</Text>
+                <TextInput
+                  style={styles.input}
+                  value={titularDraft.addressNumber}
+                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, addressNumber: v }))}
+                  placeholder="Ex: 123"
+                  placeholderTextColor={colors.ink4}
+                  maxLength={20}
                 />
               </View>
 
@@ -988,9 +1009,21 @@ export default function User() {
                   style={styles.input}
                   value={draft.address}
                   onChangeText={(v) => setDraft((c) => ({ ...c, address: v }))}
-                  placeholder="Rua e número"
+                  placeholder="Nome da rua"
                   placeholderTextColor={colors.ink4}
                   maxLength={200}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Número</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.addressNumber}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, addressNumber: v }))}
+                  placeholder="Ex: 123"
+                  placeholderTextColor={colors.ink4}
+                  maxLength={20}
                 />
               </View>
 
