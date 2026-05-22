@@ -47,3 +47,6 @@ GoogleService-Info.plist
 
 # Claude Code
 .claude/
+
+# backup local de credenciais/configs nativas
+backup/
