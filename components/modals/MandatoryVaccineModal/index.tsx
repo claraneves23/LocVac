@@ -34,6 +34,7 @@ type MandatoryVaccineModalProps = {
   onSave: () => void;
   onClose: () => void;
   saving?: boolean;
+  dateError?: string;
 };
 
 export default function MandatoryVaccineModal({
@@ -58,6 +59,7 @@ export default function MandatoryVaccineModal({
   onSave,
   onClose,
   saving = false,
+  dateError,
 }: MandatoryVaccineModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -99,14 +101,24 @@ export default function MandatoryVaccineModal({
 
             {isApplied && (
               <>
+                <Text style={styles.legend}>
+                  Campos com <Text style={styles.required}>*</Text> são obrigatórios
+                </Text>
+
                 <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Data de aplicação</Text>
-                  <Pressable style={styles.dateButton} onPress={onShowDatePicker}>
+                  <Text style={styles.formLabel}>
+                    Data de aplicação <Text style={styles.required}>*</Text>
+                  </Text>
+                  <Pressable
+                    style={[styles.dateButton, dateError && styles.inputError]}
+                    onPress={onShowDatePicker}
+                  >
                     <Text style={date ? styles.dateTextFilled : styles.dateText}>
                       {date ? formatDateToBR(date) : 'Selecione a data'}
                     </Text>
                     <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
                   </Pressable>
+                  {dateError && <Text style={styles.errorText}>{dateError}</Text>}
                   {showDatePicker && (
                     <DateTimePicker
                       value={pickerDate}
@@ -241,6 +253,16 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   formScroll: {
     marginVertical: spacing.md,
   },
+  legend: {
+    ...typography.caption,
+    color: c.ink3,
+    marginBottom: spacing.sm,
+    fontStyle: 'italic',
+  },
+  required: {
+    color: c.coral,
+    fontWeight: '700',
+  },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -291,6 +313,16 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     color: c.ink,
+  },
+  inputError: {
+    borderColor: c.danger,
+    backgroundColor: c.dangerSoft,
+  },
+  errorText: {
+    ...typography.caption,
+    color: c.danger,
+    marginTop: 4,
+    fontWeight: '500',
   },
   dateButton: {
     backgroundColor: c.bgMuted,

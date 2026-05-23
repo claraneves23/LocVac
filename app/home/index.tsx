@@ -129,6 +129,7 @@ export default function Index() {
   const [mandatoryProfName, setMandatoryProfName] = useState('');
   const [mandatoryProfId, setMandatoryProfId] = useState('');
   const [savingMandatory, setSavingMandatory] = useState(false);
+  const [mandatoryDateError, setMandatoryDateError] = useState<string | null>(null);
 
   // Other vaccine modal state
   const [isOtherModalOpen, setIsOtherModalOpen] = useState(false);
@@ -248,6 +249,7 @@ export default function Index() {
 
   // ===== Mandatory handlers =====
   const openMandatoryModal = (vaccineId: string) => {
+    setMandatoryDateError(null);
     const existingRecord = mandatoryRecords.find((r) => r.vaccineId === vaccineId);
     setEditingMandatory({ vaccineId, record: existingRecord });
     if (existingRecord) {
@@ -277,16 +279,22 @@ export default function Index() {
     if (date) {
       setMandatoryPickerDate(date);
       setMandatoryDate(date.toISOString().split('T')[0]);
+      setMandatoryDateError(null);
     }
   };
 
   const handleSaveMandatory = async () => {
     if (!editingMandatory || savingMandatory || !selectedProfile) return;
     const { vaccineId, record } = editingMandatory;
+    if (mandatoryIsApplied && !mandatoryDate) {
+      setMandatoryDateError('Campo obrigatório!');
+      return;
+    }
+    setMandatoryDateError(null);
     const payload = {
       idPessoa: Number(selectedProfile.id),
       idVacina: Number(vaccineId),
-      dataAplicacao: mandatoryDate || new Date().toISOString().split('T')[0],
+      dataAplicacao: mandatoryDate,
       lote: mandatoryLot.trim() || undefined,
       observacao: mandatoryCode.trim() || undefined,
       nomeProfissional: mandatoryProfName.trim() || undefined,
@@ -808,6 +816,7 @@ export default function Index() {
         onSave={handleSaveMandatory}
         onClose={() => setIsMandatoryModalOpen(false)}
         saving={savingMandatory}
+        dateError={mandatoryDateError ?? undefined}
       />
 
       <OtherVaccineModal
