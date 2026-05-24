@@ -124,7 +124,12 @@ export default function RedefinirSenha() {
     }
   };
 
-  const focusCodigo = () => codigoInputRef.current?.focus();
+  const focusCodigo = () => {
+    const input = codigoInputRef.current;
+    if (!input) return;
+    input.blur();
+    setTimeout(() => input.focus(), 50);
+  };
   const canSubmit = codigo.length === 6 && !loading;
 
   return (

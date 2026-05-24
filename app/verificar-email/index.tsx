@@ -31,7 +31,6 @@ export default function VerificarEmail() {
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
   const inputRef = useRef<TextInput>(null);
-  const isFocused = useRef(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -91,9 +90,6 @@ export default function VerificarEmail() {
   const focusInput = () => {
     const input = inputRef.current;
     if (!input) return;
-    if (isFocused.current) return;
-    // No Android o teclado não reabre em .focus() se o campo ainda tem "foco fantasma".
-    // Forçar blur antes garante que o OS trate como nova ativação do teclado.
     input.blur();
     setTimeout(() => input.focus(), 50);
   };
@@ -153,8 +149,6 @@ export default function VerificarEmail() {
               style={styles.hiddenInput}
               value={codigo}
               onChangeText={(v) => setCodigo(v.replace(/\D/g, '').slice(0, 6))}
-              onFocus={() => { isFocused.current = true; }}
-              onBlur={() => { isFocused.current = false; }}
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
