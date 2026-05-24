@@ -49,6 +49,7 @@ type DraftDependent = {
   guardianName?: string;
   sex: 'M' | 'F' | '';
   photoUri?: string;
+  cpf?: string;
   cns?: string;
   zipCode?: string;
   address?: string;
@@ -65,6 +66,7 @@ type DraftTitular = {
   birthDate: string;
   sex: 'M' | 'F' | '';
   photoUri?: string;
+  cpf?: string;
   cns?: string;
   zipCode?: string;
   address?: string;
@@ -147,6 +149,14 @@ export default function User() {
     const digits = value.replace(/\D/g, '').slice(0, 8);
     if (digits.length <= 5) return digits;
     return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
+  const formatCpf = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
   };
 
   const formatCns = (value: string) => {
@@ -281,7 +291,7 @@ export default function User() {
 
   const resetDraft = () => {
     setDraft({ name: '', birthDate: '', birthPlace: '', relationship: '', guardianName: '', sex: '',
-      photoUri: undefined, cns: '', zipCode: '', address: '', addressNumber: '', complement: '', neighborhood: '', city: '', state: '', phone: '' });
+      photoUri: undefined, cpf: '', cns: '', zipCode: '', address: '', addressNumber: '', complement: '', neighborhood: '', city: '', state: '', phone: '' });
     setShowRelationshipPicker(false);
     setShowStatePicker(false);
     setErrors({});
@@ -300,6 +310,7 @@ export default function User() {
       guardianName: dependent.guardianName || '',
       sex: dependent.sex === 'M' || dependent.sex === 'F' ? dependent.sex : '',
       photoUri: dependent.photoUri,
+      cpf: dependent.cpf ? formatCpf(dependent.cpf) : '',
       cns: dependent.cns ? formatCns(dependent.cns) : '',
       zipCode: dependent.zipCode ? formatCep(dependent.zipCode) : '',
       address: depRua,
@@ -324,6 +335,7 @@ export default function User() {
       const payload = {
         ...draft,
         sex: draft.sex as 'M' | 'F',
+        cpf: draft.cpf?.replace(/\D/g, '') || undefined,
         cns: draft.cns?.replace(/\D/g, '') || undefined,
         zipCode: draft.zipCode?.replace(/\D/g, '') || undefined,
         address: joinAddress(draft.address || '', draft.addressNumber || ''),
@@ -391,6 +403,7 @@ export default function User() {
       birthDate: mainUser.birthDate,
       sex: mainUser.sex === 'M' || mainUser.sex === 'F' ? mainUser.sex : '',
       photoUri: mainUser.photoUri,
+      cpf: mainUser.cpf ? formatCpf(mainUser.cpf) : '',
       cns: mainUser.cns ? formatCns(mainUser.cns) : '',
       zipCode: mainUser.zipCode ? formatCep(mainUser.zipCode) : '',
       address: titRua,
@@ -626,6 +639,18 @@ export default function User() {
                   })}
                 </View>
                 {titularErrors.sex && <Text style={styles.errorText}>{titularErrors.sex}</Text>}
+              </View>
+
+              {/* CPF (somente leitura) */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>CPF</Text>
+                <TextInput
+                  style={[styles.input, styles.inputReadonly]}
+                  value={titularDraft.cpf}
+                  editable={false}
+                  placeholder="Não informado"
+                  placeholderTextColor={colors.ink4}
+                />
               </View>
 
               {/* CNS */}
@@ -936,6 +961,19 @@ export default function User() {
                   placeholder="Ex: São Paulo - SP"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>CPF</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.cpf}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, cpf: formatCpf(v) }))}
+                  placeholder="000.000.000-00"
+                  placeholderTextColor={colors.ink4}
+                  keyboardType="numeric"
+                  maxLength={14}
                 />
               </View>
 

@@ -44,6 +44,7 @@ const mapPerfil = (perfil: any): FamilyMember => ({
   birthDate: perfil.dataNascimento,
   sex: mapSexo(perfil.sexoBiologico),
   kind: 'user',
+  cpf: perfil.cpf || undefined,
   cns: perfil.cns || undefined,
   zipCode: perfil.cep || undefined,
   address: perfil.rua || undefined,

@@ -43,6 +43,7 @@ type PessoaResponseDTO = {
   nome: string;
   dataNascimento: string;
   sexoBiologico: 'MASCULINO' | 'FEMININO' | 'OUTRO';
+  cpf?: string;
   cns?: string;
   cep?: string;
   rua?: string;
@@ -75,6 +76,7 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
     sex: mapSexo(d.sexoBiologico),
     kind: 'dependent',
     relationship: d.dscParentesco ?? '',
+    cpf: d.cpf,
     cns: d.cns,
     zipCode: d.cep,
     address: d.rua,

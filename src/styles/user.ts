@@ -342,6 +342,10 @@ export const makeStyles = (c: Colors) => StyleSheet.create({
     fontSize: 14,
     color: c.ink,
   },
+  inputReadonly: {
+    backgroundColor: c.bgSheet,
+    color: c.ink2,
+  },
   sexRow: {
     flexDirection: 'row',
     gap: 8,

@@ -13,6 +13,13 @@ const formatDateToBR = (isoDate: string | undefined): string => {
   return `${day}/${month}/${year}`;
 };
 
+const formatCpf = (value: string | undefined): string | undefined => {
+  if (!value) return undefined;
+  const digits = value.replace(/\D/g, '');
+  if (digits.length !== 11) return value;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
 const formatSex = (sex: string) => {
   if (sex === 'M') return 'Masculino';
   if (sex === 'F') return 'Feminino';
@@ -80,6 +87,7 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
               <InfoRow label="Sexo" value={formatSex(dependent.sex)} styles={styles} />
               <InfoRow label="Local de nascimento" value={dependent.birthPlace} styles={styles} />
               <InfoRow label="Responsável" value={dependent.guardianName} styles={styles} />
+              <InfoRow label="CPF" value={formatCpf(dependent.cpf)} styles={styles} />
               <InfoRow label="CNS" value={dependent.cns} styles={styles} />
               <InfoRow label="Telefone" value={dependent.phone} styles={styles} />
               <InfoRow label="CEP" value={dependent.zipCode} styles={styles} />
