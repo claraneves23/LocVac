@@ -1,16 +1,10 @@
-import { View, Text, Pressable, Modal, ScrollView, TextInput, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
-
-const formatDateToBR = (isoDate: string | undefined): string => {
-  if (!isoDate) return '';
-  const [year, month, day] = isoDate.split('-');
-  return `${day}/${month}/${year}`;
-};
+import { DateField } from '../../redesign';
 
 type MandatoryVaccineModalProps = {
   visible: boolean;
@@ -22,11 +16,8 @@ type MandatoryVaccineModalProps = {
   code: string;
   profName: string;
   profId: string;
-  pickerDate: Date;
-  showDatePicker: boolean;
   onToggleApplied: () => void;
-  onShowDatePicker: () => void;
-  onDateChange: (event: any, date?: Date) => void;
+  onChangeDate: (iso: string) => void;
   onChangeLot: (value: string) => void;
   onChangeCode: (value: string) => void;
   onChangeProfName: (value: string) => void;
@@ -47,11 +38,8 @@ export default function MandatoryVaccineModal({
   code,
   profName,
   profId,
-  pickerDate,
-  showDatePicker,
   onToggleApplied,
-  onShowDatePicker,
-  onDateChange,
+  onChangeDate,
   onChangeLot,
   onChangeCode,
   onChangeProfName,
@@ -109,26 +97,13 @@ export default function MandatoryVaccineModal({
                   <Text style={styles.formLabel}>
                     Data de aplicação <Text style={styles.required}>*</Text>
                   </Text>
-                  <Pressable
-                    style={[styles.dateButton, dateError && styles.inputError]}
-                    onPress={onShowDatePicker}
-                  >
-                    <Text style={date ? styles.dateTextFilled : styles.dateText}>
-                      {date ? formatDateToBR(date) : 'Selecione a data'}
-                    </Text>
-                    <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
-                  </Pressable>
+                  <DateField
+                    value={date}
+                    onChange={onChangeDate}
+                    error={!!dateError}
+                    maximumDate={new Date()}
+                  />
                   {dateError && <Text style={styles.errorText}>{dateError}</Text>}
-                  {showDatePicker && (
-                    <DateTimePicker
-                      value={pickerDate}
-                      mode="date"
-                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                      onChange={onDateChange}
-                      maximumDate={new Date()}
-                      locale="pt-BR"
-                    />
-                  )}
                 </View>
 
                 <View style={styles.formField}>

@@ -93,15 +93,6 @@ const formatAge = (months: number): string => {
   return `${y} ano${y > 1 ? 's' : ''} e ${m} mês${m > 1 ? 'es' : ''}`;
 };
 
-const parseDate = (dateStr: string): Date => {
-  if (!dateStr) return new Date();
-  if (dateStr.includes('/')) {
-    const [day, month, year] = dateStr.split('/');
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  }
-  return new Date(dateStr);
-};
-
 export default function Index() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -120,8 +111,6 @@ export default function Index() {
   // Mandatory modal state
   const [isMandatoryModalOpen, setIsMandatoryModalOpen] = useState(false);
   const [editingMandatory, setEditingMandatory] = useState<{ vaccineId: string; record?: MandatoryVaccineRecord } | null>(null);
-  const [mandatoryShowDatePicker, setMandatoryShowDatePicker] = useState(false);
-  const [mandatoryPickerDate, setMandatoryPickerDate] = useState(new Date());
   const [mandatoryIsApplied, setMandatoryIsApplied] = useState(false);
   const [mandatoryDate, setMandatoryDate] = useState('');
   const [mandatoryLot, setMandatoryLot] = useState('');
@@ -134,8 +123,6 @@ export default function Index() {
   // Other vaccine modal state
   const [isOtherModalOpen, setIsOtherModalOpen] = useState(false);
   const [editingOther, setEditingOther] = useState<OtherVaccine | null>(null);
-  const [otherShowDatePicker, setOtherShowDatePicker] = useState(false);
-  const [otherPickerDate, setOtherPickerDate] = useState(new Date());
   const [otherName, setOtherName] = useState('');
   const [otherDate, setOtherDate] = useState('');
   const [otherLot, setOtherLot] = useState('');
@@ -149,8 +136,6 @@ export default function Index() {
   // Campaign modal state
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<ParticipatingCampaign | null>(null);
-  const [campaignShowDatePicker, setCampaignShowDatePicker] = useState(false);
-  const [campaignPickerDate, setCampaignPickerDate] = useState(new Date());
   const [campaignName, setCampaignName] = useState('');
   const [campaignParticipationDate, setCampaignParticipationDate] = useState('');
   const [savingCampaign, setSavingCampaign] = useState(false);
@@ -259,9 +244,6 @@ export default function Index() {
       setMandatoryCode(existingRecord.code || '');
       setMandatoryProfName(existingRecord.professionalName || '');
       setMandatoryProfId(existingRecord.professionalId || '');
-      if (existingRecord.applicationDate) {
-        setMandatoryPickerDate(parseDate(existingRecord.applicationDate));
-      }
     } else {
       setMandatoryIsApplied(false);
       setMandatoryDate('');
@@ -269,18 +251,8 @@ export default function Index() {
       setMandatoryCode('');
       setMandatoryProfName('');
       setMandatoryProfId('');
-      setMandatoryPickerDate(new Date());
     }
     setIsMandatoryModalOpen(true);
-  };
-
-  const handleMandatoryDateChange = (_event: any, date?: Date) => {
-    setMandatoryShowDatePicker(Platform.OS === 'ios');
-    if (date) {
-      setMandatoryPickerDate(date);
-      setMandatoryDate(date.toISOString().split('T')[0]);
-      setMandatoryDateError(null);
-    }
   };
 
   const handleSaveMandatory = async () => {
@@ -331,7 +303,6 @@ export default function Index() {
       setOtherCode(vaccine.code || '');
       setOtherProfName(vaccine.professionalName || '');
       setOtherProfId(vaccine.professionalId || '');
-      if (vaccine.applicationDate) setOtherPickerDate(parseDate(vaccine.applicationDate));
     } else {
       setEditingOther(null);
       setOtherName('');
@@ -340,18 +311,8 @@ export default function Index() {
       setOtherCode('');
       setOtherProfName('');
       setOtherProfId('');
-      setOtherPickerDate(new Date());
     }
     setIsOtherModalOpen(true);
-  };
-
-  const handleOtherDateChange = (_event: any, date?: Date) => {
-    setOtherShowDatePicker(Platform.OS === 'ios');
-    if (date) {
-      setOtherPickerDate(date);
-      setOtherDate(date.toISOString().split('T')[0]);
-      setOtherDateError(null);
-    }
   };
 
   const handleSaveOther = async () => {
@@ -419,23 +380,12 @@ export default function Index() {
       setEditingCampaign(campaign);
       setCampaignName(campaign.campaignName);
       setCampaignParticipationDate(campaign.participationDate);
-      setCampaignPickerDate(parseDate(campaign.participationDate));
     } else {
       setEditingCampaign(null);
       setCampaignName('');
       setCampaignParticipationDate('');
-      setCampaignPickerDate(new Date());
     }
     setIsCampaignModalOpen(true);
-  };
-
-  const handleCampaignDateChange = (_event: any, date?: Date) => {
-    setCampaignShowDatePicker(Platform.OS === 'ios');
-    if (date) {
-      setCampaignPickerDate(date);
-      setCampaignParticipationDate(date.toISOString().split('T')[0]);
-      setCampaignDateError(null);
-    }
   };
 
   const handleSaveCampaign = async () => {
@@ -804,11 +754,8 @@ export default function Index() {
         code={mandatoryCode}
         profName={mandatoryProfName}
         profId={mandatoryProfId}
-        pickerDate={mandatoryPickerDate}
-        showDatePicker={mandatoryShowDatePicker}
         onToggleApplied={() => setMandatoryIsApplied(!mandatoryIsApplied)}
-        onShowDatePicker={() => setMandatoryShowDatePicker(true)}
-        onDateChange={handleMandatoryDateChange}
+        onChangeDate={(iso) => { setMandatoryDate(iso); setMandatoryDateError(null); }}
         onChangeLot={setMandatoryLot}
         onChangeCode={setMandatoryCode}
         onChangeProfName={setMandatoryProfName}
@@ -828,11 +775,8 @@ export default function Index() {
         code={otherCode}
         profName={otherProfName}
         profId={otherProfId}
-        pickerDate={otherPickerDate}
-        showDatePicker={otherShowDatePicker}
         onChangeName={(v) => { setOtherName(v); if (otherNameError) setOtherNameError(null); }}
-        onShowDatePicker={() => setOtherShowDatePicker(true)}
-        onDateChange={handleOtherDateChange}
+        onChangeDate={(iso) => { setOtherDate(iso); setOtherDateError(null); }}
         onChangeLot={setOtherLot}
         onChangeCode={setOtherCode}
         onChangeProfName={setOtherProfName}
@@ -849,14 +793,11 @@ export default function Index() {
         isEditing={!!editingCampaign}
         campaignName={campaignName}
         participationDate={campaignParticipationDate}
-        pickerDate={campaignPickerDate}
-        showDatePicker={campaignShowDatePicker}
         onChangeCampaignName={(name) => {
           setCampaignName(name);
           if (campaignNameError) setCampaignNameError(null);
         }}
-        onShowDatePicker={() => setCampaignShowDatePicker(true)}
-        onDateChange={handleCampaignDateChange}
+        onChangeParticipationDate={(iso) => { setCampaignParticipationDate(iso); setCampaignDateError(null); }}
         onSave={handleSaveCampaign}
         onClose={() => setIsCampaignModalOpen(false)}
         saving={savingCampaign}

@@ -16,12 +16,12 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { cadastrarTitular, logout } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
 import { joinAddress } from '../../src/utils/address';
 import { colors } from '../../src/theme/tokens';
+import { DateField } from '../../components/redesign';
 import styles from './styles';
 
 const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
@@ -35,7 +35,7 @@ export default function CadastroTitular() {
 
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [dataNascimento, setDataNascimento] = useState<Date | undefined>(undefined);
+  const [dataNascimento, setDataNascimento] = useState<string>('');
   const [cpf, setCpf] = useState('');
   const [cns, setCns] = useState('');
   const [sexoBiologico, setSexoBiologico] = useState<'MASCULINO' | 'FEMININO' | ''>('');
@@ -46,7 +46,6 @@ export default function CadastroTitular() {
   const [bairro, setBairro] = useState('');
   const [municipio, setMunicipio] = useState('');
   const [estado, setEstado] = useState<EstadoUF | ''>('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
 
   type FieldKey = 'nome' | 'dataNascimento' | 'cpf' | 'sexoBiologico' | 'cep' | 'telefone';
@@ -238,7 +237,7 @@ export default function CadastroTitular() {
   const handleSalvar = async () => {
     const novoErros: Partial<Record<FieldKey, string>> = {};
     if (!nome.trim()) novoErros.nome = 'Campo obrigatório!';
-    if (!dataNascimento) novoErros.dataNascimento = 'Campo obrigatório!';
+    if (!dataNascimento.trim()) novoErros.dataNascimento = 'Campo obrigatório!';
     if (!cpf.trim()) novoErros.cpf = 'Campo obrigatório!';
     if (!sexoBiologico) novoErros.sexoBiologico = 'Campo obrigatório!';
     if (cep.replace(/\D/g, '').length !== 8) novoErros.cep = 'Campo obrigatório!';
@@ -262,7 +261,7 @@ export default function CadastroTitular() {
       await cadastrarTitular({
         nome: nome.trim(),
         telefone: telefone.replace(/\D/g, ''),
-        dataNascimento: dataNascimento!.toISOString().split('T')[0],
+        dataNascimento: dataNascimento,
         cpf: cpf.replace(/\D/g, ''),
         cns: cnsDigits || undefined,
         sexoBiologico: sexoBiologico as 'MASCULINO' | 'FEMININO',
@@ -353,28 +352,15 @@ export default function CadastroTitular() {
               <Text style={styles.label}>
                 Data de nascimento <Text style={styles.required}>*</Text>
               </Text>
-              <Pressable
-                ref={dataNascimentoRef}
-                onPress={() => setShowDatePicker(true)}
-                style={[styles.input, errors.dataNascimento && styles.inputError]}
-              >
-                <Text style={{ color: dataNascimento ? colors.ink : colors.ink3, fontSize: 14 }}>
-                  {dataNascimento ? dataNascimento.toLocaleDateString() : 'Selecione a data'}
-                </Text>
-              </Pressable>
-              {errors.dataNascimento && <Text style={styles.errorText}>{errors.dataNascimento}</Text>}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={dataNascimento || new Date(2000, 0, 1)}
-                  mode="date"
-                  display="default"
-                  onChange={(_, date) => {
-                    setShowDatePicker(false);
-                    if (date) { setDataNascimento(date); clearError('dataNascimento'); }
-                  }}
+              <View ref={dataNascimentoRef}>
+                <DateField
+                  value={dataNascimento}
+                  onChange={(iso) => { setDataNascimento(iso); clearError('dataNascimento'); }}
+                  error={!!errors.dataNascimento}
                   maximumDate={new Date()}
                 />
-              )}
+              </View>
+              {errors.dataNascimento && <Text style={styles.errorText}>{errors.dataNascimento}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>

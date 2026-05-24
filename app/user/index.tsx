@@ -21,7 +21,6 @@ import { useRouter } from 'expo-router';
 
 import * as ImagePicker from 'expo-image-picker';
 import * as NavigationBar from 'expo-navigation-bar';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { FamilyMember } from '../../src/types/vaccination';
 import { addDependentAndLink, updateDependent, deleteDependent } from '../../src/service/dependentsService';
 import { updateTitular } from '../../src/service/authService';
@@ -30,7 +29,7 @@ import { joinAddress, splitAddress } from '../../src/utils/address';
 import logger from '../../src/utils/logger';
 import DependentInfoModal from '../../components/modals/DependentInfoModal';
 import { radii, spacing, typography, shadows, Tone } from '../../src/theme/tokens';
-import { Avatar, ScreenTitle } from '../../components/redesign';
+import { Avatar, ScreenTitle, DateField } from '../../components/redesign';
 import { makeStyles } from '../../src/styles/user';
 import { useTheme } from '../../src/context/ThemeContext';
 
@@ -86,7 +85,6 @@ export default function User() {
   // — dependent modal state —
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDependent, setSelectedDependent] = useState<FamilyMember | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
   const [savingDependent, setSavingDependent] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
@@ -101,7 +99,6 @@ export default function User() {
   // — titular modal state —
   const [isTitularModalOpen, setIsTitularModalOpen] = useState(false);
   const [savingTitular, setSavingTitular] = useState(false);
-  const [showTitularDatePicker, setShowTitularDatePicker] = useState(false);
   const [showTitularStatePicker, setShowTitularStatePicker] = useState(false);
   const [titularDraft, setTitularDraft] = useState<DraftTitular>({
     name: '', birthDate: '', sex: '', photoUri: undefined,
@@ -285,7 +282,6 @@ export default function User() {
   const resetDraft = () => {
     setDraft({ name: '', birthDate: '', birthPlace: '', relationship: '', guardianName: '', sex: '',
       photoUri: undefined, cns: '', zipCode: '', address: '', addressNumber: '', complement: '', neighborhood: '', city: '', state: '', phone: '' });
-    setShowDatePicker(false);
     setShowRelationshipPicker(false);
     setShowStatePicker(false);
     setErrors({});
@@ -314,7 +310,6 @@ export default function User() {
       state: (dependent.state as EstadoUF) || '',
       phone: formatPhone(dependent.phone || ''),
     });
-    setShowDatePicker(false);
     setShowRelationshipPicker(false);
     setErrors({});
     modalScrollY.current = 0;
@@ -407,7 +402,6 @@ export default function User() {
       phone: formatPhone(mainUser.phone || ''),
     });
     setTitularErrors({});
-    setShowTitularDatePicker(false);
     setShowTitularStatePicker(false);
     setIsTitularModalOpen(true);
   };
@@ -605,32 +599,13 @@ export default function User() {
               {/* nascimento */}
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Nascimento <Text style={styles.required}>*</Text></Text>
-                <Pressable
-                  style={[styles.dateButton, titularErrors.birthDate && styles.inputError]}
-                  onPress={() => setShowTitularDatePicker(true)}
-                >
-                  <Text style={titularDraft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
-                    {titularDraft.birthDate ? formatDateToBR(titularDraft.birthDate) : 'Selecionar data'}
-                  </Text>
-                  <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
-                </Pressable>
+                <DateField
+                  value={titularDraft.birthDate}
+                  onChange={(iso) => { setTitularDraft((c) => ({ ...c, birthDate: iso })); clearTitularError('birthDate'); }}
+                  error={!!titularErrors.birthDate}
+                  maximumDate={new Date()}
+                />
                 {titularErrors.birthDate && <Text style={styles.errorText}>{titularErrors.birthDate}</Text>}
-                {showTitularDatePicker && (
-                  <DateTimePicker
-                    value={titularDraft.birthDate ? new Date(titularDraft.birthDate) : new Date()}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(_event: any, selectedDate?: Date) => {
-                      setShowTitularDatePicker(Platform.OS === 'ios');
-                      if (selectedDate) {
-                        const dateStr = selectedDate.toISOString().split('T')[0];
-                        setTitularDraft((c) => ({ ...c, birthDate: dateStr }));
-                        clearTitularError('birthDate');
-                      }
-                    }}
-                    maximumDate={new Date()}
-                  />
-                )}
               </View>
 
               {/* sexo */}
@@ -891,33 +866,15 @@ export default function User() {
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Nascimento <Text style={styles.required}>*</Text></Text>
-                <Pressable
-                  ref={birthDateRef}
-                  style={[styles.dateButton, errors.birthDate && styles.inputError]}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Text style={draft.birthDate ? styles.dateButtonTextFilled : styles.dateButtonText}>
-                    {draft.birthDate ? formatDateToBR(draft.birthDate) : 'Selecionar data'}
-                  </Text>
-                  <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
-                </Pressable>
-                {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate}</Text>}
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={draft.birthDate ? new Date(draft.birthDate) : new Date()}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(_event: any, selectedDate?: Date) => {
-                      setShowDatePicker(Platform.OS === 'ios');
-                      if (selectedDate) {
-                        const dateStr = selectedDate.toISOString().split('T')[0];
-                        setDraft((c) => ({ ...c, birthDate: dateStr }));
-                        clearError('birthDate');
-                      }
-                    }}
+                <View ref={birthDateRef}>
+                  <DateField
+                    value={draft.birthDate}
+                    onChange={(iso) => { setDraft((c) => ({ ...c, birthDate: iso })); clearError('birthDate'); }}
+                    error={!!errors.birthDate}
                     maximumDate={new Date()}
                   />
-                )}
+                </View>
+                {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate}</Text>}
               </View>
 
               <View style={styles.fieldGroup}>

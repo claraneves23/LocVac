@@ -1,27 +1,18 @@
-import { View, Text, Pressable, Modal, ScrollView, StyleSheet, Platform, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
-
-const formatDateToBR = (isoDate: string | undefined): string => {
-  if (!isoDate) return '';
-  const [year, month, day] = isoDate.split('-');
-  return `${day}/${month}/${year}`;
-};
+import { DateField } from '../../redesign';
 
 type CampaignModalProps = {
   visible: boolean;
   isEditing: boolean;
   campaignName: string;
   participationDate: string;
-  pickerDate: Date;
-  showDatePicker: boolean;
   onChangeCampaignName: (text: string) => void;
-  onShowDatePicker: () => void;
-  onDateChange: (event: any, date?: Date) => void;
+  onChangeParticipationDate: (iso: string) => void;
   onSave: () => void;
   onClose: () => void;
   saving?: boolean;
@@ -34,11 +25,8 @@ export default function CampaignModal({
   isEditing,
   campaignName,
   participationDate,
-  pickerDate,
-  showDatePicker,
   onChangeCampaignName,
-  onShowDatePicker,
-  onDateChange,
+  onChangeParticipationDate,
   onSave,
   onClose,
   saving = false,
@@ -98,26 +86,13 @@ export default function CampaignModal({
               <Text style={styles.formLabel}>
                 Data de participação <Text style={styles.required}>*</Text>
               </Text>
-              <Pressable
-                style={[styles.dateButton, participationDateError && styles.inputError]}
-                onPress={onShowDatePicker}
-              >
-                <Text style={participationDate ? styles.dateTextFilled : styles.dateText}>
-                  {participationDate ? formatDateToBR(participationDate) : 'Selecione a data'}
-                </Text>
-                <Ionicons name="calendar-outline" size={18} color={colors.brandInk} />
-              </Pressable>
+              <DateField
+                value={participationDate}
+                onChange={onChangeParticipationDate}
+                error={!!participationDateError}
+                maximumDate={new Date()}
+              />
               {participationDateError && <Text style={styles.errorText}>{participationDateError}</Text>}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={pickerDate}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={onDateChange}
-                  maximumDate={new Date()}
-                  locale="pt-BR"
-                />
-              )}
             </View>
           </ScrollView>
 
