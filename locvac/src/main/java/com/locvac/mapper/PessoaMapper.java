@@ -20,6 +20,7 @@ public class PessoaMapper {
         pessoa.setCep(dto.cep());
         pessoa.setRua(dto.rua());
         pessoa.setComplemento(dto.complemento());
+        pessoa.setBairro(dto.bairro());
         pessoa.setMunicipio(dto.municipio());
         pessoa.setEstado(dto.estado());
         pessoa.setTelefone(dto.telefone());
@@ -43,6 +44,7 @@ public class PessoaMapper {
                 pessoa.getCep(),
                 pessoa.getRua(),
                 pessoa.getComplemento(),
+                pessoa.getBairro(),
                 pessoa.getMunicipio(),
                 pessoa.getEstado(),
                 pessoa.getTelefone(),

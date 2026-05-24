@@ -48,6 +48,7 @@ const mapPerfil = (perfil: any): FamilyMember => ({
   zipCode: perfil.cep || undefined,
   address: perfil.rua || undefined,
   complement: perfil.complemento || undefined,
+  neighborhood: perfil.bairro || undefined,
   city: perfil.municipio || undefined,
   state: perfil.estado || undefined,
   phone: perfil.telefone || undefined,

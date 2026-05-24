@@ -37,6 +37,7 @@ export interface CadastroTitularRequest {
 	cep: string;
 	rua?: string;
 	complemento?: string;
+	bairro?: string;
 	municipio?: string;
 	estado?: string;
 	telefone: string;
@@ -95,6 +96,7 @@ export async function cadastrarTitular(data: CadastroTitularRequest): Promise<{ 
 		cep: data.cep,
 		rua: data.rua || '',
 		complemento: data.complemento || '',
+		bairro: data.bairro || '',
 		municipio: data.municipio || '',
 		estado: data.estado || null,
 		telefone: data.telefone,
@@ -118,6 +120,7 @@ export interface UpdateTitularRequest {
 	cep: string;
 	rua?: string;
 	complemento?: string;
+	bairro?: string;
 	municipio?: string;
 	estado?: string;
 	telefone: string;
@@ -133,6 +136,7 @@ export async function updateTitular(pessoaId: string, data: UpdateTitularRequest
 		cep: data.cep,
 		rua: data.rua || '',
 		complemento: data.complemento || '',
+		bairro: data.bairro || '',
 		municipio: data.municipio || '',
 		estado: data.estado || null,
 		telefone: data.telefone,

@@ -85,6 +85,7 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
               <InfoRow label="CEP" value={dependent.zipCode} styles={styles} />
               <InfoRow label="Rua" value={dependent.address} styles={styles} />
               <InfoRow label="Complemento" value={dependent.complement} styles={styles} />
+              <InfoRow label="Bairro" value={dependent.neighborhood} styles={styles} />
               <InfoRow label="Município" value={dependent.city} styles={styles} />
               <InfoRow label="Estado" value={dependent.state} styles={styles} />
             </View>

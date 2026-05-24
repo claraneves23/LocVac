@@ -43,6 +43,7 @@ export default function CadastroTitular() {
   const [rua, setRua] = useState('');
   const [numero, setNumero] = useState('');
   const [complemento, setComplemento] = useState('');
+  const [bairro, setBairro] = useState('');
   const [municipio, setMunicipio] = useState('');
   const [estado, setEstado] = useState<EstadoUF | ''>('');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -147,6 +148,7 @@ export default function CadastroTitular() {
     const data = await response.json().catch(() => null);
     if (!data || data.erro) return;
     if (data.logradouro) setRua(data.logradouro);
+    if (data.bairro) setBairro(data.bairro);
     if (data.localidade) setMunicipio(data.localidade);
     if (data.uf) setEstado(data.uf as EstadoUF);
   };
@@ -267,6 +269,7 @@ export default function CadastroTitular() {
         cep: cep.replace(/\D/g, ''),
         rua: joinAddress(rua, numero),
         complemento: complemento.trim(),
+        bairro: bairro.trim(),
         municipio: municipio.trim(),
         estado: estado || undefined,
       });
@@ -485,6 +488,18 @@ export default function CadastroTitular() {
                 value={complemento}
                 onChangeText={setComplemento}
                 placeholder="Apto, bloco, etc."
+                placeholderTextColor={colors.ink3}
+                maxLength={100}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Bairro</Text>
+              <TextInput
+                style={styles.input}
+                value={bairro}
+                onChangeText={setBairro}
+                placeholder="Nome do bairro"
                 placeholderTextColor={colors.ink3}
                 maxLength={100}
               />

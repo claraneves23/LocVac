@@ -15,6 +15,7 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
     cep: dependent.zipCode || '',
     rua: dependent.address || '',
     complemento: dependent.complement || '',
+    bairro: dependent.neighborhood || '',
     municipio: dependent.city || '',
     estado: dependent.state || null,
     telefone: (dependent.phone || '').replace(/\D/g, ''),
@@ -46,6 +47,7 @@ type PessoaResponseDTO = {
   cep?: string;
   rua?: string;
   complemento?: string;
+  bairro?: string;
   municipio?: string;
   estado?: string;
   telefone?: string;
@@ -77,6 +79,7 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
     zipCode: d.cep,
     address: d.rua,
     complement: d.complemento,
+    neighborhood: d.bairro,
     city: d.municipio,
     state: d.estado,
     phone: d.telefone,
@@ -95,6 +98,7 @@ export async function updateDependent(id: string, dependent: Omit<FamilyMember, 
     cep: dependent.zipCode || '',
     rua: dependent.address || '',
     complemento: dependent.complement || '',
+    bairro: dependent.neighborhood || '',
     municipio: dependent.city || '',
     estado: dependent.state || null,
     telefone: (dependent.phone || '').replace(/\D/g, ''),

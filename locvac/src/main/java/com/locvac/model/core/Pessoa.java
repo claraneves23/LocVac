@@ -53,6 +53,9 @@ public class Pessoa {
     private String complemento;
 
     @Column(length = 100)
+    private String bairro;
+
+    @Column(length = 100)
     private String municipio;
 
     @Enumerated(EnumType.STRING)
@@ -117,6 +120,7 @@ public class Pessoa {
 
     public void setRua(String rua) { this.rua = rua; }
     public void setComplemento(String complemento) { this.complemento = complemento; }
+    public void setBairro(String bairro) { this.bairro = bairro; }
     public void setMunicipio(String municipio) { this.municipio = municipio; }
     public void setEstado(Estado estado) { this.estado = estado; }
 
@@ -173,6 +177,7 @@ public class Pessoa {
 
     public String getRua() { return rua; }
     public String getComplemento() { return complemento; }
+    public String getBairro() { return bairro; }
     public String getMunicipio() { return municipio; }
     public Estado getEstado() { return estado; }
 

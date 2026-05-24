@@ -41,6 +41,9 @@ public record PessoaRequestDTO(
         String complemento,
 
         @Size(max = 100)
+        String bairro,
+
+        @Size(max = 100)
         String municipio,
 
         Estado estado,

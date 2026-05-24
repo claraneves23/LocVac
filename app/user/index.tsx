@@ -55,6 +55,7 @@ type DraftDependent = {
   address?: string;
   addressNumber?: string;
   complement?: string;
+  neighborhood?: string;
   city?: string;
   state?: EstadoUF | '';
   phone?: string;
@@ -70,6 +71,7 @@ type DraftTitular = {
   address?: string;
   addressNumber?: string;
   complement?: string;
+  neighborhood?: string;
   city?: string;
   state?: EstadoUF | '';
   phone?: string;
@@ -91,7 +93,7 @@ export default function User() {
   const [draft, setDraft] = useState<DraftDependent>({
     name: '', birthDate: '', birthPlace: '', relationship: '',
     guardianName: '', sex: '', photoUri: undefined,
-    address: '', addressNumber: '', city: '', state: '', zipCode: '', phone: '',
+    address: '', addressNumber: '', neighborhood: '', city: '', state: '', zipCode: '', phone: '',
   });
   type DepFieldKey = 'name' | 'birthDate' | 'relationship' | 'sex' | 'zipCode' | 'phone';
   const [errors, setErrors] = useState<Partial<Record<DepFieldKey, string>>>({});
@@ -103,7 +105,7 @@ export default function User() {
   const [showTitularStatePicker, setShowTitularStatePicker] = useState(false);
   const [titularDraft, setTitularDraft] = useState<DraftTitular>({
     name: '', birthDate: '', sex: '', photoUri: undefined,
-    cns: '', zipCode: '', address: '', addressNumber: '', complement: '', city: '', state: '', phone: '',
+    cns: '', zipCode: '', address: '', addressNumber: '', complement: '', neighborhood: '', city: '', state: '', phone: '',
   });
   type TitularFieldKey = 'name' | 'birthDate' | 'sex' | 'zipCode' | 'phone';
   const [titularErrors, setTitularErrors] = useState<Partial<Record<TitularFieldKey, string>>>({});
@@ -173,6 +175,7 @@ export default function User() {
     setDraft((c) => ({
       ...c,
       ...(data.logradouro && { address: data.logradouro, addressNumber: '' }),
+      ...(data.bairro && { neighborhood: data.bairro }),
       ...(data.localidade && { city: data.localidade }),
       ...(data.uf && { state: data.uf as EstadoUF }),
     }));
@@ -184,6 +187,7 @@ export default function User() {
     setTitularDraft((c) => ({
       ...c,
       ...(data.logradouro && { address: data.logradouro, addressNumber: '' }),
+      ...(data.bairro && { neighborhood: data.bairro }),
       ...(data.localidade && { city: data.localidade }),
       ...(data.uf && { state: data.uf as EstadoUF }),
     }));
@@ -280,7 +284,7 @@ export default function User() {
 
   const resetDraft = () => {
     setDraft({ name: '', birthDate: '', birthPlace: '', relationship: '', guardianName: '', sex: '',
-      photoUri: undefined, cns: '', zipCode: '', address: '', addressNumber: '', complement: '', city: '', state: '', phone: '' });
+      photoUri: undefined, cns: '', zipCode: '', address: '', addressNumber: '', complement: '', neighborhood: '', city: '', state: '', phone: '' });
     setShowDatePicker(false);
     setShowRelationshipPicker(false);
     setShowStatePicker(false);
@@ -305,6 +309,7 @@ export default function User() {
       address: depRua,
       addressNumber: depNumero,
       complement: dependent.complement || '',
+      neighborhood: dependent.neighborhood || '',
       city: dependent.city || '',
       state: (dependent.state as EstadoUF) || '',
       phone: formatPhone(dependent.phone || ''),
@@ -396,6 +401,7 @@ export default function User() {
       address: titRua,
       addressNumber: titNumero,
       complement: mainUser.complement || '',
+      neighborhood: mainUser.neighborhood || '',
       city: mainUser.city || '',
       state: (mainUser.state as EstadoUF) || '',
       phone: formatPhone(mainUser.phone || ''),
@@ -419,6 +425,7 @@ export default function User() {
         cep: titularDraft.zipCode?.replace(/\D/g, '') || '',
         rua: joinAddress(titularDraft.address || '', titularDraft.addressNumber || ''),
         complemento: titularDraft.complement,
+        bairro: titularDraft.neighborhood,
         municipio: titularDraft.city,
         estado: titularDraft.state || undefined,
         telefone: (titularDraft.phone || '').replace(/\D/g, ''),
@@ -710,6 +717,19 @@ export default function User() {
                   value={titularDraft.complement}
                   onChangeText={(v) => setTitularDraft((c) => ({ ...c, complement: v }))}
                   placeholder="Apto, bloco, etc."
+                  placeholderTextColor={colors.ink4}
+                  maxLength={100}
+                />
+              </View>
+
+              {/* bairro */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Bairro</Text>
+                <TextInput
+                  style={styles.input}
+                  value={titularDraft.neighborhood}
+                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, neighborhood: v }))}
+                  placeholder="Nome do bairro"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
                 />
@@ -1034,6 +1054,18 @@ export default function User() {
                   value={draft.complement}
                   onChangeText={(v) => setDraft((c) => ({ ...c, complement: v }))}
                   placeholder="Apto, bloco, etc."
+                  placeholderTextColor={colors.ink4}
+                  maxLength={100}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Bairro</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draft.neighborhood}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, neighborhood: v }))}
+                  placeholder="Nome do bairro"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
                 />

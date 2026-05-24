@@ -16,6 +16,7 @@ public record PessoaResponseDTO(
         String cep,
         String rua,
         String complemento,
+        String bairro,
         String municipio,
         Estado estado,
         String telefone,
