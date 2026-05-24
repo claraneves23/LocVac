@@ -100,8 +100,9 @@ function LayoutContent() {
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    NavigationBar.setButtonStyleAsync('dark').catch(() => {});
-  }, []);
+    NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
+    NavigationBar.setBackgroundColorAsync(isDark ? colors.bgElev : '#FFFFFF').catch(() => {});
+  }, [isDark, colors.bgElev]);
 
   const hideBottomBar = HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
   const isOnPublicOrSetup = PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular';

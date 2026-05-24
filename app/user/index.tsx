@@ -79,7 +79,7 @@ type DraftTitular = {
 
 export default function User() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { mainUser, dependents, usuarioId, refreshDependents, refreshMainUser } = useAppContext();
 
@@ -123,14 +123,14 @@ export default function User() {
           await NavigationBar.setButtonStyleAsync('light');
           await NavigationBar.setVisibilityAsync('visible');
         } else {
-          await NavigationBar.setButtonStyleAsync('dark');
+          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
         }
       } catch (error) {
         logger.warn('NavigationBar API não disponível no Expo Go');
       }
     };
     updateSystemBars();
-  }, [anyModalOpen]);
+  }, [anyModalOpen, isDark]);
 
   // — formatters —
   const formatDateToBR = (isoDate: string): string => {

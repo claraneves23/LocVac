@@ -103,7 +103,7 @@ const parseDate = (dateStr: string): Date => {
 };
 
 export default function Index() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { mainUser, dependents } = useAppContext();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -240,12 +240,12 @@ export default function Index() {
           await NavigationBar.setButtonStyleAsync('light');
           await NavigationBar.setVisibilityAsync('visible');
         } else {
-          await NavigationBar.setButtonStyleAsync('dark');
+          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
         }
       } catch {}
     };
     updateBars();
-  }, [anyModalOpen]);
+  }, [anyModalOpen, isDark]);
 
   // ===== Mandatory handlers =====
   const openMandatoryModal = (vaccineId: string) => {

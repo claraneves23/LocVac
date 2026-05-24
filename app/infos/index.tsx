@@ -72,7 +72,7 @@ const overlapsGroup = (vaccine: VacinaDTO, group: AgeGroup): boolean => {
 };
 
 export default function Infos() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const TONE_BG: Record<string, string> = { brand: colors.brandSoft, coral: colors.coralSoft, ochre: colors.ochreSoft };
   const TONE_INK: Record<string, string> = { brand: colors.brandInk, coral: colors.coralInk, ochre: colors.ochreInk };
@@ -111,12 +111,12 @@ export default function Infos() {
           await NavigationBar.setButtonStyleAsync('light');
           await NavigationBar.setVisibilityAsync('visible');
         } else {
-          await NavigationBar.setButtonStyleAsync('dark');
+          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
         }
       } catch {}
     };
     updateBars();
-  }, [helpVisible, filterVisible]);
+  }, [helpVisible, filterVisible, isDark]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
