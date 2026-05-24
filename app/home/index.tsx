@@ -44,6 +44,7 @@ import AppHeader from '../../components/redesign/AppHeader';
 import Skeleton from '../../components/redesign/Skeleton';
 import ProfileModal from '../../components/modals/ProfileModal';
 import MandatoryVaccineModal from '../../components/modals/MandatoryVaccineModal';
+import QuickFillVaccinesModal from '../../components/modals/QuickFillVaccinesModal';
 import OtherVaccineModal from '../../components/modals/OtherVaccineModal';
 import CampaignModal from '../../components/modals/CampaignModal';
 import { makeStyles } from '../../src/styles/home';
@@ -107,6 +108,9 @@ export default function Index() {
   const [campaigns, setCampaigns] = useState<ParticipatingCampaign[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [mandatoryListLoaded, setMandatoryListLoaded] = useState(false);
+
+  // Quick-fill modal state
+  const [isQuickFillOpen, setIsQuickFillOpen] = useState(false);
 
   // Mandatory modal state
   const [isMandatoryModalOpen, setIsMandatoryModalOpen] = useState(false);
@@ -216,7 +220,7 @@ export default function Index() {
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  const anyModalOpen = isProfileModalOpen || isMandatoryModalOpen || isOtherModalOpen || isCampaignModalOpen;
+  const anyModalOpen = isProfileModalOpen || isMandatoryModalOpen || isOtherModalOpen || isCampaignModalOpen || isQuickFillOpen;
   useEffect(() => {
     const updateBars = async () => {
       if (Platform.OS !== 'android') return;
@@ -597,6 +601,7 @@ export default function Index() {
             <SectionHeader
               title="Obrigatórias"
               count={`${mandatoryRecords.length}/${mandatoryVaccineList.length}`}
+              onQuickFill={() => setIsQuickFillOpen(true)}
             />
             {vaccineGroups.length === 0 ? (
               <View style={styles.emptyCard}>
@@ -744,6 +749,15 @@ export default function Index() {
         onClose={() => setIsProfileModalOpen(false)}
       />
 
+      <QuickFillVaccinesModal
+        visible={isQuickFillOpen}
+        vaccines={mandatoryVaccineList}
+        records={mandatoryRecords}
+        pessoaId={selectedProfile ? Number(selectedProfile.id) : null}
+        onClose={() => setIsQuickFillOpen(false)}
+        onSaved={loadData}
+      />
+
       <MandatoryVaccineModal
         visible={isMandatoryModalOpen}
         vaccineId={editingMandatory?.vaccineId ?? null}
@@ -814,10 +828,12 @@ function SectionHeader({
   title,
   count,
   onAdd,
+  onQuickFill,
 }: {
   title: string;
   count: string | number;
   onAdd?: () => void;
+  onQuickFill?: () => void;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -827,11 +843,18 @@ function SectionHeader({
         <Text style={styles.sectionTitle}>{title}</Text>
         <Text style={styles.sectionCount}>{count}</Text>
       </View>
-      {onAdd && (
-        <Pressable onPress={onAdd} style={styles.addBtn}>
-          <Ionicons name="add" size={16} color="#fff" />
-        </Pressable>
-      )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {onQuickFill && (
+          <Pressable onPress={onQuickFill} style={styles.quickFillBtn} hitSlop={6}>
+            <Ionicons name="list" size={18} color={colors.brandInk} />
+          </Pressable>
+        )}
+        {onAdd && (
+          <Pressable onPress={onAdd} style={styles.addBtn}>
+            <Ionicons name="add" size={16} color="#fff" />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }

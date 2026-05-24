@@ -141,6 +141,16 @@ export const makeStyles = (c: Colors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  quickFillBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: c.brandSoft,
+    borderWidth: 1,
+    borderColor: c.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // Group header
   groupHeader: {
