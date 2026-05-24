@@ -51,6 +51,7 @@ public class SecurityConfig {
                     "/excluir",
                     "/privacidade",
                     "/logo.png",
+                    "/iconLocVac.png",
                     "/favicon.ico",
                     "/error"
                 ).permitAll()
