@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as NavigationBar from 'expo-navigation-bar';
-import { Animated, Image, Platform, StyleSheet, View } from 'react-native';
+import { Animated, BackHandler, Image, Platform, StyleSheet, ToastAndroid, View } from 'react-native';
 import BottomTabs from '../components/redesign/BottomTabs';
 import { getNavigationDirection } from '../src/navigation-direction';
 import { AppProvider, useAppContext } from '../src/context/AppContext';
@@ -19,6 +19,8 @@ configurarHandlerNotificacao();
 const MAIN_TAB_ROUTES = ['home', 'hist', 'infos', 'user'];
 const isMainTabRoute = (name: string) =>
   MAIN_TAB_ROUTES.some((r) => name === r || name === `${r}/index` || name.startsWith(`${r}/`));
+const MAIN_TAB_PATHS = ['/home', '/hist', '/infos', '/user'];
+const DOUBLE_BACK_DELAY_MS = 2000;
 const HIDE_BOTTOM_BAR_ROUTES = [
   '/login',
   '/verificar-email',
@@ -103,6 +105,26 @@ function LayoutContent() {
     NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
     NavigationBar.setBackgroundColorAsync(isDark ? colors.bgElev : '#FFFFFF').catch(() => {});
   }, [isDark, colors.bgElev]);
+
+  const pathnameRef = useRef(pathname);
+  useEffect(() => { pathnameRef.current = pathname; }, [pathname]);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    let lastBackPress = 0;
+    const onBack = () => {
+      if (!MAIN_TAB_PATHS.includes(pathnameRef.current)) return false;
+      const now = Date.now();
+      if (now - lastBackPress < DOUBLE_BACK_DELAY_MS) {
+        BackHandler.exitApp();
+        return true;
+      }
+      lastBackPress = now;
+      ToastAndroid.show('Pressione novamente para sair', ToastAndroid.SHORT);
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, []);
 
   const hideBottomBar = HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
   const isOnPublicOrSetup = PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular';
