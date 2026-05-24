@@ -1,13 +1,14 @@
-﻿import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Skeleton from '../../components/redesign/Skeleton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchInformativosPorVacina, fetchEfeitosColateraisPorVacina } from '../../src/service/infoService';
 import { VacinaInformativoDTO, EfeitoColateralDTO } from '../../src/types/info';
-import { colors, radii, shadows, spacing, typography, tonePairs, Tone } from '../../src/theme/tokens';
+import { type Colors, radii, shadows, spacing, typography, makeTonePairs, Tone } from '../../src/theme/tokens';
 import { ScreenTitle } from '../../components/redesign';
+import { useTheme } from '../../src/context/ThemeContext';
 
 const SEVERIDADE_TONE: Record<EfeitoColateralDTO['severidade'], Tone> = {
   LEVE: 'success',
@@ -24,6 +25,9 @@ const SEVERIDADE_LABEL: Record<EfeitoColateralDTO['severidade'], string> = {
 export default function VaccineDetails() {
   const { vaccineId, vaccineName } = useLocalSearchParams<{ vaccineId: string; vaccineName: string }>();
   const router = useRouter();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const tonePairs = useMemo(() => makeTonePairs(colors), [colors]);
   const [informativos, setInformativos] = useState<VacinaInformativoDTO[]>([]);
   const [efeitos, setEfeitos] = useState<EfeitoColateralDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,15 +169,15 @@ export default function VaccineDetails() {
         </ScrollView>
       )}
 
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     paddingTop: '5%',
   },
   content: {
@@ -185,10 +189,10 @@ const styles = StyleSheet.create({
     paddingBottom: 130,
   },
   heroCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     padding: spacing.lg,
     alignItems: 'center',
     gap: 8,
@@ -199,18 +203,18 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroTitle: {
     ...typography.h2,
-    color: colors.ink,
+    color: c.ink,
     textAlign: 'center',
   },
   heroSub: {
     ...typography.small,
-    color: colors.ink3,
+    color: c.ink3,
     textAlign: 'center',
   },
   section: {
@@ -218,19 +222,19 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
     marginBottom: spacing.sm,
   },
   sectionCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     padding: spacing.md,
   },
   sectionContent: {
     ...typography.body,
-    color: colors.ink2,
+    color: c.ink2,
   },
   sourceBox: {
     flexDirection: 'row',
@@ -240,7 +244,7 @@ const styles = StyleSheet.create({
   },
   sourceText: {
     ...typography.caption,
-    color: colors.ink3,
+    color: c.ink3,
   },
   efeitoCard: {
     borderRadius: radii.md,
@@ -262,12 +266,12 @@ const styles = StyleSheet.create({
   },
   efeitoDescricao: {
     ...typography.body,
-    color: colors.ink,
+    color: c.ink,
     marginBottom: 4,
   },
   efeitoOrientacao: {
     ...typography.small,
-    color: colors.ink2,
+    color: c.ink2,
     fontStyle: 'italic',
   },
   emptyBox: {
@@ -279,24 +283,24 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.brandSoft,
+    backgroundColor: c.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyTitle: {
     ...typography.bodyLg,
     fontWeight: '600',
-    color: colors.ink,
+    color: c.ink,
   },
   emptyText: {
     ...typography.small,
-    color: colors.ink3,
+    color: c.ink3,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
   },
   recommendationBox: {
     flexDirection: 'row',
-    backgroundColor: colors.successSoft,
+    backgroundColor: c.successSoft,
     padding: spacing.md,
     borderRadius: radii.md,
     gap: 10,
@@ -306,7 +310,7 @@ const styles = StyleSheet.create({
   recommendationText: {
     flex: 1,
     ...typography.small,
-    color: colors.successInk,
+    color: c.successInk,
     lineHeight: 18,
   },
 });

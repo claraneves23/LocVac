@@ -145,15 +145,17 @@ export const darkColors: Colors = {
 
 export type Tone = 'brand' | 'coral' | 'ochre' | 'success' | 'warn' | 'danger' | 'neutral';
 
-export const tonePairs: Record<Tone, { bg: string; ink: string; solid: string }> = {
-  brand:   { bg: colors.brandSoft,   ink: colors.brandInk,   solid: colors.brand },
-  coral:   { bg: colors.coralSoft,   ink: colors.coralInk,   solid: colors.coral },
-  ochre:   { bg: colors.ochreSoft,   ink: colors.ochreInk,   solid: colors.ochre },
-  success: { bg: colors.successSoft, ink: colors.successInk, solid: colors.success },
-  warn:    { bg: colors.warnSoft,    ink: colors.warnInk,    solid: colors.warn },
-  danger:  { bg: colors.dangerSoft,  ink: colors.dangerInk,  solid: colors.danger },
-  neutral: { bg: colors.bgMuted,     ink: colors.ink2,       solid: colors.ink },
-};
+export const makeTonePairs = (c: Colors): Record<Tone, { bg: string; ink: string; solid: string }> => ({
+  brand:   { bg: c.brandSoft,   ink: c.brandInk,   solid: c.brand },
+  coral:   { bg: c.coralSoft,   ink: c.coralInk,   solid: c.coral },
+  ochre:   { bg: c.ochreSoft,   ink: c.ochreInk,   solid: c.ochre },
+  success: { bg: c.successSoft, ink: c.successInk, solid: c.success },
+  warn:    { bg: c.warnSoft,    ink: c.warnInk,    solid: c.warn },
+  danger:  { bg: c.dangerSoft,  ink: c.dangerInk,  solid: c.danger },
+  neutral: { bg: c.bgMuted,     ink: c.ink2,       solid: c.ink },
+});
+
+export const tonePairs = makeTonePairs(colors);
 
 export const theme = { colors, radii, spacing, typography, shadows, tonePairs, fontFamily };
 export default theme;

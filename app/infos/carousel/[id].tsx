@@ -1,16 +1,19 @@
-﻿import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Skeleton from '../../../components/redesign/Skeleton';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchCarrosselConteudo } from '../../../src/service/infoService';
 import { CarrosselConteudoDTO } from '../../../src/types/info';
-import { colors, radii, shadows, spacing, typography } from '../../../src/theme/tokens';
+import { type Colors, radii, shadows, spacing, typography } from '../../../src/theme/tokens';
 import { ScreenTitle } from '../../../components/redesign';
+import { useTheme } from '../../../src/context/ThemeContext';
 
 export default function CarrosselDetalhe() {
   const { id, titulo } = useLocalSearchParams<{ id: string; titulo: string }>();
   const router = useRouter();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [secoes, setSecoes] = useState<CarrosselConteudoDTO[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,15 +71,15 @@ export default function CarrosselDetalhe() {
         </ScrollView>
       )}
 
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     paddingTop: '5%',
   },
   content: {
@@ -88,22 +91,22 @@ const styles = StyleSheet.create({
     paddingBottom: 130,
   },
   secaoCard: {
-    backgroundColor: colors.bgElev,
+    backgroundColor: c.bgElev,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: c.line,
     padding: spacing.lg,
     marginBottom: spacing.md,
     ...shadows.sm,
   },
   secaoTitulo: {
     ...typography.h3,
-    color: colors.ink,
+    color: c.ink,
     marginBottom: spacing.sm,
   },
   secaoConteudo: {
     ...typography.body,
-    color: colors.ink2,
+    color: c.ink2,
   },
   itensList: {
     marginTop: spacing.sm,
@@ -118,12 +121,12 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: colors.brand,
+    backgroundColor: c.brandInk,
     marginTop: 8,
   },
   itemTexto: {
     flex: 1,
     ...typography.body,
-    color: colors.ink2,
+    color: c.ink2,
   },
 });
