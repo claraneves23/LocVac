@@ -27,6 +27,7 @@ public class HostFilter extends OncePerRequestFilter {
             "/excluir",
             "/privacidade",
             "/logo.png",
+            "/iconLocVac.png",
             "/favicon.ico"
     );
 
@@ -146,7 +147,7 @@ public class HostFilter extends OncePerRequestFilter {
 <body>
   <div class="card">
     <div class="logo-wrap">
-      <img src="/logo.png" alt="LocVac">
+      <img src="/iconLocVac.png" alt="LocVac">
     </div>
     <span class="badge">Em construção</span>
     <h1>Esta página ainda não está disponível</h1>
