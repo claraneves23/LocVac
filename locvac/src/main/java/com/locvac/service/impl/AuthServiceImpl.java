@@ -9,8 +9,10 @@ import com.locvac.service.JwtService;
 import com.locvac.service.RefreshTokenService;
 import dev.samstevens.totp.code.CodeVerifier;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -47,16 +49,21 @@ public class AuthServiceImpl implements AuthService {
     public Object login(LoginRequest request) {
         String email = request.email() == null ? null : request.email().trim().toLowerCase();
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas"));
 
-        if (usuario.getBloqueadoAte() != null &&
-            usuario.getBloqueadoAte().isAfter(LocalDateTime.now())) {
-            throw new RuntimeException("Conta bloqueada. Tente novamente mais tarde.");
+        LocalDateTime agora = LocalDateTime.now();
+        if (usuario.getBloqueadoAte() != null) {
+            if (usuario.getBloqueadoAte().isAfter(agora)) {
+                throw new ContaBloqueadaException(usuario.getBloqueadoAte());
+            }
+            usuario.setBloqueadoAte(null);
+            usuario.setTentativasFalhas(0);
+            usuarioRepository.save(usuario);
         }
 
         if (!passwordEncoder.matches(request.senha(), usuario.getSenhaHash())) {
             registrarTentativaFalha(usuario);
-            throw new RuntimeException("Credenciais inválidas");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas");
         }
 
         usuario.setTentativasFalhas(0);

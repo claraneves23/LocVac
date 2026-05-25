@@ -135,13 +135,30 @@ export default function Login() {
       router.replace('/home');
       notificarBoasVindasSeNecessario(email.trim()).catch(() => {});
     } catch (error: any) {
-      const message =
-        error?.response?.status === 401
-          ? 'E-mail ou senha incorretos.'
-          : error?.response?.status === 423
-            ? 'Conta bloqueada temporariamente. Tente novamente mais tarde.'
-            : 'Erro ao fazer login. Verifique sua conexão.';
-      Alert.alert('Erro', message);
+      const status = error?.response?.status;
+      let title = 'Erro';
+      let message: string;
+      if (status === 401) {
+        title = 'Não foi possível entrar';
+        message = 'E-mail ou senha incorretos. Se ainda não tem cadastro, toque em "Criar conta".';
+      } else if (status === 423) {
+        title = 'Conta bloqueada';
+        const segundosRestantes = Number(error?.response?.data?.segundosRestantes);
+        if (Number.isFinite(segundosRestantes) && segundosRestantes > 0) {
+          const minutos = Math.ceil(segundosRestantes / 60);
+          message = minutos <= 1
+            ? 'Muitas tentativas. Tente novamente em menos de 1 minuto.'
+            : `Muitas tentativas. Tente novamente em ${minutos} minutos.`;
+        } else {
+          message = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+        }
+      } else if (!error?.response) {
+        title = 'Sem conexão';
+        message = 'Não foi possível contatar o servidor. Verifique sua internet e tente novamente.';
+      } else {
+        message = 'Ocorreu um erro inesperado. Tente novamente em instantes.';
+      }
+      Alert.alert(title, message);
     } finally {
       setLoading(false);
     }
@@ -173,11 +190,19 @@ export default function Login() {
       await iniciarCadastro({ email: email.trim(), senha });
       router.push({ pathname: '/verificar-email', params: { email: email.trim().toLowerCase() } });
     } catch (error: any) {
-      const message =
-        error?.response?.status === 409
-          ? 'Este e-mail já está cadastrado.'
-          : 'Erro ao iniciar cadastro. Verifique sua conexão.';
-      Alert.alert('Erro', message);
+      const status = error?.response?.status;
+      let title = 'Erro';
+      let message: string;
+      if (status === 409) {
+        title = 'E-mail já cadastrado';
+        message = 'Já existe uma conta com este e-mail. Tente entrar ou recuperar a senha.';
+      } else if (!error?.response) {
+        title = 'Sem conexão';
+        message = 'Não foi possível contatar o servidor. Verifique sua internet e tente novamente.';
+      } else {
+        message = 'Ocorreu um erro inesperado. Tente novamente em instantes.';
+      }
+      Alert.alert(title, message);
     } finally {
       setLoading(false);
     }
