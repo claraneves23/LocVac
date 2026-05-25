@@ -117,6 +117,7 @@ export default function MandatoryVaccineModal({
                     placeholderTextColor={colors.ink4}
                     value={lot}
                     onChangeText={onChangeLot}
+                    maxLength={30}
                   />
                 </View>
 
@@ -128,6 +129,7 @@ export default function MandatoryVaccineModal({
                     placeholderTextColor={colors.ink4}
                     value={code}
                     onChangeText={onChangeCode}
+                    maxLength={500}
                   />
                 </View>
 
@@ -139,6 +141,7 @@ export default function MandatoryVaccineModal({
                     placeholderTextColor={colors.ink4}
                     value={profName}
                     onChangeText={onChangeProfName}
+                    maxLength={100}
                   />
                 </View>
 
@@ -150,6 +153,7 @@ export default function MandatoryVaccineModal({
                     placeholderTextColor={colors.ink4}
                     value={profId}
                     onChangeText={onChangeProfId}
+                    maxLength={30}
                   />
                 </View>
               </>

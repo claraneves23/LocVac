@@ -93,6 +93,7 @@ export default function OtherVaccineModal({
                 placeholderTextColor={colors.ink4}
                 value={name}
                 onChangeText={onChangeName}
+                maxLength={150}
               />
               {nameError && <Text style={styles.errorText}>{nameError}</Text>}
             </View>
@@ -119,6 +120,7 @@ export default function OtherVaccineModal({
                 placeholderTextColor={colors.ink4}
                 value={lot}
                 onChangeText={onChangeLot}
+                maxLength={30}
               />
             </View>
 
@@ -130,6 +132,7 @@ export default function OtherVaccineModal({
                 placeholderTextColor={colors.ink4}
                 value={code}
                 onChangeText={onChangeCode}
+                maxLength={500}
               />
             </View>
 
@@ -141,6 +144,7 @@ export default function OtherVaccineModal({
                 placeholderTextColor={colors.ink4}
                 value={profName}
                 onChangeText={onChangeProfName}
+                maxLength={100}
               />
             </View>
 
@@ -152,6 +156,7 @@ export default function OtherVaccineModal({
                 placeholderTextColor={colors.ink4}
                 value={profId}
                 onChangeText={onChangeProfId}
+                maxLength={30}
               />
             </View>
           </ScrollView>
