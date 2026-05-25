@@ -79,6 +79,7 @@ export default function CadastroTitular() {
   const scrollRef = useRef<ScrollView>(null);
   const focusedInputRef = useRef<TextInput | null>(null);
   const currentScrollY = useRef(0);
+  const lastFetchedCep = useRef<string>('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const nomeRef = useRef<TextInput>(null);
@@ -201,6 +202,8 @@ export default function CadastroTitular() {
   const fetchCep = async (cep: string) => {
     const digits = cep.replace(/\D/g, '');
     if (digits.length !== 8) return;
+    if (lastFetchedCep.current === digits) return;
+    lastFetchedCep.current = digits;
     const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`).catch(() => null);
     if (!response?.ok) return;
     const data = await response.json().catch(() => null);
@@ -546,9 +549,13 @@ export default function CadastroTitular() {
                 ref={cepRef}
                 style={[styles.input, errors.cep && styles.inputError]}
                 value={cep}
-                onChangeText={(v) => { setCep(formatCep(v)); clearError('cep'); }}
+                onChangeText={(v) => {
+                  const formatted = formatCep(v);
+                  setCep(formatted);
+                  clearError('cep');
+                  if (formatted.replace(/\D/g, '').length === 8) fetchCep(formatted);
+                }}
                 onFocus={focusFor(cepRef)}
-                onBlur={() => fetchCep(cep)}
                 placeholder="00000-000"
                 placeholderTextColor={colors.ink3}
                 keyboardType="numeric"

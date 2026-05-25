@@ -186,6 +186,10 @@ export default function User() {
   };
 
   const fetchCep = async (cep: string) => {
+    const digits = cep.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    if (lastFetchedCep.current === digits) return;
+    lastFetchedCep.current = digits;
     const data = await lookupCep(cep);
     if (!data) return;
     setDraft((c) => ({
@@ -258,6 +262,7 @@ export default function User() {
   const sexRef = useRef<View>(null);
   const zipCodeRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
+  const lastFetchedCep = useRef<string>('');
 
   const DEP_FIELD_ORDER: DepFieldKey[] = ['name', 'birthDate', 'relationship', 'sex', 'zipCode', 'phone'];
 
@@ -1019,8 +1024,12 @@ export default function User() {
                   ref={zipCodeRef}
                   style={[styles.input, errors.zipCode && styles.inputError]}
                   value={draft.zipCode}
-                  onChangeText={(v) => { setDraft((c) => ({ ...c, zipCode: formatCep(v) })); clearError('zipCode'); }}
-                  onBlur={() => fetchCep(draft.zipCode || '')}
+                  onChangeText={(v) => {
+                    const formatted = formatCep(v);
+                    setDraft((c) => ({ ...c, zipCode: formatted }));
+                    clearError('zipCode');
+                    if (formatted.replace(/\D/g, '').length === 8) fetchCep(formatted);
+                  }}
                   placeholder="00000-000"
                   placeholderTextColor={colors.ink4}
                   keyboardType="numeric"
