@@ -1,6 +1,7 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { type Tone } from '../../src/theme/tokens';
 import { useTheme } from '../../src/context/ThemeContext';
+import { usePhotoSource } from '../../src/hooks/usePhotoSource';
 
 type Props = {
   name?: string;
@@ -12,6 +13,7 @@ type Props = {
 
 export default function Avatar({ name = '?', photoUri, size = 40, tone = 'brand', active = false }: Props) {
   const { colors } = useTheme();
+  const resolvedUri = usePhotoSource(photoUri);
   const toneMap: Record<Tone, { bg: string; ink: string }> = {
     brand:   { bg: colors.brandSoft,   ink: colors.brandInk },
     coral:   { bg: colors.coralSoft,   ink: colors.coralInk },
@@ -27,9 +29,9 @@ export default function Avatar({ name = '?', photoUri, size = 40, tone = 'brand'
 
   return (
     <View style={{ position: 'relative', width: size, height: size }}>
-      {photoUri ? (
+      {resolvedUri ? (
         <Image
-          source={{ uri: photoUri }}
+          source={{ uri: resolvedUri }}
           style={{ width: size, height: size, borderRadius: size / 2 }}
         />
       ) : (

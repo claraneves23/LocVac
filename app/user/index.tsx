@@ -24,6 +24,8 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { FamilyMember } from '../../src/types/vaccination';
 import { addDependentAndLink, updateDependent, deleteDependent } from '../../src/service/dependentsService';
 import { updateTitular } from '../../src/service/authService';
+import { uploadPessoaFoto, deletePessoaFoto } from '../../src/service/pessoaFotoService';
+import { invalidatePhotoCache, usePhotoSource } from '../../src/hooks/usePhotoSource';
 import { useAppContext } from '../../src/context/AppContext';
 import { joinAddress, splitAddress } from '../../src/utils/address';
 import { sanitizeName } from '../../src/utils/nameSanitizer';
@@ -107,6 +109,8 @@ export default function User() {
   type DepFieldKey = 'name' | 'birthDate' | 'relationship' | 'sex' | 'zipCode' | 'phone';
   const [errors, setErrors] = useState<Partial<Record<DepFieldKey, string>>>({});
   const [sameAddressAsTitular, setSameAddressAsTitular] = useState(true);
+  const originalDependentPhoto = useRef<string | undefined>(undefined);
+  const originalTitularPhoto = useRef<string | undefined>(undefined);
 
   // — titular modal state —
   const [isTitularModalOpen, setIsTitularModalOpen] = useState(false);
@@ -118,6 +122,8 @@ export default function User() {
   });
   type TitularFieldKey = 'name' | 'birthDate' | 'sex' | 'zipCode' | 'phone';
   const [titularErrors, setTitularErrors] = useState<Partial<Record<TitularFieldKey, string>>>({});
+  const titularPhotoSrc = usePhotoSource(titularDraft.photoUri);
+  const dependentPhotoSrc = usePhotoSource(draft.photoUri);
 
   // — help modal state —
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -332,6 +338,7 @@ export default function User() {
     resetDraft();
     setDraft((c) => ({ ...c, ...titularAddressFields() }));
     setSameAddressAsTitular(true);
+    originalDependentPhoto.current = undefined;
     modalScrollY.current = 0;
     setIsModalOpen(true);
   };
@@ -370,10 +377,32 @@ export default function User() {
       phone: formatPhone(dependent.phone || ''),
     });
     setSameAddressAsTitular(matchesTitular);
+    originalDependentPhoto.current = dependent.photoUri;
     setShowRelationshipPicker(false);
     setErrors({});
     modalScrollY.current = 0;
     setIsModalOpen(true);
+  };
+
+  const syncFoto = async (pessoaId: string, original: string | undefined, current: string | undefined) => {
+    if (current === original) return;
+    if (current && current.startsWith('data:')) {
+      try {
+        await uploadPessoaFoto(pessoaId, current);
+        if (original) invalidatePhotoCache(original);
+      } catch (e: any) {
+        logger.error('Erro ao subir foto:', e?.response?.status);
+      }
+      return;
+    }
+    if (!current && original) {
+      try {
+        await deletePessoaFoto(pessoaId);
+        invalidatePhotoCache(original);
+      } catch (e: any) {
+        logger.error('Erro ao remover foto:', e?.response?.status);
+      }
+    }
   };
 
   const toggleSameAddress = () => {
@@ -400,11 +429,15 @@ export default function User() {
         zipCode: draft.zipCode?.replace(/\D/g, '') || undefined,
         address: joinAddress(draft.address || '', draft.addressNumber || ''),
       };
+      let savedPessoaId: string;
       if (draft.id) {
         await updateDependent(draft.id, payload);
+        savedPessoaId = draft.id;
       } else {
-        await addDependentAndLink(usuarioId!, payload);
+        const newId = await addDependentAndLink(usuarioId!, payload);
+        savedPessoaId = String(newId);
       }
+      await syncFoto(savedPessoaId, originalDependentPhoto.current, draft.photoUri);
       setIsModalOpen(false);
       resetDraft();
       await refreshDependents();
@@ -476,6 +509,7 @@ export default function User() {
     });
     setTitularErrors({});
     setShowTitularStatePicker(false);
+    originalTitularPhoto.current = mainUser.photoUri;
     setIsTitularModalOpen(true);
   };
 
@@ -496,8 +530,8 @@ export default function User() {
         municipio: titularDraft.city,
         estado: titularDraft.state || undefined,
         telefone: (titularDraft.phone || '').replace(/\D/g, ''),
-        fotoUrl: titularDraft.photoUri,
       });
+      await syncFoto(mainUser.id, originalTitularPhoto.current, titularDraft.photoUri);
       setIsTitularModalOpen(false);
       await refreshMainUser();
     } catch (e: any) {
@@ -630,8 +664,8 @@ export default function User() {
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               {/* foto */}
               <View style={styles.photoRow}>
-                {titularDraft.photoUri ? (
-                  <Image source={{ uri: titularDraft.photoUri }} style={styles.photoPreview} />
+                {titularPhotoSrc ? (
+                  <Image source={{ uri: titularPhotoSrc }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
                     <Ionicons name="person" size={24} color={colors.brandInk} />
@@ -909,8 +943,8 @@ export default function User() {
               scrollEventThrottle={16}
             >
               <View style={styles.photoRow}>
-                {draft.photoUri ? (
-                  <Image source={{ uri: draft.photoUri }} style={styles.photoPreview} />
+                {dependentPhotoSrc ? (
+                  <Image source={{ uri: dependentPhotoSrc }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
                     <Ionicons name="person" size={24} color={colors.brandInk} />

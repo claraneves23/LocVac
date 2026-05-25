@@ -5,7 +5,7 @@ import { API_BASE } from './apiConfig';
 
 const API_URL = API_BASE;
 
-export async function addDependentAndLink(usuarioId: string, dependent: Omit<FamilyMember, 'id' | 'userId' | 'kind'> & { cpf?: string }): Promise<void> {
+export async function addDependentAndLink(usuarioId: string, dependent: Omit<FamilyMember, 'id' | 'userId' | 'kind'> & { cpf?: string }): Promise<number> {
   const pessoaResponse = await axios.post(`${API_URL}/pessoas`, {
     nome: dependent.name,
     dataNascimento: dependent.birthDate,
@@ -19,7 +19,7 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
     municipio: dependent.city || '',
     estado: dependent.state || null,
     telefone: (dependent.phone || '').replace(/\D/g, ''),
-    fotoUrl: dependent.photoUri || '',
+    fotoUrl: null,
     nomeResponsavel: dependent.guardianName || '',
     ativo: true
   });
@@ -36,6 +36,7 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
   };
   logger.log('[dependents] vinculando pessoa ao usuário');
   await axios.post(`${API_URL}/usuarioPessoa/novaVinculacao`, vinculoPayload);
+  return pessoaId;
 }
 
 type PessoaResponseDTO = {
@@ -104,7 +105,7 @@ export async function updateDependent(id: string, dependent: Omit<FamilyMember, 
     municipio: dependent.city || '',
     estado: dependent.state || null,
     telefone: (dependent.phone || '').replace(/\D/g, ''),
-    fotoUrl: dependent.photoUri || '',
+    fotoUrl: null,
     nomeResponsavel: dependent.guardianName || '',
     ativo: true,
   });

@@ -124,7 +124,6 @@ export interface UpdateTitularRequest {
 	municipio?: string;
 	estado?: string;
 	telefone: string;
-	fotoUrl?: string;
 }
 
 export async function updateTitular(pessoaId: string, data: UpdateTitularRequest): Promise<void> {
@@ -140,7 +139,7 @@ export async function updateTitular(pessoaId: string, data: UpdateTitularRequest
 		municipio: data.municipio || '',
 		estado: data.estado || null,
 		telefone: data.telefone,
-		fotoUrl: data.fotoUrl || null,
+		fotoUrl: null,
 		ativo: true,
 	});
 }

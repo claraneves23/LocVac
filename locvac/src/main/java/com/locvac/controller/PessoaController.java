@@ -1,7 +1,10 @@
 package com.locvac.controller;
 
+import com.locvac.dto.pessoa.PessoaFotoRequestDTO;
+import com.locvac.dto.pessoa.PessoaFotoResponseDTO;
 import com.locvac.dto.pessoa.PessoaRequestDTO;
 import com.locvac.dto.pessoa.PessoaResponseDTO;
+import com.locvac.service.PessoaFotoService;
 import com.locvac.service.PessoaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -16,9 +19,11 @@ import java.util.List;
 public class PessoaController {
 
     private final PessoaService service;
+    private final PessoaFotoService fotoService;
 
-    public PessoaController(PessoaService service) {
+    public PessoaController(PessoaService service, PessoaFotoService fotoService) {
         this.service = service;
+        this.fotoService = fotoService;
     }
 
     @PostMapping
@@ -55,6 +60,22 @@ public class PessoaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         service.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/foto")
+    public ResponseEntity<PessoaFotoResponseDTO> salvarFoto(@PathVariable Long id, @RequestBody @Valid PessoaFotoRequestDTO dto) {
+        return ResponseEntity.ok(fotoService.salvar(id, dto.dataUrl()));
+    }
+
+    @GetMapping("/{id}/foto")
+    public ResponseEntity<PessoaFotoResponseDTO> obterFoto(@PathVariable Long id) {
+        return ResponseEntity.ok(fotoService.obter(id));
+    }
+
+    @DeleteMapping("/{id}/foto")
+    public ResponseEntity<Void> removerFoto(@PathVariable Long id) {
+        fotoService.remover(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -11,6 +11,7 @@ import com.locvac.repository.DoseAplicadaRepository;
 import com.locvac.repository.GrupoRiscoRepository;
 import com.locvac.repository.NotificacaoRepository;
 import com.locvac.repository.ParticipacaoCampanhaRepository;
+import com.locvac.repository.PessoaFotoRepository;
 import com.locvac.repository.UsuarioPessoaRepository;
 import com.locvac.repository.UsuarioRepository;
 import com.locvac.model.enums.TipoVinculo;
@@ -44,6 +45,7 @@ public class PessoaServiceImpl implements PessoaService {
     private final ValidacaoCpfUtils validacaoCpfUtils;
     private final ValidacaoCnsUtils validacaoCnsUtils;
     private final GrupoRiscoRepository grupoRiscoRepository;
+    private final PessoaFotoRepository pessoaFotoRepository;
 
     public PessoaServiceImpl(
             PessoaRepository repository,
@@ -55,7 +57,8 @@ public class PessoaServiceImpl implements PessoaService {
             NotificacaoRepository notificacaoRepository,
             ValidacaoCpfUtils validacaoCpfUtils,
             ValidacaoCnsUtils validacaoCnsUtils,
-            GrupoRiscoRepository grupoRiscoRepository
+            GrupoRiscoRepository grupoRiscoRepository,
+            PessoaFotoRepository pessoaFotoRepository
     ) {
         this.repository = repository;
         this.mapper = mapper;
@@ -67,6 +70,7 @@ public class PessoaServiceImpl implements PessoaService {
         this.validacaoCpfUtils = validacaoCpfUtils;
         this.validacaoCnsUtils = validacaoCnsUtils;
         this.grupoRiscoRepository = grupoRiscoRepository;
+        this.pessoaFotoRepository = pessoaFotoRepository;
     }
 
     @Override
@@ -149,7 +153,6 @@ public class PessoaServiceImpl implements PessoaService {
         pessoa.setMunicipio(dto.municipio());
         pessoa.setEstado(dto.estado());
         pessoa.setTelefone(dto.telefone());
-        pessoa.setFotoUrl(dto.fotoUrl());
         pessoa.setNomeResponsavel(dto.nomeResponsavel());
         if (dto.gruposRiscoIds() != null) {
             pessoa.setGruposRisco(resolverGrupos(dto.gruposRiscoIds()));
@@ -165,6 +168,7 @@ public class PessoaServiceImpl implements PessoaService {
         doseAplicadaRepository.deleteAll(doseAplicadaRepository.findByPessoaId(id));
         participacaoCampanhaRepository.deleteAll(participacaoCampanhaRepository.findByPessoaId(id));
         usuarioPessoaRepository.deleteAll(usuarioPessoaRepository.findByPessoaId(id));
+        pessoaFotoRepository.findById(id).ifPresent(pessoaFotoRepository::delete);
         repository.delete(pessoa);
     }
 
