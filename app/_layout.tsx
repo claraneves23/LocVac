@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as NavigationBar from 'expo-navigation-bar';
-import { Animated, BackHandler, Image, Platform, StyleSheet, ToastAndroid, View } from 'react-native';
+import { Animated, BackHandler, Image, Linking, Platform, StyleSheet, ToastAndroid, View } from 'react-native';
 import BottomTabs from '../components/redesign/BottomTabs';
 import { getNavigationDirection } from '../src/navigation-direction';
 import { AppProvider, useAppContext } from '../src/context/AppContext';
@@ -65,7 +65,13 @@ function LayoutContent() {
   }, [router]);
 
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { url?: string } | undefined;
+      const url = data?.url;
+      if (typeof url === 'string' && /^https?:\/\//i.test(url)) {
+        Linking.openURL(url).catch(() => router.push('/hist'));
+        return;
+      }
       router.push('/hist');
     });
     return () => sub.remove();
