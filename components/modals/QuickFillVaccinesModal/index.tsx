@@ -36,6 +36,23 @@ const formatAge = (months: number): string => {
   return `${y} ano${y > 1 ? 's' : ''} e ${m} mês${m > 1 ? 'es' : ''}`;
 };
 
+const ordinalDose = (n: number): string => {
+  if (n === 1) return '1ª dose';
+  if (n === 2) return '2ª dose';
+  if (n === 3) return '3ª dose';
+  return `${n}ª dose`;
+};
+
+const formatDoseLabel = (v: VacinaDTO): string => {
+  if (!v.tipoDose) return '';
+  if (v.tipoDose === 'UNICA') return 'Dose única';
+  if (v.tipoDose === 'REFORCO') {
+    if (!v.numeroDose || v.numeroDose === 1) return 'Reforço';
+    return `${v.numeroDose}º reforço`;
+  }
+  return v.numeroDose ? ordinalDose(v.numeroDose) : '';
+};
+
 const todayIso = (): string => new Date().toISOString().split('T')[0];
 
 type PendingEntry = { checked: boolean; date: string };
@@ -170,7 +187,10 @@ export default function QuickFillVaccinesModal({
                           )}
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.vaccineName} numberOfLines={2}>{v.nome}</Text>
+                          <Text style={styles.vaccineName} numberOfLines={2}>
+                            {v.nome}
+                            {formatDoseLabel(v) ? <Text style={styles.doseLabel}>{` · ${formatDoseLabel(v)}`}</Text> : null}
+                          </Text>
                           {alreadyApplied && (
                             <Text style={styles.alreadyLabel}>Já registrada</Text>
                           )}
@@ -319,6 +339,11 @@ const makeStyles = (c: Colors) =>
       ...typography.body,
       fontWeight: '600',
       color: c.ink,
+    },
+    doseLabel: {
+      ...typography.small,
+      fontWeight: '500',
+      color: c.ink3,
     },
     alreadyLabel: {
       ...typography.caption,

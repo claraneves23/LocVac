@@ -667,11 +667,11 @@ export default function Index() {
                               {v.nome}
                               {formatDoseLabel(v) ? <Text style={styles.itemDose}>{` · ${formatDoseLabel(v)}`}</Text> : null}
                             </Text>
-                            <Text style={styles.itemSub} numberOfLines={2}>
-                              {applied && record?.applicationDate
-                                ? `Aplicada em ${formatDateToBR(record.applicationDate)}`
-                                : v.descricao}
-                            </Text>
+                            {applied && record?.applicationDate && (
+                              <Text style={styles.itemSub} numberOfLines={1}>
+                                Aplicada em {formatDateToBR(record.applicationDate)}
+                              </Text>
+                            )}
                           </View>
                           <Ionicons
                             name={applied ? 'checkmark-circle' : 'ellipse-outline'}
