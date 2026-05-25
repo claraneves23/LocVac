@@ -10,6 +10,8 @@ import { ScreenTitle } from '../../../components/redesign';
 import { useTheme } from '../../../src/context/ThemeContext';
 import DefaultLayout from './layouts/DefaultLayout';
 import CronogramaTimeline from './layouts/CronogramaTimeline';
+import EfeitosColateraisLayout from './layouts/EfeitosColateraisLayout';
+import DuvidasFrequentesLayout from './layouts/DuvidasFrequentesLayout';
 
 type LayoutProps = { secoes: CarrosselConteudoDTO[] };
 
@@ -19,6 +21,8 @@ type LayoutProps = { secoes: CarrosselConteudoDTO[] };
 const LAYOUTS: Record<string, ComponentType<LayoutProps>> = {
   default: DefaultLayout,
   cronograma: CronogramaTimeline,
+  efeitos_colaterais: EfeitosColateraisLayout,
+  duvidas_frequentes: DuvidasFrequentesLayout,
 };
 
 export default function CarrosselDetalhe() {

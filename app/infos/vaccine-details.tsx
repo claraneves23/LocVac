@@ -185,7 +185,7 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   },
   contentInner: {
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
     paddingBottom: 130,
   },
   heroCard: {
@@ -193,10 +193,11 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: c.line,
-    padding: spacing.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
     alignItems: 'center',
-    gap: 8,
-    marginBottom: spacing.lg,
+    gap: 10,
+    marginBottom: spacing.xl,
     ...shadows.sm,
   },
   heroIcon: {
@@ -206,41 +207,47 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     backgroundColor: c.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
   heroTitle: {
     ...typography.h2,
     color: c.ink,
     textAlign: 'center',
+    paddingHorizontal: spacing.sm,
   },
   heroSub: {
     ...typography.small,
     color: c.ink3,
     textAlign: 'center',
+    paddingHorizontal: spacing.sm,
   },
   section: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.h3,
     color: c.ink,
     marginBottom: spacing.sm,
+    paddingHorizontal: 2,
   },
   sectionCard: {
     backgroundColor: c.bgElev,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: c.line,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   sectionContent: {
     ...typography.body,
     color: c.ink2,
+    lineHeight: 21,
   },
   sourceBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 4,
+    marginTop: spacing.sm,
   },
   sourceText: {
     ...typography.caption,
@@ -249,14 +256,15 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   efeitoCard: {
     borderRadius: radii.md,
     borderLeftWidth: 4,
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
   efeitoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   efeitoSeveridade: {
     ...typography.caption,
@@ -301,10 +309,11 @@ const makeStyles = (c: Colors) => StyleSheet.create({
   recommendationBox: {
     flexDirection: 'row',
     backgroundColor: c.successSoft,
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: radii.md,
-    gap: 10,
-    marginTop: spacing.sm,
+    gap: 12,
+    marginTop: spacing.md,
     alignItems: 'flex-start',
   },
   recommendationText: {
