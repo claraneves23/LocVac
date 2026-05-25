@@ -141,4 +141,49 @@ export default StyleSheet.create({
     fontWeight: '700',
     color: colors.brandInk,
   },
+  stepIndicator: {
+    marginBottom: spacing.md,
+  },
+  stepIndicatorText: {
+    ...typography.caption,
+    color: colors.ink3,
+    marginBottom: 6,
+    fontWeight: '600',
+  },
+  stepBarTrack: {
+    height: 4,
+    backgroundColor: colors.line,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  stepBarFill: {
+    height: '100%',
+    backgroundColor: colors.brand,
+    borderRadius: 4,
+  },
+  stepActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  stepBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 13,
+    borderRadius: radii.sm + 3,
+    borderWidth: 1,
+    borderColor: colors.brand,
+    backgroundColor: colors.bgElev,
+    gap: 4,
+  },
+  stepBackButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.brand,
+  },
+  stepSubmitButton: {
+    flex: 1,
+  },
 });

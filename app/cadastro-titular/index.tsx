@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { cadastrarTitular, logout } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
 import { joinAddress } from '../../src/utils/address';
@@ -35,6 +36,9 @@ import styles from './styles';
 
 const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
 type EstadoUF = typeof ESTADO_OPTIONS[number];
+
+const DRAFT_KEY = 'locvac:cadastro-titular:draft';
+const TOTAL_STEPS = 2;
 
 export default function CadastroTitular() {
   const router = useRouter();
@@ -56,6 +60,9 @@ export default function CadastroTitular() {
   const [municipio, setMunicipio] = useState('');
   const [estado, setEstado] = useState<EstadoUF | ''>('');
   const [showStatePicker, setShowStatePicker] = useState(false);
+
+  const [step, setStep] = useState<1 | 2>(1);
+  const [draftReady, setDraftReady] = useState(false);
 
   type FieldKey = 'nome' | 'dataNascimento' | 'cpf' | 'sexoBiologico' | 'cep' | 'telefone';
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
@@ -112,6 +119,47 @@ export default function CadastroTitular() {
       } catch {}
     }, 80);
   };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(DRAFT_KEY);
+        if (raw) {
+          const d = JSON.parse(raw) as Partial<{
+            nome: string; telefone: string; dataNascimento: string; cpf: string; cns: string;
+            sexoBiologico: 'MASCULINO' | 'FEMININO' | ''; cep: string; rua: string; numero: string;
+            complemento: string; bairro: string; municipio: string; estado: EstadoUF | '';
+            step: 1 | 2;
+          }>;
+          if (d.nome) setNome(d.nome);
+          if (d.telefone) setTelefone(d.telefone);
+          if (d.dataNascimento) setDataNascimento(d.dataNascimento);
+          if (d.cpf) setCpf(d.cpf);
+          if (d.cns) setCns(d.cns);
+          if (d.sexoBiologico) setSexoBiologico(d.sexoBiologico);
+          if (d.cep) setCep(d.cep);
+          if (d.rua) setRua(d.rua);
+          if (d.numero) setNumero(d.numero);
+          if (d.complemento) setComplemento(d.complemento);
+          if (d.bairro) setBairro(d.bairro);
+          if (d.municipio) setMunicipio(d.municipio);
+          if (d.estado) setEstado(d.estado);
+          if (d.step === 1 || d.step === 2) setStep(d.step);
+        }
+      } catch {}
+      setDraftReady(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    const draft = {
+      nome, telefone, dataNascimento, cpf, cns, sexoBiologico,
+      cep, rua, numero, complemento, bairro, municipio, estado, step,
+    };
+    AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).catch(() => {});
+  }, [draftReady, nome, telefone, dataNascimento, cpf, cns, sexoBiologico,
+      cep, rua, numero, complemento, bairro, municipio, estado, step]);
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -243,15 +291,40 @@ export default function CadastroTitular() {
     );
   };
 
-  const handleSalvar = async () => {
+  const validarEtapa1 = (): boolean => {
     const novoErros: Partial<Record<FieldKey, string>> = {};
     if (!nome.trim()) novoErros.nome = 'Campo obrigatório!';
     if (!dataNascimento.trim()) novoErros.dataNascimento = 'Campo obrigatório!';
     if (!cpf.trim()) novoErros.cpf = 'Campo obrigatório!';
     if (!sexoBiologico) novoErros.sexoBiologico = 'Campo obrigatório!';
-    if (cep.replace(/\D/g, '').length !== 8) novoErros.cep = 'Campo obrigatório!';
     if (!telefone.trim()) novoErros.telefone = 'Campo obrigatório!';
+    if (Object.keys(novoErros).length > 0) {
+      setErrors(novoErros);
+      scrollToFirstError(novoErros);
+      return false;
+    }
+    setErrors({});
+    return true;
+  };
 
+  const handleAvancar = () => {
+    if (!validarEtapa1()) return;
+    setStep(2);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const handleVoltarEtapa = () => {
+    setStep(1);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const handleSalvar = async () => {
+    if (!validarEtapa1()) {
+      setStep(1);
+      return;
+    }
+    const novoErros: Partial<Record<FieldKey, string>> = {};
+    if (cep.replace(/\D/g, '').length !== 8) novoErros.cep = 'Campo obrigatório!';
     if (Object.keys(novoErros).length > 0) {
       setErrors(novoErros);
       scrollToFirstError(novoErros);
@@ -281,6 +354,7 @@ export default function CadastroTitular() {
         municipio: municipio.trim(),
         estado: estado || undefined,
       });
+      await AsyncStorage.removeItem(DRAFT_KEY).catch(() => {});
       await loadAll();
       router.replace('/home');
     } catch (error: any) {
@@ -331,14 +405,23 @@ export default function CadastroTitular() {
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.brandTitle}>Seus dados</Text>
-            <Text style={styles.brandSub}>Finalize o cadastro do titular</Text>
+            <Text style={styles.brandTitle}>{step === 1 ? 'Seus dados' : 'Onde você mora'}</Text>
+            <Text style={styles.brandSub}>
+              {step === 1 ? 'Vamos começar pelas informações pessoais' : 'Agora precisamos do seu endereço'}
+            </Text>
           </View>
 
           <View style={styles.card}>
+            <View style={styles.stepIndicator}>
+              <Text style={styles.stepIndicatorText}>Etapa {step} de {TOTAL_STEPS}</Text>
+              <View style={styles.stepBarTrack}>
+                <View style={[styles.stepBarFill, { width: `${(step / TOTAL_STEPS) * 100}%` }]} />
+              </View>
+            </View>
             <Text style={styles.legend}>
               Campos com <Text style={styles.required}>*</Text> são obrigatórios
             </Text>
+            {step === 1 && (<>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>
                 Nome completo <Text style={styles.required}>*</Text>
@@ -433,6 +516,26 @@ export default function CadastroTitular() {
               {errors.sexoBiologico && <Text style={styles.errorText}>{errors.sexoBiologico}</Text>}
             </View>
 
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>
+                Telefone <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                ref={telefoneRef}
+                style={[styles.input, errors.telefone && styles.inputError]}
+                value={telefone}
+                onChangeText={(v) => { setTelefone(formatPhone(v)); clearError('telefone'); }}
+                onFocus={focusFor(telefoneRef)}
+                placeholder="(00) 00000-0000"
+                placeholderTextColor={colors.ink3}
+                maxLength={15}
+                keyboardType="phone-pad"
+              />
+              {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
+            </View>
+            </>)}
+
+            {step === 2 && (<>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>
                 CEP <Text style={styles.required}>*</Text>
@@ -540,36 +643,39 @@ export default function CadastroTitular() {
                 </ScrollView>
               )}
             </View>
+            </>)}
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>
-                Telefone <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                ref={telefoneRef}
-                style={[styles.input, errors.telefone && styles.inputError]}
-                value={telefone}
-                onChangeText={(v) => { setTelefone(formatPhone(v)); clearError('telefone'); }}
-                onFocus={focusFor(telefoneRef)}
-                placeholder="(00) 00000-0000"
-                placeholderTextColor={colors.ink3}
-                maxLength={15}
-                keyboardType="phone-pad"
-              />
-              {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
-            </View>
-
-            <Pressable
-              style={[styles.submitButton, (loading || loggingOut) && styles.submitButtonDisabled]}
-              onPress={handleSalvar}
-              disabled={loading || loggingOut}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.white} size="small" />
-              ) : (
-                <Text style={styles.submitButtonText}>Concluir cadastro</Text>
-              )}
-            </Pressable>
+            {step === 1 ? (
+              <Pressable
+                style={[styles.submitButton, (loading || loggingOut) && styles.submitButtonDisabled]}
+                onPress={handleAvancar}
+                disabled={loading || loggingOut}
+              >
+                <Text style={styles.submitButtonText}>Continuar</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.stepActions}>
+                <Pressable
+                  style={[styles.stepBackButton, (loading || loggingOut) && styles.submitButtonDisabled]}
+                  onPress={handleVoltarEtapa}
+                  disabled={loading || loggingOut}
+                >
+                  <Ionicons name="chevron-back" size={16} color={colors.brand} />
+                  <Text style={styles.stepBackButtonText}>Voltar</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.submitButton, styles.stepSubmitButton, (loading || loggingOut) && styles.submitButtonDisabled]}
+                  onPress={handleSalvar}
+                  disabled={loading || loggingOut}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={colors.white} size="small" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Concluir cadastro</Text>
+                  )}
+                </Pressable>
+              </View>
+            )}
 
             <Pressable
               onPress={handleVoltarLogin}
