@@ -206,6 +206,11 @@ export const makeStyles = (c: Colors) => StyleSheet.create({
     fontWeight: '600',
     color: c.ink,
   },
+  itemDose: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: c.ink3,
+  },
   itemSub: {
     fontSize: 12,
     color: c.ink3,

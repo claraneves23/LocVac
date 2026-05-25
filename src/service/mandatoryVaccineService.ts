@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { API_BASE } from './apiConfig';
 
+export type TipoDose = 'PRIMARIA' | 'REFORCO' | 'UNICA';
+
 export type VacinaDTO = {
   id: number;
   nome: string;
@@ -9,6 +11,8 @@ export type VacinaDTO = {
   codigoPNI: string;
   idadeMinimaMeses: number | null;
   idadeMaximaMeses: number | null;
+  numeroDose: number | null;
+  tipoDose: TipoDose | null;
 };
 
 export type DoseAplicadaDTO = {

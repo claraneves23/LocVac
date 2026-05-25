@@ -1,5 +1,6 @@
 package com.locvac.dto.vacina;
 
+import com.locvac.model.enums.TipoDose;
 import com.locvac.model.enums.TipoSecaoVacinacao;
 import jakarta.validation.constraints.Size;
 
@@ -19,6 +20,8 @@ public class VacinaRequestDTO {
     private TipoSecaoVacinacao tipoSecaoVacinacao;
     private Integer idadeMinimaMeses;
     private Integer idadeMaximaMeses;
+    private Integer numeroDose;
+    private TipoDose tipoDose;
     private List<Long> gruposRiscoIds;
 
     public String getNome() { return nome; }
@@ -44,6 +47,12 @@ public class VacinaRequestDTO {
 
     public Integer getIdadeMaximaMeses() { return idadeMaximaMeses; }
     public void setIdadeMaximaMeses(Integer idadeMaximaMeses) { this.idadeMaximaMeses = idadeMaximaMeses; }
+
+    public Integer getNumeroDose() { return numeroDose; }
+    public void setNumeroDose(Integer numeroDose) { this.numeroDose = numeroDose; }
+
+    public TipoDose getTipoDose() { return tipoDose; }
+    public void setTipoDose(TipoDose tipoDose) { this.tipoDose = tipoDose; }
 
     public List<Long> getGruposRiscoIds() { return gruposRiscoIds; }
     public void setGruposRiscoIds(List<Long> gruposRiscoIds) { this.gruposRiscoIds = gruposRiscoIds; }

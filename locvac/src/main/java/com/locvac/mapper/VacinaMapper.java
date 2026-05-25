@@ -20,6 +20,8 @@ public class VacinaMapper {
         vacina.setTipoSecaoVacinacao(dto.getTipoSecaoVacinacao());
         vacina.setIdadeMinimaMeses(dto.getIdadeMinimaMeses());
         vacina.setIdadeMaximaMeses(dto.getIdadeMaximaMeses());
+        vacina.setNumeroDose(dto.getNumeroDose());
+        vacina.setTipoDose(dto.getTipoDose());
         return vacina;
     }
 
@@ -36,6 +38,8 @@ public class VacinaMapper {
                 vacina.getTipoSecaoVacinacao(),
                 vacina.getIdadeMinimaMeses(),
                 vacina.getIdadeMaximaMeses(),
+                vacina.getNumeroDose(),
+                vacina.getTipoDose(),
                 gruposRiscoIds
         );
     }

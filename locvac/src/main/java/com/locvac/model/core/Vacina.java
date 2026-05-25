@@ -1,5 +1,6 @@
 package com.locvac.model.core;
 
+import com.locvac.model.enums.TipoDose;
 import com.locvac.model.enums.TipoSecaoVacinacao;
 import jakarta.persistence.*;
 
@@ -42,6 +43,13 @@ public class Vacina {
 
     @Column(name = "idade_maxima_meses")
     private Integer idadeMaximaMeses;
+
+    @Column(name = "numero_dose")
+    private Integer numeroDose;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_dose", length = 20)
+    private TipoDose tipoDose;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -132,6 +140,12 @@ public class Vacina {
     public void setIdadeMaximaMeses(Integer idadeMaximaMeses) {
         this.idadeMaximaMeses = idadeMaximaMeses;
     }
+
+    public Integer getNumeroDose() { return numeroDose; }
+    public void setNumeroDose(Integer numeroDose) { this.numeroDose = numeroDose; }
+
+    public TipoDose getTipoDose() { return tipoDose; }
+    public void setTipoDose(TipoDose tipoDose) { this.tipoDose = tipoDose; }
 
     public List<GrupoRisco> getGruposRisco() { return gruposRisco; }
     public void setGruposRisco(List<GrupoRisco> gruposRisco) { this.gruposRisco = gruposRisco; }

@@ -84,6 +84,23 @@ const formatCNS = (cns: string): string => {
   return cns;
 };
 
+const ordinalDose = (n: number): string => {
+  if (n === 1) return '1ª dose';
+  if (n === 2) return '2ª dose';
+  if (n === 3) return '3ª dose';
+  return `${n}ª dose`;
+};
+
+const formatDoseLabel = (v: VacinaDTO): string => {
+  if (!v.tipoDose) return '';
+  if (v.tipoDose === 'UNICA') return 'Dose única';
+  if (v.tipoDose === 'REFORCO') {
+    if (!v.numeroDose || v.numeroDose === 1) return 'Reforço';
+    return `${v.numeroDose}º reforço`;
+  }
+  return v.numeroDose ? ordinalDose(v.numeroDose) : '';
+};
+
 const formatAge = (months: number): string => {
   if (months === 0) return 'Ao nascer';
   if (months === 1) return '1 mês';
@@ -646,7 +663,10 @@ export default function Index() {
                             />
                           </View>
                           <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={styles.itemTitle} numberOfLines={1}>{v.nome}</Text>
+                            <Text style={styles.itemTitle} numberOfLines={1}>
+                              {v.nome}
+                              {formatDoseLabel(v) ? <Text style={styles.itemDose}>{` · ${formatDoseLabel(v)}`}</Text> : null}
+                            </Text>
                             <Text style={styles.itemSub} numberOfLines={2}>
                               {applied && record?.applicationDate
                                 ? `Aplicada em ${formatDateToBR(record.applicationDate)}`
