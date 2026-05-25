@@ -1,7 +1,7 @@
 ﻿import { StyleSheet } from 'react-native';
-import { colors, radii, shadows, typography } from '../../src/theme/tokens';
+import { type Colors, radii, shadows, typography } from '../../src/theme/tokens';
 
-export default StyleSheet.create({
+export const makeStyles = (colors: Colors) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -57,7 +57,7 @@ export default StyleSheet.create({
   },
   email: {
     fontWeight: '700',
-    color: colors.brand,
+    color: colors.brandInk,
   },
   cellsRow: {
     flexDirection: 'row',
@@ -114,7 +114,7 @@ export default StyleSheet.create({
   resendText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.brand,
+    color: colors.brandInk,
   },
   resendTextDisabled: {
     color: colors.ink3,

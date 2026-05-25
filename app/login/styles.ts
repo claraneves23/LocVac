@@ -1,7 +1,7 @@
-﻿import { StyleSheet } from 'react-native';
-import { colors, radii, shadows, typography } from '../../src/theme/tokens';
+import { StyleSheet } from 'react-native';
+import { type Colors, radii, shadows, typography } from '../../src/theme/tokens';
 
-export default StyleSheet.create({
+export const makeStyles = (colors: Colors) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -134,7 +134,7 @@ export default StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    color: colors.brand,
+    color: colors.brandInk,
     fontWeight: '600',
   },
   footer: {
@@ -151,6 +151,6 @@ export default StyleSheet.create({
   footerLink: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.brand,
+    color: colors.brandInk,
   },
 });

@@ -16,19 +16,21 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { login, iniciarCadastro } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
+import { useTheme } from '../../src/context/ThemeContext';
 import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
-import { colors } from '../../src/theme/tokens';
-import styles from './styles';
+import { makeStyles } from './styles';
 
 type Mode = 'login' | 'cadastro';
 
 export default function Login() {
   const router = useRouter();
   const { loadAll } = useAppContext();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [mode, setMode] = useState<Mode>('login');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -215,7 +217,7 @@ export default function Login() {
       end={{ x: 0, y: 1 }}
       style={styles.container}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

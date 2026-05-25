@@ -11,12 +11,12 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { confirmarCadastro, reenviarCodigo } from '../../src/service/authService';
 import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
-import { colors } from '../../src/theme/tokens';
-import styles from './styles';
+import { useTheme } from '../../src/context/ThemeContext';
+import { makeStyles } from './styles';
 
 const RESEND_COOLDOWN = 60;
 const CELLS = [0, 1, 2, 3, 4, 5];
@@ -25,6 +25,8 @@ export default function VerificarEmail() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email: string }>();
   const email = (params.email as string) || '';
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
@@ -102,7 +104,7 @@ export default function VerificarEmail() {
       end={{ x: 0, y: 1 }}
       style={styles.container}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

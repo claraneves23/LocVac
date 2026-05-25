@@ -13,14 +13,16 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { solicitarRecuperacaoSenha } from '../../src/service/authService';
-import { colors } from '../../src/theme/tokens';
-import styles from './styles';
+import { useTheme } from '../../src/context/ThemeContext';
+import { makeStyles } from './styles';
 
 export default function EsqueciSenha() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function EsqueciSenha() {
       end={{ x: 0, y: 1 }}
       style={styles.container}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -110,7 +112,7 @@ export default function EsqueciSenha() {
             </Pressable>
 
             <Pressable onPress={() => router.replace('/login')} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={14} color={colors.brand} />
+              <Ionicons name="chevron-back" size={14} color={colors.brandInk} />
               <Text style={styles.backText}>Voltar para o login</Text>
             </Pressable>
           </View>

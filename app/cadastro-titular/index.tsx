@@ -15,11 +15,12 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { cadastrarTitular, logout } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
+import { useTheme } from '../../src/context/ThemeContext';
 import { joinAddress } from '../../src/utils/address';
 import { sanitizeName } from '../../src/utils/nameSanitizer';
 import {
@@ -30,9 +31,8 @@ import {
   sanitizeCity,
 } from '../../src/utils/addressSanitizers';
 import { minBirthDate } from '../../src/utils/dateBounds';
-import { colors } from '../../src/theme/tokens';
 import { DateField } from '../../components/redesign';
-import styles from './styles';
+import { makeStyles } from './styles';
 
 const ESTADO_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] as const;
 type EstadoUF = typeof ESTADO_OPTIONS[number];
@@ -43,6 +43,8 @@ const TOTAL_STEPS = 2;
 export default function CadastroTitular() {
   const router = useRouter();
   const { loadAll, reset } = useAppContext();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [loading, setLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -386,7 +388,7 @@ export default function CadastroTitular() {
       end={{ x: 0, y: 1 }}
       style={styles.container}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -625,7 +627,7 @@ export default function CadastroTitular() {
                 <Text style={{ color: estado ? colors.ink : colors.ink3, fontSize: 14 }}>
                   {estado || 'Selecione o estado'}
                 </Text>
-                <Ionicons name="chevron-down" size={16} color={colors.brand} />
+                <Ionicons name="chevron-down" size={16} color={colors.brandInk} />
               </Pressable>
               {showStatePicker && (
                 <ScrollView style={styles.pickerDropdown} nestedScrollEnabled>
@@ -660,7 +662,7 @@ export default function CadastroTitular() {
                   onPress={handleVoltarEtapa}
                   disabled={loading || loggingOut}
                 >
-                  <Ionicons name="chevron-back" size={16} color={colors.brand} />
+                  <Ionicons name="chevron-back" size={16} color={colors.brandInk} />
                   <Text style={styles.stepBackButtonText}>Voltar</Text>
                 </Pressable>
                 <Pressable
@@ -683,10 +685,10 @@ export default function CadastroTitular() {
               style={styles.backButton}
             >
               {loggingOut ? (
-                <ActivityIndicator color={colors.brand} size="small" />
+                <ActivityIndicator color={colors.brandInk} size="small" />
               ) : (
                 <View style={styles.backRow}>
-                  <Ionicons name="chevron-back" size={14} color={colors.brand} />
+                  <Ionicons name="chevron-back" size={14} color={colors.brandInk} />
                   <Text style={styles.backText}>Voltar para o login</Text>
                 </View>
               )}

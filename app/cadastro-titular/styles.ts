@@ -1,7 +1,7 @@
 ﻿import { StyleSheet } from 'react-native';
-import { colors, radii, shadows, typography, spacing } from '../../src/theme/tokens';
+import { type Colors, radii, shadows, typography, spacing } from '../../src/theme/tokens';
 
-export default StyleSheet.create({
+export const makeStyles = (colors: Colors) => StyleSheet.create({
   container: { flex: 1 },
   keyboardView: { flex: 1 },
   scrollContent: {
@@ -110,7 +110,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  backText: { fontSize: 13, color: colors.brand, fontWeight: '600' },
+  backText: { fontSize: 13, color: colors.brandInk, fontWeight: '600' },
   pickerButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -174,14 +174,14 @@ export default StyleSheet.create({
     paddingVertical: 13,
     borderRadius: radii.sm + 3,
     borderWidth: 1,
-    borderColor: colors.brand,
+    borderColor: colors.brandInk,
     backgroundColor: colors.bgElev,
     gap: 4,
   },
   stepBackButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.brand,
+    color: colors.brandInk,
   },
   stepSubmitButton: {
     flex: 1,

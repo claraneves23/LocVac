@@ -13,11 +13,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from '../../src/service/authService';
-import { colors } from '../../src/theme/tokens';
-import styles from './styles';
+import { useTheme } from '../../src/context/ThemeContext';
+import { makeStyles } from './styles';
 
 const RESEND_COOLDOWN = 60;
 const CELLS = [0, 1, 2, 3, 4, 5];
@@ -26,6 +26,8 @@ export default function RedefinirSenha() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email: string }>();
   const email = (params.email as string) || '';
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [codigo, setCodigo] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -139,7 +141,7 @@ export default function RedefinirSenha() {
       end={{ x: 0, y: 1 }}
       style={styles.container}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -275,7 +277,7 @@ export default function RedefinirSenha() {
             </Pressable>
 
             <Pressable onPress={() => router.replace('/login')} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={14} color={colors.brand} />
+              <Ionicons name="chevron-back" size={14} color={colors.brandInk} />
               <Text style={styles.backText}>Voltar para o login</Text>
             </Pressable>
           </View>
