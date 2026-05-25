@@ -548,7 +548,7 @@ export default function User() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {mainUser && (
           <View style={styles.profileCard}>
-            <Avatar name={mainUser.name} size={72} tone="brand" active />
+            <Avatar name={mainUser.name} photoUri={mainUser.photoUri} size={72} tone="brand" active />
             <View style={styles.profileText}>
               <Text style={styles.profileName}>{mainUser.name}</Text>
               <View style={styles.profileTagRow}>
