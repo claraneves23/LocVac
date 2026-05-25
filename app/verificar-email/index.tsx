@@ -112,7 +112,7 @@ export default function VerificarEmail() {
         <View style={styles.scrollContent}>
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../assets/images/logo.png')}
+              source={isDark ? require('../../assets/images/logodark.png') : require('../../assets/images/logo.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
