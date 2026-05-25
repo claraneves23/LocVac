@@ -153,7 +153,7 @@ export default function Infos() {
   const handleCarouselPress = (item: CarrosselItemDTO) => {
     router.push({
       pathname: '/infos/carousel/[id]',
-      params: { id: item.id, titulo: item.titulo },
+      params: { id: item.id, titulo: item.titulo, template: item.template ?? '' },
     });
   };
 

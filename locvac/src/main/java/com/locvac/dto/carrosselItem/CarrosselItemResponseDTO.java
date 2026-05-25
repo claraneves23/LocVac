@@ -6,5 +6,6 @@ public record CarrosselItemResponseDTO(
         String descricao,
         String imagemUrl,
         Integer ordemExibicao,
-        boolean ativo
+        boolean ativo,
+        String template
 ) {}

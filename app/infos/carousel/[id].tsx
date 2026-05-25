@@ -1,16 +1,32 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
-import Skeleton from '../../../components/redesign/Skeleton';
+import { ComponentType, useEffect, useMemo, useState } from 'react';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import Skeleton from '../../../components/redesign/Skeleton';
 import { fetchCarrosselConteudo } from '../../../src/service/infoService';
 import { CarrosselConteudoDTO } from '../../../src/types/info';
-import { type Colors, radii, shadows, spacing, typography } from '../../../src/theme/tokens';
+import { type Colors, spacing } from '../../../src/theme/tokens';
 import { ScreenTitle } from '../../../components/redesign';
 import { useTheme } from '../../../src/context/ThemeContext';
+import DefaultLayout from './layouts/DefaultLayout';
+import CronogramaTimeline from './layouts/CronogramaTimeline';
+
+type LayoutProps = { secoes: CarrosselConteudoDTO[] };
+
+// Registro de layouts: adicione novos templates aqui.
+// Para criar um novo: defina string no campo `template` de carrossel_item
+// e mapeie o nome para o componente abaixo.
+const LAYOUTS: Record<string, ComponentType<LayoutProps>> = {
+  default: DefaultLayout,
+  cronograma: CronogramaTimeline,
+};
 
 export default function CarrosselDetalhe() {
-  const { id, titulo } = useLocalSearchParams<{ id: string; titulo: string }>();
+  const { id, titulo, template } = useLocalSearchParams<{
+    id: string;
+    titulo: string;
+    template?: string;
+  }>();
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -19,56 +35,29 @@ export default function CarrosselDetalhe() {
 
   useEffect(() => {
     fetchCarrosselConteudo(Number(id))
-      .then(data => setSecoes(data))
+      .then((data) => setSecoes(data))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const Layout = LAYOUTS[template || 'default'] ?? LAYOUTS.default;
 
   return (
     <View style={styles.container}>
       <ScreenTitle title={String(titulo || 'Conteúdo')} back={() => router.back()} />
 
       {loading ? (
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
-          {[['52%', '100%', '88%', '70%'], ['40%', '100%', '92%', '75%', '55%'], ['58%', '100%', '80%']].map((widths, si) => (
-            <View key={si} style={styles.secaoCard}>
-              <Skeleton width={widths[0]} height={18} radius={6} style={{ marginBottom: spacing.sm }} />
-              {widths.slice(1).map((w, li) => (
-                <Skeleton key={li} width={w} height={13} radius={4} style={{ marginBottom: li < widths.length - 2 ? 8 : spacing.sm }} />
-              ))}
-              <View style={styles.itensList}>
-                {[0, 1, 2].map((j) => (
-                  <View key={j} style={styles.itemRow}>
-                    <Skeleton width={7} height={7} radius={4} style={{ marginTop: 8 }} />
-                    <Skeleton width={`${62 + j * 8}%`} height={13} radius={4} />
-                  </View>
-                ))}
-              </View>
+        <ScrollView contentContainerStyle={styles.skeletonContainer} showsVerticalScrollIndicator={false}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.skeletonCard}>
+              <Skeleton width="50%" height={18} radius={6} style={{ marginBottom: spacing.sm }} />
+              <Skeleton width="100%" height={13} radius={4} style={{ marginBottom: 6 }} />
+              <Skeleton width="85%" height={13} radius={4} style={{ marginBottom: 6 }} />
+              <Skeleton width="60%" height={13} radius={4} />
             </View>
           ))}
         </ScrollView>
       ) : (
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner} showsVerticalScrollIndicator={false}>
-          {secoes.map((secao) => (
-            <View key={secao.id} style={styles.secaoCard}>
-              <Text style={styles.secaoTitulo}>{secao.tituloSecao}</Text>
-
-              {secao.conteudo ? (
-                <Text style={styles.secaoConteudo}>{secao.conteudo}</Text>
-              ) : null}
-
-              {secao.itens && secao.itens.length > 0 ? (
-                <View style={styles.itensList}>
-                  {secao.itens.map((item, index) => (
-                    <View key={index} style={styles.itemRow}>
-                      <View style={styles.itemBullet} />
-                      <Text style={styles.itemTexto}>{item}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          ))}
-        </ScrollView>
+        <Layout secoes={secoes} />
       )}
 
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -76,57 +65,24 @@ export default function CarrosselDetalhe() {
   );
 }
 
-const makeStyles = (c: Colors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: c.bg,
-    paddingTop: '5%',
-  },
-  content: {
-    flex: 1,
-  },
-  contentInner: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    paddingBottom: 130,
-  },
-  secaoCard: {
-    backgroundColor: c.bgElev,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: c.line,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.sm,
-  },
-  secaoTitulo: {
-    ...typography.h3,
-    color: c.ink,
-    marginBottom: spacing.sm,
-  },
-  secaoConteudo: {
-    ...typography.body,
-    color: c.ink2,
-  },
-  itensList: {
-    marginTop: spacing.sm,
-    gap: 10,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  itemBullet: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: c.brandInk,
-    marginTop: 8,
-  },
-  itemTexto: {
-    flex: 1,
-    ...typography.body,
-    color: c.ink2,
-  },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+      paddingTop: '5%',
+    },
+    skeletonContainer: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.sm,
+      paddingBottom: 130,
+    },
+    skeletonCard: {
+      backgroundColor: c.bgElev,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.line,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+  });

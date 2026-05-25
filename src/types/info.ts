@@ -13,6 +13,7 @@ export type CarrosselItemDTO = {
   imagemUrl: string;
   ordemExibicao: number;
   ativo: boolean;
+  template: string | null;
 };
 
 export type CarrosselConteudoDTO = {

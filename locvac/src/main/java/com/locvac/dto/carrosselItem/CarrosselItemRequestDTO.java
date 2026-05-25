@@ -7,5 +7,6 @@ public record CarrosselItemRequestDTO(
         @Size(max = 500) String descricao,
         @Size(max = 500) String imagemUrl,
         Integer ordemExibicao,
-        boolean ativo
+        boolean ativo,
+        @Size(max = 50) String template
 ) {}

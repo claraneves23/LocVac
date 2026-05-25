@@ -15,6 +15,7 @@ public class CarrosselItemMapper {
         entity.setImagemUrl(dto.imagemUrl());
         entity.setOrdemExibicao(dto.ordemExibicao());
         entity.setAtivo(dto.ativo());
+        entity.setTemplate(dto.template());
         return entity;
     }
 
@@ -25,7 +26,8 @@ public class CarrosselItemMapper {
                 entity.getDescricao(),
                 entity.getImagemUrl(),
                 entity.getOrdemExibicao(),
-                entity.isAtivo()
+                entity.isAtivo(),
+                entity.getTemplate()
         );
     }
 }

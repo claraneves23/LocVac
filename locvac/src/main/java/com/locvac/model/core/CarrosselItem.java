@@ -30,6 +30,9 @@ public class CarrosselItem {
     @Column(name = "ativo", nullable = false)
     private boolean ativo = true;
 
+    @Column(name = "template", length = 50)
+    private String template;
+
     @OneToMany(mappedBy = "carrosselItem", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<CarrosselConteudo> conteudos = new ArrayList<>();
 
@@ -76,6 +79,9 @@ public class CarrosselItem {
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
     }
+
+    public String getTemplate() { return template; }
+    public void setTemplate(String template) { this.template = template; }
 
     public List<CarrosselConteudo> getConteudos() {
         return conteudos;
