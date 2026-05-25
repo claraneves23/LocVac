@@ -346,6 +346,35 @@ export const makeStyles = (c: Colors) => StyleSheet.create({
     backgroundColor: c.bgSheet,
     color: c.ink2,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  sameAddrToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: c.line,
+    backgroundColor: c.bgMuted,
+  },
+  sameAddrToggleActive: {
+    borderColor: c.brand,
+    backgroundColor: c.brand,
+  },
+  sameAddrToggleText: {
+    ...typography.small,
+    fontWeight: '600',
+    color: c.ink2,
+  },
+  sameAddrToggleTextActive: {
+    color: c.white,
+  },
   sexRow: {
     flexDirection: 'row',
     gap: 8,

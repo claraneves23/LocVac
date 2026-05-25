@@ -106,6 +106,7 @@ export default function User() {
   });
   type DepFieldKey = 'name' | 'birthDate' | 'relationship' | 'sex' | 'zipCode' | 'phone';
   const [errors, setErrors] = useState<Partial<Record<DepFieldKey, string>>>({});
+  const [sameAddressAsTitular, setSameAddressAsTitular] = useState(true);
 
   // — titular modal state —
   const [isTitularModalOpen, setIsTitularModalOpen] = useState(false);
@@ -311,17 +312,50 @@ export default function User() {
     setErrors({});
   };
 
-  const openCreate = () => { resetDraft(); modalScrollY.current = 0; setIsModalOpen(true); };
+  const titularAddressFields = () => {
+    if (!mainUser) {
+      return { zipCode: '', address: '', addressNumber: '', complement: '', neighborhood: '', city: '', state: '' as EstadoUF | '' };
+    }
+    const { rua: titRua, numero: titNumero } = splitAddress(mainUser.address);
+    return {
+      zipCode: mainUser.zipCode ? formatCep(mainUser.zipCode) : '',
+      address: titRua,
+      addressNumber: titNumero,
+      complement: mainUser.complement || '',
+      neighborhood: mainUser.neighborhood || '',
+      city: mainUser.city || '',
+      state: (mainUser.state as EstadoUF) || '',
+    };
+  };
+
+  const openCreate = () => {
+    resetDraft();
+    setDraft((c) => ({ ...c, ...titularAddressFields() }));
+    setSameAddressAsTitular(true);
+    modalScrollY.current = 0;
+    setIsModalOpen(true);
+  };
 
   const openEdit = (dependent: FamilyMember) => {
     const { rua: depRua, numero: depNumero } = splitAddress(dependent.address);
+    const isTitularGuardian = dependent.relationship === 'Filho' || dependent.relationship === 'Filha';
+    const tit = titularAddressFields();
+    const matchesTitular = mainUser
+      ? (dependent.zipCode || '') === (mainUser.zipCode || '')
+        && (depRua === tit.address)
+        && (depNumero === tit.addressNumber)
+        && ((dependent.complement || '') === tit.complement)
+        && ((dependent.neighborhood || '') === tit.neighborhood)
+        && ((dependent.city || '') === tit.city)
+        && (((dependent.state as EstadoUF) || '') === tit.state)
+      : false;
     setDraft({
       id: dependent.id,
       name: dependent.name,
       birthDate: dependent.birthDate,
       birthPlace: dependent.birthPlace || '',
       relationship: dependent.relationship || '',
-      guardianName: dependent.guardianName || '',
+      guardianName: isTitularGuardian ? (mainUser?.name || '') : (dependent.guardianName || ''),
       sex: dependent.sex === 'M' || dependent.sex === 'F' ? dependent.sex : '',
       photoUri: dependent.photoUri,
       cpf: dependent.cpf ? formatCpf(dependent.cpf) : '',
@@ -335,10 +369,22 @@ export default function User() {
       state: (dependent.state as EstadoUF) || '',
       phone: formatPhone(dependent.phone || ''),
     });
+    setSameAddressAsTitular(matchesTitular);
     setShowRelationshipPicker(false);
     setErrors({});
     modalScrollY.current = 0;
     setIsModalOpen(true);
+  };
+
+  const toggleSameAddress = () => {
+    if (sameAddressAsTitular) {
+      setSameAddressAsTitular(false);
+      return;
+    }
+    setDraft((c) => ({ ...c, ...titularAddressFields() }));
+    clearError('zipCode');
+    setShowStatePicker(false);
+    setSameAddressAsTitular(true);
   };
 
   const handleSave = async () => {
@@ -934,16 +980,32 @@ export default function User() {
                 {showRelationshipPicker && (
                   <View style={styles.pickerDropdown}>
                     <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
-                      {RELATIONSHIP_OPTIONS.map((option) => (
+                      {RELATIONSHIP_OPTIONS.map((option) => {
+                        const isParentRel = option === 'Filho' || option === 'Filha';
+                        return (
                         <Pressable
                           key={option}
                           style={[styles.pickerOption, draft.relationship === option && styles.pickerOptionActive]}
-                          onPress={() => { setDraft((c) => ({ ...c, relationship: option })); setShowRelationshipPicker(false); clearError('relationship'); }}
+                          onPress={() => {
+                            setDraft((c) => {
+                              const wasParentRel = c.relationship === 'Filho' || c.relationship === 'Filha';
+                              let nextGuardian = c.guardianName;
+                              if (isParentRel) {
+                                nextGuardian = mainUser?.name || '';
+                              } else if (wasParentRel) {
+                                nextGuardian = '';
+                              }
+                              return { ...c, relationship: option, guardianName: nextGuardian };
+                            });
+                            setShowRelationshipPicker(false);
+                            clearError('relationship');
+                          }}
                         >
                           <Text style={[styles.pickerOptionText, draft.relationship === option && styles.pickerOptionTextActive]}>{option}</Text>
                           {draft.relationship === option && <Ionicons name="checkmark" size={18} color={colors.brandInk} />}
                         </Pressable>
-                      ))}
+                        );
+                      })}
                     </ScrollView>
                   </View>
                 )}
@@ -1006,23 +1068,45 @@ export default function User() {
                 />
               </View>
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Nome da mãe ou responsável</Text>
-                <TextInput
-                  style={styles.input}
-                  value={draft.guardianName}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, guardianName: sanitizeName(v) }))}
-                  placeholder="Nome do responsável"
-                  placeholderTextColor={colors.ink4}
-                  maxLength={100}
-                />
-              </View>
+              {(() => {
+                const isTitularGuardian = draft.relationship === 'Filho' || draft.relationship === 'Filha';
+                return (
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Nome da mãe ou responsável</Text>
+                    <TextInput
+                      style={[styles.input, isTitularGuardian && styles.inputReadonly]}
+                      value={draft.guardianName}
+                      onChangeText={(v) => setDraft((c) => ({ ...c, guardianName: sanitizeName(v) }))}
+                      placeholder="Nome do responsável"
+                      placeholderTextColor={colors.ink4}
+                      maxLength={100}
+                      editable={!isTitularGuardian}
+                    />
+                  </View>
+                );
+              })()}
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>CEP <Text style={styles.required}>*</Text></Text>
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>CEP <Text style={styles.required}>*</Text></Text>
+                  <Pressable
+                    onPress={toggleSameAddress}
+                    style={[styles.sameAddrToggle, sameAddressAsTitular && styles.sameAddrToggleActive]}
+                    hitSlop={6}
+                  >
+                    <Ionicons
+                      name={sameAddressAsTitular ? 'checkmark-circle' : 'ellipse-outline'}
+                      size={14}
+                      color={sameAddressAsTitular ? colors.white : colors.ink2}
+                    />
+                    <Text style={[styles.sameAddrToggleText, sameAddressAsTitular && styles.sameAddrToggleTextActive]}>
+                      Mesmo do titular
+                    </Text>
+                  </Pressable>
+                </View>
                 <TextInput
                   ref={zipCodeRef}
-                  style={[styles.input, errors.zipCode && styles.inputError]}
+                  style={[styles.input, errors.zipCode && styles.inputError, sameAddressAsTitular && styles.inputReadonly]}
                   value={draft.zipCode}
                   onChangeText={(v) => {
                     const formatted = formatCep(v);
@@ -1034,6 +1118,7 @@ export default function User() {
                   placeholderTextColor={colors.ink4}
                   keyboardType="numeric"
                   maxLength={9}
+                  editable={!sameAddressAsTitular}
                 />
                 {errors.zipCode && <Text style={styles.errorText}>{errors.zipCode}</Text>}
               </View>
@@ -1041,66 +1126,75 @@ export default function User() {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Rua</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, sameAddressAsTitular && styles.inputReadonly]}
                   value={draft.address}
                   onChangeText={(v) => setDraft((c) => ({ ...c, address: sanitizeStreet(v) }))}
                   placeholder="Nome da rua"
                   placeholderTextColor={colors.ink4}
                   maxLength={200}
+                  editable={!sameAddressAsTitular}
                 />
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Número</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, sameAddressAsTitular && styles.inputReadonly]}
                   value={draft.addressNumber}
                   onChangeText={(v) => setDraft((c) => ({ ...c, addressNumber: sanitizeStreetNumber(v) }))}
                   placeholder="Ex: 123"
                   placeholderTextColor={colors.ink4}
                   maxLength={20}
+                  editable={!sameAddressAsTitular}
                 />
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Complemento</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, sameAddressAsTitular && styles.inputReadonly]}
                   value={draft.complement}
                   onChangeText={(v) => setDraft((c) => ({ ...c, complement: sanitizeComplement(v) }))}
                   placeholder="Apto, bloco, etc."
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
+                  editable={!sameAddressAsTitular}
                 />
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Bairro</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, sameAddressAsTitular && styles.inputReadonly]}
                   value={draft.neighborhood}
                   onChangeText={(v) => setDraft((c) => ({ ...c, neighborhood: sanitizeNeighborhood(v) }))}
                   placeholder="Nome do bairro"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
+                  editable={!sameAddressAsTitular}
                 />
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Município</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, sameAddressAsTitular && styles.inputReadonly]}
                   value={draft.city}
                   onChangeText={(v) => setDraft((c) => ({ ...c, city: sanitizeCity(v) }))}
                   placeholder="Nome da cidade"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
+                  editable={!sameAddressAsTitular}
                 />
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Estado</Text>
-                <Pressable style={styles.dateButton} onPress={() => setShowStatePicker(!showStatePicker)}>
+                <Pressable
+                  style={[styles.dateButton, sameAddressAsTitular && styles.inputReadonly]}
+                  onPress={() => { if (!sameAddressAsTitular) setShowStatePicker(!showStatePicker); }}
+                  disabled={sameAddressAsTitular}
+                >
                   <Text style={draft.state ? styles.dateButtonTextFilled : styles.dateButtonText}>
                     {draft.state || 'Selecionar estado'}
                   </Text>
