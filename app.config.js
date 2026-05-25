@@ -4,7 +4,7 @@ module.exports = {
   expo: {
     name: IS_DEV ? "LocVac (Dev)" : "LocVac",
     slug: "LocVac",
-    version: "1.0.2",
+    version: "1.0.3",
     orientation: "portrait",
     icon: "./assets/images/iconLocVac.png",
     userInterfaceStyle: "light",
