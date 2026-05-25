@@ -49,6 +49,7 @@ import OtherVaccineModal from '../../components/modals/OtherVaccineModal';
 import CampaignModal from '../../components/modals/CampaignModal';
 import { makeStyles } from '../../src/styles/home';
 import { useTheme } from '../../src/context/ThemeContext';
+import { isoToDate } from '../../src/utils/dateBounds';
 
 const SELECTED_PROFILE_KEY = 'selectedProfileId';
 
@@ -172,6 +173,11 @@ export default function Index() {
     if (!mainUser) return null;
     return familyMembers.find((p) => p.id === selectedProfileId) ?? mainUser;
   }, [familyMembers, selectedProfileId, mainUser]);
+
+  const vaccineMinDate = useMemo(
+    () => isoToDate(selectedProfile?.birthDate),
+    [selectedProfile?.birthDate],
+  );
 
   useEffect(() => {
     if (mainUser && !selectedProfileId) {
@@ -776,6 +782,7 @@ export default function Index() {
         pessoaId={selectedProfile ? Number(selectedProfile.id) : null}
         onClose={() => setIsQuickFillOpen(false)}
         onSaved={loadData}
+        minimumDate={vaccineMinDate}
       />
 
       <MandatoryVaccineModal
@@ -798,6 +805,7 @@ export default function Index() {
         onClose={() => setIsMandatoryModalOpen(false)}
         saving={savingMandatory}
         dateError={mandatoryDateError ?? undefined}
+        minimumDate={vaccineMinDate}
       />
 
       <OtherVaccineModal
@@ -820,6 +828,7 @@ export default function Index() {
         saving={savingOther}
         nameError={otherNameError ?? undefined}
         dateError={otherDateError ?? undefined}
+        minimumDate={vaccineMinDate}
       />
 
       <CampaignModal
@@ -837,6 +846,7 @@ export default function Index() {
         saving={savingCampaign}
         campaignNameError={campaignNameError ?? undefined}
         participationDateError={campaignDateError ?? undefined}
+        minimumDate={vaccineMinDate}
       />
 
       <StatusBar style={anyModalOpen ? 'light' : 'dark'} />

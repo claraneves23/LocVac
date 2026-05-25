@@ -24,6 +24,7 @@ type Props = {
   pessoaId: number | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
+  minimumDate?: Date;
 };
 
 const formatAge = (months: number): string => {
@@ -64,6 +65,7 @@ export default function QuickFillVaccinesModal({
   pessoaId,
   onClose,
   onSaved,
+  minimumDate,
 }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -203,6 +205,7 @@ export default function QuickFillVaccinesModal({
                             value={entry.date}
                             onChange={(iso) => setDate(id, iso)}
                             maximumDate={new Date()}
+                            minimumDate={minimumDate}
                           />
                         </View>
                       )}

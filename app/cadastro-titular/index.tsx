@@ -20,6 +20,15 @@ import { useRouter } from 'expo-router';
 import { cadastrarTitular, logout } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
 import { joinAddress } from '../../src/utils/address';
+import { sanitizeName } from '../../src/utils/nameSanitizer';
+import {
+  sanitizeStreet,
+  sanitizeStreetNumber,
+  sanitizeComplement,
+  sanitizeNeighborhood,
+  sanitizeCity,
+} from '../../src/utils/addressSanitizers';
+import { minBirthDate } from '../../src/utils/dateBounds';
 import { colors } from '../../src/theme/tokens';
 import { DateField } from '../../components/redesign';
 import styles from './styles';
@@ -338,7 +347,7 @@ export default function CadastroTitular() {
                 ref={nomeRef}
                 style={[styles.input, errors.nome && styles.inputError]}
                 value={nome}
-                onChangeText={(v) => { setNome(v); clearError('nome'); }}
+                onChangeText={(v) => { setNome(sanitizeName(v)); clearError('nome'); }}
                 onFocus={focusFor(nomeRef)}
                 placeholder="Digite seu nome"
                 placeholderTextColor={colors.ink3}
@@ -358,6 +367,7 @@ export default function CadastroTitular() {
                   onChange={(iso) => { setDataNascimento(iso); clearError('dataNascimento'); }}
                   error={!!errors.dataNascimento}
                   maximumDate={new Date()}
+                  minimumDate={minBirthDate()}
                 />
               </View>
               {errors.dataNascimento && <Text style={styles.errorText}>{errors.dataNascimento}</Text>}
@@ -447,7 +457,7 @@ export default function CadastroTitular() {
               <TextInput
                 style={styles.input}
                 value={rua}
-                onChangeText={setRua}
+                onChangeText={(v) => setRua(sanitizeStreet(v))}
                 placeholder="Nome da rua"
                 placeholderTextColor={colors.ink3}
                 maxLength={200}
@@ -459,7 +469,7 @@ export default function CadastroTitular() {
               <TextInput
                 style={styles.input}
                 value={numero}
-                onChangeText={setNumero}
+                onChangeText={(v) => setNumero(sanitizeStreetNumber(v))}
                 placeholder="Ex: 123"
                 placeholderTextColor={colors.ink3}
                 maxLength={20}
@@ -472,7 +482,7 @@ export default function CadastroTitular() {
               <TextInput
                 style={styles.input}
                 value={complemento}
-                onChangeText={setComplemento}
+                onChangeText={(v) => setComplemento(sanitizeComplement(v))}
                 placeholder="Apto, bloco, etc."
                 placeholderTextColor={colors.ink3}
                 maxLength={100}
@@ -484,7 +494,7 @@ export default function CadastroTitular() {
               <TextInput
                 style={styles.input}
                 value={bairro}
-                onChangeText={setBairro}
+                onChangeText={(v) => setBairro(sanitizeNeighborhood(v))}
                 placeholder="Nome do bairro"
                 placeholderTextColor={colors.ink3}
                 maxLength={100}
@@ -496,7 +506,7 @@ export default function CadastroTitular() {
               <TextInput
                 style={styles.input}
                 value={municipio}
-                onChangeText={setMunicipio}
+                onChangeText={(v) => setMunicipio(sanitizeCity(v))}
                 placeholder="Nome da cidade"
                 placeholderTextColor={colors.ink3}
                 maxLength={100}

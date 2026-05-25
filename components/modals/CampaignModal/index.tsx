@@ -18,6 +18,7 @@ type CampaignModalProps = {
   saving?: boolean;
   campaignNameError?: string;
   participationDateError?: string;
+  minimumDate?: Date;
 };
 
 export default function CampaignModal({
@@ -32,6 +33,7 @@ export default function CampaignModal({
   saving = false,
   campaignNameError,
   participationDateError,
+  minimumDate,
 }: CampaignModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -91,6 +93,7 @@ export default function CampaignModal({
                 onChange={onChangeParticipationDate}
                 error={!!participationDateError}
                 maximumDate={new Date()}
+                minimumDate={minimumDate}
               />
               {participationDateError && <Text style={styles.errorText}>{participationDateError}</Text>}
             </View>

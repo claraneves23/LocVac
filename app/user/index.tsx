@@ -26,6 +26,15 @@ import { addDependentAndLink, updateDependent, deleteDependent } from '../../src
 import { updateTitular } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
 import { joinAddress, splitAddress } from '../../src/utils/address';
+import { sanitizeName } from '../../src/utils/nameSanitizer';
+import {
+  sanitizeStreet,
+  sanitizeStreetNumber,
+  sanitizeComplement,
+  sanitizeNeighborhood,
+  sanitizeCity,
+} from '../../src/utils/addressSanitizers';
+import { minBirthDate } from '../../src/utils/dateBounds';
 import logger from '../../src/utils/logger';
 import DependentInfoModal from '../../components/modals/DependentInfoModal';
 import { radii, spacing, typography, shadows, Tone } from '../../src/theme/tokens';
@@ -601,7 +610,7 @@ export default function User() {
                 <TextInput
                   style={[styles.input, titularErrors.name && styles.inputError]}
                   value={titularDraft.name}
-                  onChangeText={(v) => { setTitularDraft((c) => ({ ...c, name: v })); clearTitularError('name'); }}
+                  onChangeText={(v) => { setTitularDraft((c) => ({ ...c, name: sanitizeName(v) })); clearTitularError('name'); }}
                   placeholder="Nome completo"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -617,6 +626,7 @@ export default function User() {
                   onChange={(iso) => { setTitularDraft((c) => ({ ...c, birthDate: iso })); clearTitularError('birthDate'); }}
                   error={!!titularErrors.birthDate}
                   maximumDate={new Date()}
+                  minimumDate={minBirthDate()}
                 />
                 {titularErrors.birthDate && <Text style={styles.errorText}>{titularErrors.birthDate}</Text>}
               </View>
@@ -689,7 +699,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={titularDraft.address}
-                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, address: v }))}
+                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, address: sanitizeStreet(v) }))}
                   placeholder="Nome da rua"
                   placeholderTextColor={colors.ink4}
                   maxLength={200}
@@ -702,7 +712,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={titularDraft.addressNumber}
-                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, addressNumber: v }))}
+                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, addressNumber: sanitizeStreetNumber(v) }))}
                   placeholder="Ex: 123"
                   placeholderTextColor={colors.ink4}
                   maxLength={20}
@@ -715,7 +725,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={titularDraft.complement}
-                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, complement: v }))}
+                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, complement: sanitizeComplement(v) }))}
                   placeholder="Apto, bloco, etc."
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -728,7 +738,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={titularDraft.neighborhood}
-                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, neighborhood: v }))}
+                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, neighborhood: sanitizeNeighborhood(v) }))}
                   placeholder="Nome do bairro"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -741,7 +751,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={titularDraft.city}
-                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, city: v }))}
+                  onChangeText={(v) => setTitularDraft((c) => ({ ...c, city: sanitizeCity(v) }))}
                   placeholder="Nome da cidade"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -881,7 +891,7 @@ export default function User() {
                   ref={nameInputRef}
                   style={[styles.input, errors.name && styles.inputError]}
                   value={draft.name}
-                  onChangeText={(v) => { setDraft((c) => ({ ...c, name: v })); clearError('name'); }}
+                  onChangeText={(v) => { setDraft((c) => ({ ...c, name: sanitizeName(v) })); clearError('name'); }}
                   placeholder="Nome completo"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -897,6 +907,7 @@ export default function User() {
                     onChange={(iso) => { setDraft((c) => ({ ...c, birthDate: iso })); clearError('birthDate'); }}
                     error={!!errors.birthDate}
                     maximumDate={new Date()}
+                    minimumDate={minBirthDate()}
                   />
                 </View>
                 {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate}</Text>}
@@ -995,7 +1006,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.guardianName}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, guardianName: v }))}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, guardianName: sanitizeName(v) }))}
                   placeholder="Nome do responsável"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -1023,7 +1034,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.address}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, address: v }))}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, address: sanitizeStreet(v) }))}
                   placeholder="Nome da rua"
                   placeholderTextColor={colors.ink4}
                   maxLength={200}
@@ -1035,7 +1046,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.addressNumber}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, addressNumber: v }))}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, addressNumber: sanitizeStreetNumber(v) }))}
                   placeholder="Ex: 123"
                   placeholderTextColor={colors.ink4}
                   maxLength={20}
@@ -1047,7 +1058,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.complement}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, complement: v }))}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, complement: sanitizeComplement(v) }))}
                   placeholder="Apto, bloco, etc."
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -1059,7 +1070,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.neighborhood}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, neighborhood: v }))}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, neighborhood: sanitizeNeighborhood(v) }))}
                   placeholder="Nome do bairro"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}
@@ -1071,7 +1082,7 @@ export default function User() {
                 <TextInput
                   style={styles.input}
                   value={draft.city}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, city: v }))}
+                  onChangeText={(v) => setDraft((c) => ({ ...c, city: sanitizeCity(v) }))}
                   placeholder="Nome da cidade"
                   placeholderTextColor={colors.ink4}
                   maxLength={100}

@@ -61,6 +61,22 @@ export default function DateField({
     setText(isoToBR(value));
   }, [value]);
 
+  const isoWithinBounds = (iso: string): boolean => {
+    const d = new Date(`${iso}T00:00:00`);
+    if (isNaN(d.getTime())) return false;
+    if (minimumDate) {
+      const min = new Date(minimumDate);
+      min.setHours(0, 0, 0, 0);
+      if (d < min) return false;
+    }
+    if (maximumDate) {
+      const max = new Date(maximumDate);
+      max.setHours(23, 59, 59, 999);
+      if (d > max) return false;
+    }
+    return true;
+  };
+
   const handleChangeText = (raw: string) => {
     const formatted = formatTyping(raw);
     setText(formatted);
@@ -69,13 +85,13 @@ export default function DateField({
       return;
     }
     const iso = brToIso(formatted);
-    if (iso) onChange(iso);
+    if (iso && isoWithinBounds(iso)) onChange(iso);
   };
 
   const handleBlur = () => {
     if (text === '') return;
     const iso = brToIso(text);
-    if (!iso) {
+    if (!iso || !isoWithinBounds(iso)) {
       setText(isoToBR(value));
     }
   };

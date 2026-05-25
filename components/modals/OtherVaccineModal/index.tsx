@@ -26,6 +26,7 @@ type OtherVaccineModalProps = {
   saving?: boolean;
   nameError?: string;
   dateError?: string;
+  minimumDate?: Date;
 };
 
 export default function OtherVaccineModal({
@@ -48,6 +49,7 @@ export default function OtherVaccineModal({
   saving = false,
   nameError,
   dateError,
+  minimumDate,
 }: OtherVaccineModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -104,6 +106,7 @@ export default function OtherVaccineModal({
                 onChange={onChangeDate}
                 error={!!dateError}
                 maximumDate={new Date()}
+                minimumDate={minimumDate}
               />
               {dateError && <Text style={styles.errorText}>{dateError}</Text>}
             </View>

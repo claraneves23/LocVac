@@ -26,6 +26,7 @@ type MandatoryVaccineModalProps = {
   onClose: () => void;
   saving?: boolean;
   dateError?: string;
+  minimumDate?: Date;
 };
 
 export default function MandatoryVaccineModal({
@@ -48,6 +49,7 @@ export default function MandatoryVaccineModal({
   onClose,
   saving = false,
   dateError,
+  minimumDate,
 }: MandatoryVaccineModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -102,6 +104,7 @@ export default function MandatoryVaccineModal({
                     onChange={onChangeDate}
                     error={!!dateError}
                     maximumDate={new Date()}
+                    minimumDate={minimumDate}
                   />
                   {dateError && <Text style={styles.errorText}>{dateError}</Text>}
                 </View>
