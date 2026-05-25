@@ -1,5 +1,9 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useMemo } from 'react';
+import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { useMemo, useState } from 'react';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CarrosselConteudoDTO } from '../../../../src/types/info';
 import { type Colors, radii, shadows, spacing, typography } from '../../../../src/theme/tokens';
@@ -44,61 +48,86 @@ export default function CronogramaTimeline({ secoes }: Props) {
       .filter((x) => x.secoes.length > 0);
   }, [secoes]);
 
+  // expansao por grupo — default: todos expandidos
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(PUBLIC_GROUPS.map((g) => [g, true]))
+  );
+
+  const toggle = (grupo: PublicGroup) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded((e) => ({ ...e, [grupo]: !e[grupo] }));
+  };
+
   return (
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={styles.scrollInner}
       showsVerticalScrollIndicator={false}
     >
-      {grupos.map(({ grupo, meta, secoes: secoesDoGrupo }) => (
-        <View key={grupo} style={styles.groupBlock}>
-          <View style={styles.groupHeader}>
-            <View style={styles.groupIcon}>
-              <Ionicons name={meta.icon} size={18} color={colors.brandInk} />
-            </View>
-            <Text style={styles.groupLabel}>{meta.label}</Text>
-          </View>
+      {grupos.map(({ grupo, meta, secoes: secoesDoGrupo }) => {
+        const isOpen = expanded[grupo];
+        return (
+          <View key={grupo} style={styles.groupBlock}>
+            <Pressable style={styles.groupHeader} onPress={() => toggle(grupo)}>
+              <View style={styles.groupIcon}>
+                <Ionicons name={meta.icon} size={18} color={colors.brandInk} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.groupLabel}>{meta.label}</Text>
+                <Text style={styles.groupCount}>
+                  {secoesDoGrupo.length} {secoesDoGrupo.length === 1 ? 'faixa' : 'faixas'}
+                </Text>
+              </View>
+              <Ionicons
+                name={isOpen ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={colors.ink3}
+              />
+            </Pressable>
 
-          <View style={styles.timeline}>
-            {secoesDoGrupo.map((secao, idx) => {
-              const isLast = idx === secoesDoGrupo.length - 1;
-              return (
-                <View key={secao.id} style={styles.timelineRow}>
-                  <View style={styles.timelineLeft}>
-                    <View style={styles.timelineDot}>
-                      <View style={styles.timelineDotInner} />
-                    </View>
-                    {!isLast && <View style={styles.timelineLine} />}
-                  </View>
-
-                  <View style={styles.timelineRight}>
-                    <Text style={styles.idadeLabel}>{secao.tituloSecao}</Text>
-                    {secao.conteudo ? (
-                      <Text style={styles.idadeSub}>{secao.conteudo}</Text>
-                    ) : null}
-
-                    {secao.itens && secao.itens.length > 0 ? (
-                      <View style={styles.vacinasList}>
-                        {secao.itens.map((item, i) => (
-                          <View key={i} style={styles.vacinaChip}>
-                            <Ionicons
-                              name="shield-checkmark-outline"
-                              size={14}
-                              color={colors.brandInk}
-                              style={{ marginRight: 6 }}
-                            />
-                            <Text style={styles.vacinaText}>{item}</Text>
-                          </View>
-                        ))}
+            {isOpen && (
+              <View style={styles.timeline}>
+                {secoesDoGrupo.map((secao, idx) => {
+                  const isLast = idx === secoesDoGrupo.length - 1;
+                  return (
+                    <View key={secao.id} style={styles.timelineRow}>
+                      <View style={styles.timelineLeft}>
+                        <View style={styles.timelineDot}>
+                          <View style={styles.timelineDotInner} />
+                        </View>
+                        {!isLast && <View style={styles.timelineLine} />}
                       </View>
-                    ) : null}
-                  </View>
-                </View>
-              );
-            })}
+
+                      <View style={styles.timelineRight}>
+                        <Text style={styles.idadeLabel}>{secao.tituloSecao}</Text>
+                        {secao.conteudo ? (
+                          <Text style={styles.idadeSub}>{secao.conteudo}</Text>
+                        ) : null}
+
+                        {secao.itens && secao.itens.length > 0 ? (
+                          <View style={styles.vacinasList}>
+                            {secao.itens.map((item, i) => (
+                              <View key={i} style={styles.vacinaChip}>
+                                <Ionicons
+                                  name="shield-checkmark-outline"
+                                  size={14}
+                                  color={colors.brandInk}
+                                  style={{ marginRight: 6 }}
+                                />
+                                <Text style={styles.vacinaText}>{item}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
-        </View>
-      ))}
+        );
+      })}
     </ScrollView>
   );
 }
@@ -123,6 +152,12 @@ const makeStyles = (c: Colors) =>
       alignItems: 'center',
       gap: 10,
       marginBottom: spacing.md,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      backgroundColor: c.bgElev,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: c.line,
     },
     groupIcon: {
       width: 32,
@@ -135,6 +170,11 @@ const makeStyles = (c: Colors) =>
     groupLabel: {
       ...typography.h3,
       color: c.ink,
+    },
+    groupCount: {
+      ...typography.caption,
+      color: c.ink3,
+      marginTop: 2,
     },
     timeline: {
       paddingLeft: 4,
