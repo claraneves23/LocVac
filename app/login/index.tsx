@@ -22,6 +22,7 @@ import { login, iniciarCadastro } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
+import { validarSenha } from '../../src/utils/passwordValidator';
 import { makeStyles } from './styles';
 
 type Mode = 'login' | 'cadastro';
@@ -175,17 +176,19 @@ export default function Login() {
       setErrors(novoErros);
       return;
     }
-    setErrors({});
 
-    if (senha.length < 6) {
-      Alert.alert('Senha fraca', 'A senha deve ter pelo menos 6 caracteres.');
+    const senhaErro = validarSenha(senha);
+    if (senhaErro) {
+      setErrors({ senha: senhaErro });
       return;
     }
 
     if (senha !== confirmarSenha) {
-      Alert.alert('Senhas diferentes', 'As senhas não coincidem.');
+      setErrors({ confirmarSenha: 'As senhas não coincidem.' });
       return;
     }
+
+    setErrors({});
 
     setLoading(true);
     try {
@@ -320,7 +323,9 @@ export default function Login() {
                   />
                 </Pressable>
               </View>
-              {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
+              {errors.senha
+                ? <Text style={styles.errorText}>{errors.senha}</Text>
+                : mode === 'cadastro' && <Text style={styles.helperText}>Mín. 8 caracteres, 1 maiúscula, 1 número e 1 caractere especial.</Text>}
             </View>
 
             <Animated.View

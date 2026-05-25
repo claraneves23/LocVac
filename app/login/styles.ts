@@ -109,6 +109,11 @@ export const makeStyles = (colors: Colors) => StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
+  helperText: {
+    fontSize: 11,
+    color: colors.ink3,
+    marginTop: 4,
+  },
   eyeButton: {
     paddingHorizontal: 12,
     paddingVertical: 12,
