@@ -65,7 +65,8 @@ function LayoutContent() {
   }, [router]);
 
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+    const handle = (response: Notifications.NotificationResponse | null) => {
+      if (!response) return;
       const data = response.notification.request.content.data as { url?: string } | undefined;
       const url = data?.url;
       if (typeof url === 'string' && /^https?:\/\//i.test(url)) {
@@ -73,7 +74,11 @@ function LayoutContent() {
         return;
       }
       router.push('/hist');
-    });
+    };
+
+    Notifications.getLastNotificationResponseAsync().then(handle).catch(() => {});
+
+    const sub = Notifications.addNotificationResponseReceivedListener(handle);
     return () => sub.remove();
   }, [router]);
 
