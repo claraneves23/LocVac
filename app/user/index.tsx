@@ -554,7 +554,7 @@ export default function User() {
               <View style={styles.profileTagRow}>
                 <View style={styles.profileTag}>
                   <Ionicons name="shield-checkmark" size={11} color={colors.brandInk} />
-                  <Text style={styles.profileTagText}>Titular</Text>
+                  <Text style={styles.profileTagText}>{dependents.length > 0 ? 'Responsável' : 'Titular'}</Text>
                 </View>
               </View>
               <Text style={styles.profileEmail} numberOfLines={1}>{mainUser.email}</Text>
