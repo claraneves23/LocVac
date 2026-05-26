@@ -6,3 +6,4 @@ export { default as AppHeader } from './AppHeader';
 export { default as BottomTabs } from './BottomTabs';
 export { default as Skeleton } from './Skeleton';
 export { default as DateField } from './DateField';
+export { default as PasswordRequirements } from './PasswordRequirements';
