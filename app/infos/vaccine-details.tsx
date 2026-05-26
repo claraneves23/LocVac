@@ -122,13 +122,6 @@ export default function VaccineDetails() {
                       </View>
                     </View>
                   ))}
-
-                  <View style={styles.sourceBox}>
-                    <Ionicons name="document-text-outline" size={14} color={colors.ink3} />
-                    <Text style={styles.sourceText}>
-                      {informativo.orgaoEmissor} · v{informativo.versao} · {informativo.dataPublicacao}
-                    </Text>
-                  </View>
                 </View>
               ))}
 
@@ -157,6 +150,15 @@ export default function VaccineDetails() {
                   })}
                 </View>
               )}
+
+              {informativos.map((informativo) => (
+                <View key={`src-${informativo.id}`} style={styles.sourceBox}>
+                  <Ionicons name="document-text-outline" size={14} color={colors.ink3} />
+                  <Text style={styles.sourceText}>
+                    {informativo.orgaoEmissor} · v{informativo.versao} · {informativo.dataPublicacao}
+                  </Text>
+                </View>
+              ))}
             </>
           )}
 
