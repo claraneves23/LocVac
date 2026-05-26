@@ -49,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
     public Object login(LoginRequest request) {
         String email = request.email() == null ? null : request.email().trim().toLowerCase();
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "EMAIL_NAO_CADASTRADO"));
 
         LocalDateTime agora = LocalDateTime.now();
         if (usuario.getBloqueadoAte() != null) {
@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.senha(), usuario.getSenhaHash())) {
             registrarTentativaFalha(usuario);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "SENHA_INCORRETA");
         }
 
         usuario.setTentativasFalhas(0);

@@ -23,6 +23,7 @@ import { useAppContext } from '../../src/context/AppContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
 import { validarSenha } from '../../src/utils/passwordValidator';
+import { PasswordRequirements } from '../../components/redesign';
 import { makeStyles } from './styles';
 
 type Mode = 'login' | 'cadastro';
@@ -142,8 +143,17 @@ export default function Login() {
       let title = 'Erro';
       let message: string;
       if (status === 401) {
-        title = 'Não foi possível entrar';
-        message = 'E-mail ou senha incorretos. Se ainda não tem cadastro, toque em "Criar conta".';
+        const detail: string = error?.response?.data?.detail ?? '';
+        if (detail.includes('EMAIL_NAO_CADASTRADO')) {
+          title = 'E-mail não cadastrado';
+          message = 'Não encontramos uma conta com este e-mail. Toque em "Criar conta" para se cadastrar.';
+        } else if (detail.includes('SENHA_INCORRETA')) {
+          title = 'Senha incorreta';
+          message = 'A senha digitada não confere. Tente novamente ou toque em "Esqueci minha senha".';
+        } else {
+          title = 'Não foi possível entrar';
+          message = 'E-mail ou senha incorretos. Se ainda não tem cadastro, toque em "Criar conta".';
+        }
       } else if (status === 423) {
         title = 'Conta bloqueada';
         const segundosRestantes = Number(error?.response?.data?.segundosRestantes);
@@ -323,9 +333,8 @@ export default function Login() {
                   />
                 </Pressable>
               </View>
-              {errors.senha
-                ? <Text style={styles.errorText}>{errors.senha}</Text>
-                : mode === 'cadastro' && <Text style={styles.helperText}>Mín. 8 caracteres, 1 maiúscula, 1 número e 1 caractere especial.</Text>}
+              {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
+              {mode === 'cadastro' && <PasswordRequirements senha={senha} />}
             </View>
 
             <Animated.View
