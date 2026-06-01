@@ -52,6 +52,7 @@ import {
 } from '../../src/utils/format';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { fetchMunicipios } from '../../src/utils/municipios';
+import { isCpfValido, isCnsValido, isTelefoneValido } from '../../src/utils/validators';
 
 const SEX_OPTIONS = ['M', 'F'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
@@ -122,7 +123,7 @@ export default function User() {
     guardianName: '', sex: '', photoUri: undefined,
     address: '', addressNumber: '', neighborhood: '', city: '', state: '', zipCode: '', phone: '',
   });
-  type DepFieldKey = 'name' | 'birthDate' | 'relationship' | 'sex' | 'zipCode' | 'phone';
+  type DepFieldKey = 'name' | 'birthDate' | 'relationship' | 'sex' | 'cpf' | 'cns' | 'zipCode' | 'phone';
   const [errors, setErrors] = useState<Partial<Record<DepFieldKey, string>>>({});
   const [sameAddressAsTitular, setSameAddressAsTitular] = useState(true);
   const originalDependentPhoto = useRef<string | undefined>(undefined);
@@ -249,9 +250,11 @@ export default function User() {
   const sexRef = useRef<View>(null);
   const zipCodeRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
+  const cpfRef = useRef<TextInput>(null);
+  const cnsRef = useRef<TextInput>(null);
   const lastFetchedCep = useRef<string>('');
 
-  const DEP_FIELD_ORDER: DepFieldKey[] = ['name', 'birthDate', 'relationship', 'sex', 'zipCode', 'phone'];
+  const DEP_FIELD_ORDER: DepFieldKey[] = ['name', 'birthDate', 'relationship', 'sex', 'cpf', 'cns', 'zipCode', 'phone'];
 
   const scrollDepToFirstError = (currentErrors: Partial<Record<DepFieldKey, string>>) => {
     const firstField = DEP_FIELD_ORDER.find((f) => currentErrors[f]);
@@ -259,12 +262,13 @@ export default function User() {
     const refMap: Record<DepFieldKey, React.RefObject<any>> = {
       name: nameInputRef, birthDate: birthDateRef,
       relationship: relationshipRef, sex: sexRef,
+      cpf: cpfRef, cns: cnsRef,
       zipCode: zipCodeRef, phone: phoneRef,
     };
-    const ref = refMap[firstField];
-    const scroll = modalScrollRef.current;
-    if (!ref?.current || !scroll) return;
     setTimeout(() => {
+      const ref = refMap[firstField];
+      const scroll = modalScrollRef.current;
+      if (!ref?.current || !scroll) return;
       try {
         (ref.current as any).measure?.(
           (_x: number, _y: number, _w: number, h: number, _pageX: number, pageY: number) => {
@@ -274,7 +278,7 @@ export default function User() {
           },
         );
       } catch {}
-    }, 80);
+    }, 120);
   };
 
   const validateDraft = () => {
@@ -283,8 +287,13 @@ export default function User() {
     if (!draft.birthDate.trim()) e.birthDate = 'Campo obrigatório!';
     if (!draft.relationship.trim()) e.relationship = 'Campo obrigatório!';
     if (!draft.sex) e.sex = 'Campo obrigatório!';
+    const cpfDigits = (draft.cpf || '').replace(/\D/g, '');
+    if (cpfDigits && !isCpfValido(cpfDigits)) e.cpf = 'CPF inválido!';
+    const cnsDigits = (draft.cns || '').replace(/\D/g, '');
+    if (cnsDigits && !isCnsValido(cnsDigits)) e.cns = 'CNS inválido!';
     if (!draft.zipCode || draft.zipCode.replace(/\D/g, '').length !== 8) e.zipCode = 'Campo obrigatório!';
     if (!draft.phone?.trim()) e.phone = 'Campo obrigatório!';
+    else if (!isTelefoneValido(draft.phone)) e.phone = 'Telefone inválido!';
     if (Object.keys(e).length > 0) { setErrors(e); scrollDepToFirstError(e); return false; }
     setErrors({});
     return true;
@@ -416,6 +425,12 @@ export default function User() {
     setSameAddressAsTitular(true);
   };
 
+  const setDepFieldError = (field: DepFieldKey, message: string) => {
+    const novoErros: Partial<Record<DepFieldKey, string>> = { [field]: message };
+    setErrors(novoErros);
+    scrollDepToFirstError(novoErros);
+  };
+
   const handleSave = async () => {
     if (savingDependent) return;
     if (!validateDraft() || !mainUser) return;
@@ -442,8 +457,72 @@ export default function User() {
       resetDraft();
       await refreshDependents();
     } catch (e: any) {
+      const status = e?.response?.status;
+      const detail: string = e?.response?.data?.detail ?? e?.response?.data?.message ?? '';
+      const detailLower = detail.toLowerCase();
+      logger.error('Erro ao salvar dependente:', status, detail);
+
+      if (status === undefined) {
+        Alert.alert('Sem conexão', 'Verifique sua internet e tente novamente.');
+        return;
+      }
+      if (status === 409) {
+        if (detailLower.includes('cpf')) {
+          setDepFieldError('cpf', 'Este CPF já está cadastrado.');
+          return;
+        }
+        if (detailLower.includes('cns')) {
+          setDepFieldError('cns', 'Este CNS já está cadastrado.');
+          return;
+        }
+        Alert.alert('Erro', 'Já existe um cadastro com esses dados.');
+        return;
+      }
+      if (status === 400) {
+        if (detailLower.includes('cpf')) {
+          setDepFieldError('cpf', 'CPF inválido!');
+          return;
+        }
+        if (detailLower.includes('cns')) {
+          setDepFieldError('cns', 'CNS inválido!');
+          return;
+        }
+        if (detailLower.includes('cep')) {
+          setDepFieldError('zipCode', 'CEP inválido!');
+          return;
+        }
+        if (detailLower.includes('telefone')) {
+          setDepFieldError('phone', 'Telefone inválido!');
+          return;
+        }
+        if (detailLower.includes('nome')) {
+          setDepFieldError('name', 'Nome inválido!');
+          return;
+        }
+        if (detailLower.includes('nascimento')) {
+          setDepFieldError('birthDate', 'Data de nascimento inválida!');
+          return;
+        }
+        Alert.alert('Erro', 'Verifique os dados informados e tente novamente.');
+        return;
+      }
+      if (status === 401 || status === 403) {
+        Alert.alert('Sessão expirada', 'Faça login novamente para continuar.');
+        return;
+      }
+      if (status === 404 && draft.id) {
+        Alert.alert('Erro', 'Dependente não encontrado. Pode ter sido removido.');
+        return;
+      }
+      if (status === 413) {
+        Alert.alert('Foto muito grande', 'Escolha uma imagem menor e tente novamente.');
+        return;
+      }
+      if (status >= 500) {
+        Alert.alert('Erro no servidor', 'Tente novamente em alguns instantes.');
+        return;
+      }
       Alert.alert('Erro', draft.id ? 'Não foi possível atualizar o dependente.' : 'Não foi possível adicionar o dependente.');
-      logger.error('Erro ao salvar dependente:', e?.response?.status);
     } finally {
       setSavingDependent(false);
     }
@@ -1169,27 +1248,31 @@ export default function User() {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>CPF</Text>
                 <TextInput
-                  style={styles.input}
+                  ref={cpfRef}
+                  style={[styles.input, errors.cpf && styles.inputError]}
                   value={draft.cpf}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, cpf: formatCpf(v) }))}
+                  onChangeText={(v) => { setDraft((c) => ({ ...c, cpf: formatCpf(v) })); clearError('cpf'); }}
                   placeholder="000.000.000-00"
                   placeholderTextColor={colors.ink4}
                   keyboardType="numeric"
                   maxLength={14}
                 />
+                {errors.cpf && <Text style={styles.errorText}>{errors.cpf}</Text>}
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>CNS</Text>
                 <TextInput
-                  style={styles.input}
+                  ref={cnsRef}
+                  style={[styles.input, errors.cns && styles.inputError]}
                   value={draft.cns}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, cns: formatCns(v) }))}
+                  onChangeText={(v) => { setDraft((c) => ({ ...c, cns: formatCns(v) })); clearError('cns'); }}
                   placeholder="000 0000 0000 0000"
                   placeholderTextColor={colors.ink4}
                   keyboardType="numeric"
                   maxLength={18}
                 />
+                {errors.cns && <Text style={styles.errorText}>{errors.cns}</Text>}
               </View>
 
               {(() => {
