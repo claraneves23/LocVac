@@ -285,9 +285,12 @@ export default function CadastroTitular() {
 
   const goToStep1WithError = (field: FieldKey, message: string) => {
     const novoErros = { [field]: message } as Partial<Record<FieldKey, string>>;
-    setErrors(novoErros);
     setStep(1);
-    scrollToFirstError(novoErros);
+    setErrors(novoErros);
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      scrollToFirstError(novoErros);
+    }, 150);
   };
 
   const handleSalvar = async () => {
@@ -333,18 +336,15 @@ export default function CadastroTitular() {
         goToStep1WithError('cpf', 'CPF inválido!');
         return;
       }
-      if (status === 409 && detail.includes('CPF')) {
-        goToStep1WithError('cpf', 'Este CPF já está cadastrado.');
-        return;
-      }
       if (status === 409 && detail.includes('CNS')) {
         goToStep1WithError('cns', 'Este CNS já está cadastrado.');
         return;
       }
-      const message = status === 409
-        ? 'Você já tem um titular cadastrado.'
-        : 'Erro ao salvar. Verifique os dados e tente novamente.';
-      Alert.alert('Erro', message);
+      if (status === 409) {
+        goToStep1WithError('cpf', 'Este CPF já está cadastrado ou vinculado a outro titular.');
+        return;
+      }
+      Alert.alert('Erro', 'Erro ao salvar. Verifique os dados e tente novamente.');
     } finally {
       setLoading(false);
     }
