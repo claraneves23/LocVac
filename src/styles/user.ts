@@ -343,8 +343,10 @@ export const makeStyles = (c: Colors) => StyleSheet.create({
     color: c.ink,
   },
   inputReadonly: {
-    backgroundColor: c.bgSheet,
-    color: c.ink2,
+    backgroundColor: c.line,
+    borderColor: c.lineStrong,
+    color: c.ink3,
+    opacity: 0.75,
   },
   labelRow: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { FamilyMember } from '../types/vaccination';
 import logger from '../utils/logger';
+import { mapSexo } from '../utils/format';
 import { API_BASE } from './apiConfig';
 
 const API_URL = API_BASE;
@@ -18,6 +19,8 @@ export async function addDependentAndLink(usuarioId: string, dependent: Omit<Fam
     bairro: dependent.neighborhood || '',
     municipio: dependent.city || '',
     estado: dependent.state || null,
+    naturalidadeMunicipio: dependent.birthCity || null,
+    naturalidadeEstado: dependent.birthState || null,
     telefone: (dependent.phone || '').replace(/\D/g, ''),
     fotoUrl: null,
     nomeResponsavel: dependent.guardianName || '',
@@ -52,16 +55,12 @@ type PessoaResponseDTO = {
   bairro?: string;
   municipio?: string;
   estado?: string;
+  naturalidadeMunicipio?: string;
+  naturalidadeEstado?: string;
   telefone?: string;
   fotoUrl?: string;
   nomeResponsavel?: string;
   dscParentesco?: string;
-};
-
-const mapSexo = (sexo: string): 'M' | 'F' | 'Outro' => {
-  if (sexo === 'MASCULINO') return 'M';
-  if (sexo === 'FEMININO') return 'F';
-  return 'Outro';
 };
 
 export async function getDependents(usuarioId: string): Promise<FamilyMember[]> {
@@ -85,6 +84,8 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
     neighborhood: d.bairro,
     city: d.municipio,
     state: d.estado,
+    birthCity: d.naturalidadeMunicipio,
+    birthState: d.naturalidadeEstado,
     phone: d.telefone,
     photoUri: d.fotoUrl || undefined,
     guardianName: d.nomeResponsavel,
@@ -104,6 +105,8 @@ export async function updateDependent(id: string, dependent: Omit<FamilyMember, 
     bairro: dependent.neighborhood || '',
     municipio: dependent.city || '',
     estado: dependent.state || null,
+    naturalidadeMunicipio: dependent.birthCity || null,
+    naturalidadeEstado: dependent.birthState || null,
     telefone: (dependent.phone || '').replace(/\D/g, ''),
     fotoUrl: null,
     nomeResponsavel: dependent.guardianName || '',

@@ -4,6 +4,7 @@ import { getPessoaId, fetchPerfil } from '../service/authService';
 import { getDependents, getUsuarioTitularIdByPessoaId } from '../service/dependentsService';
 import { FamilyMember } from '../types/vaccination';
 import logger from '../utils/logger';
+import { mapSexo } from '../utils/format';
 
 type AppContextType = {
   mainUser: FamilyMember | null;
@@ -30,12 +31,6 @@ const AppContext = createContext<AppContextType>({
 export function useAppContext() {
   return useContext(AppContext);
 }
-
-const mapSexo = (sexo: string): 'M' | 'F' | 'Outro' => {
-  if (sexo === 'MASCULINO') return 'M';
-  if (sexo === 'FEMININO') return 'F';
-  return 'Outro';
-};
 
 const mapPerfil = (perfil: any): FamilyMember => ({
   id: String(perfil.id),
