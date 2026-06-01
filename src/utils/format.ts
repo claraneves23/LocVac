@@ -32,6 +32,15 @@ export function formatCep(value: string | undefined | null): string {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 }
 
+export function formatRg(value: string | undefined | null): string {
+  if (!value) return '';
+  const cleaned = value.replace(/[^\dXx]/g, '').toUpperCase().slice(0, 9);
+  if (cleaned.length <= 2) return cleaned;
+  if (cleaned.length <= 5) return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+  if (cleaned.length <= 8) return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5)}`;
+  return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5, 8)}-${cleaned.slice(8)}`;
+}
+
 export function formatPhone(value: string | undefined | null): string {
   if (!value) return '';
   const digits = value.replace(/\D/g, '').slice(0, 11);

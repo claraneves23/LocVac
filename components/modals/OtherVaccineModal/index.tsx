@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { useKeyboardHeight } from '../../../src/hooks/useKeyboardHeight';
+import { formatRg } from '../../../src/utils/format';
 import { DateField } from '../../redesign';
 
 type OtherVaccineModalProps = {
@@ -154,11 +155,12 @@ export default function OtherVaccineModal({
               <Text style={styles.formLabel}>RG do profissional</Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="RG"
+                placeholder="00.000.000-0"
                 placeholderTextColor={colors.ink4}
-                value={profId}
-                onChangeText={onChangeProfId}
-                maxLength={30}
+                value={formatRg(profId)}
+                onChangeText={(v) => onChangeProfId(formatRg(v))}
+                maxLength={12}
+                autoCapitalize="characters"
               />
             </View>
           </ScrollView>
