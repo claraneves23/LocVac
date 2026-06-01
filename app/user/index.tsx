@@ -1118,19 +1118,25 @@ export default function User() {
                     <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
                   )}
                 </Pressable>
-                {showBirthCityPicker && draft.birthState && (
-                  <View style={styles.pickerDropdown}>
-                    <TextInput
-                      style={[styles.input, { margin: 8 }]}
-                      value={birthCitySearch}
-                      onChangeText={setBirthCitySearch}
-                      placeholder="Buscar cidade..."
-                      placeholderTextColor={colors.ink4}
-                    />
-                    <ScrollView style={styles.pickerScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-                      {birthCityOptions
-                        .filter((nome) => nome.toLowerCase().includes(birthCitySearch.trim().toLowerCase()))
-                        .map((nome) => (
+                {showBirthCityPicker && draft.birthState && (() => {
+                  const MAX_VISIBLE = 80;
+                  const search = birthCitySearch.trim().toLowerCase();
+                  const filtered = search
+                    ? birthCityOptions.filter((nome) => nome.toLowerCase().includes(search))
+                    : birthCityOptions;
+                  const visible = filtered.slice(0, MAX_VISIBLE);
+                  const hiddenCount = filtered.length - visible.length;
+                  return (
+                    <View style={styles.pickerDropdown}>
+                      <TextInput
+                        style={[styles.input, { margin: 8 }]}
+                        value={birthCitySearch}
+                        onChangeText={setBirthCitySearch}
+                        placeholder="Buscar cidade..."
+                        placeholderTextColor={colors.ink4}
+                      />
+                      <ScrollView style={styles.pickerScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                        {visible.map((nome) => (
                           <Pressable
                             key={nome}
                             style={[styles.pickerOption, draft.birthCity === nome && styles.pickerOptionActive]}
@@ -1144,14 +1150,20 @@ export default function User() {
                             {draft.birthCity === nome && <Ionicons name="checkmark" size={18} color={colors.brandInk} />}
                           </Pressable>
                         ))}
-                      {!loadingBirthCities && birthCityOptions.length === 0 && (
-                        <Text style={[styles.dateButtonText, { padding: 12, textAlign: 'center' }]}>
-                          Nenhuma cidade encontrada.
-                        </Text>
-                      )}
-                    </ScrollView>
-                  </View>
-                )}
+                        {hiddenCount > 0 && (
+                          <Text style={[styles.dateButtonText, { padding: 12, textAlign: 'center' }]}>
+                            +{hiddenCount} cidades. Digite para filtrar.
+                          </Text>
+                        )}
+                        {!loadingBirthCities && filtered.length === 0 && (
+                          <Text style={[styles.dateButtonText, { padding: 12, textAlign: 'center' }]}>
+                            Nenhuma cidade encontrada.
+                          </Text>
+                        )}
+                      </ScrollView>
+                    </View>
+                  );
+                })()}
               </View>
 
               <View style={styles.fieldGroup}>
