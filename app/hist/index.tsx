@@ -23,6 +23,7 @@ import {
 import Tag from '../../components/redesign/Tag';
 import { makeStyles } from '../../src/styles/hist';
 import { useTheme } from '../../src/context/ThemeContext';
+import { formatAge, formatDateToBR } from '../../src/utils/format';
 
 type ActiveTab = 'history' | 'pending';
 type EntryType = 'mandatory' | 'other' | 'campaign';
@@ -53,22 +54,6 @@ type PendingEntry = {
   urgency: 'high' | 'medium' | 'low';
   lida?: boolean;
   member?: FamilyMember;
-};
-
-const formatAge = (months: number): string => {
-  if (months === 0) return 'Ao nascer';
-  if (months === 1) return '1 mês';
-  if (months < 12) return `${months} meses`;
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  if (m === 0) return y === 1 ? '1 ano' : `${y} anos`;
-  return `${y} ano${y > 1 ? 's' : ''} e ${m} mês${m > 1 ? 'es' : ''}`;
-};
-
-const formatDateToBR = (isoDate: string | undefined): string => {
-  if (!isoDate) return '';
-  const [year, month, day] = isoDate.split('-');
-  return `${day}/${month}/${year}`;
 };
 
 const TYPE_TONE: Record<EntryType, 'brand' | 'neutral' | 'ochre'> = {

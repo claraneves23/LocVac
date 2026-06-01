@@ -16,6 +16,7 @@ import { DateField } from '../../redesign';
 import { registrarDose, VacinaDTO } from '../../../src/service/mandatoryVaccineService';
 import { MandatoryVaccineRecord } from '../../../src/types/vaccination';
 import logger from '../../../src/utils/logger';
+import { formatAge, formatDoseLabel } from '../../../src/utils/format';
 
 type Props = {
   visible: boolean;
@@ -25,33 +26,6 @@ type Props = {
   onClose: () => void;
   onSaved: () => Promise<void>;
   minimumDate?: Date;
-};
-
-const formatAge = (months: number): string => {
-  if (months === 0) return 'Ao nascer';
-  if (months === 1) return '1 mês';
-  if (months < 12) return `${months} meses`;
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  if (m === 0) return y === 1 ? '1 ano' : `${y} anos`;
-  return `${y} ano${y > 1 ? 's' : ''} e ${m} mês${m > 1 ? 'es' : ''}`;
-};
-
-const ordinalDose = (n: number): string => {
-  if (n === 1) return '1ª dose';
-  if (n === 2) return '2ª dose';
-  if (n === 3) return '3ª dose';
-  return `${n}ª dose`;
-};
-
-const formatDoseLabel = (v: VacinaDTO): string => {
-  if (!v.tipoDose) return '';
-  if (v.tipoDose === 'UNICA') return 'Dose única';
-  if (v.tipoDose === 'REFORCO') {
-    if (!v.numeroDose || v.numeroDose === 1) return 'Reforço';
-    return `${v.numeroDose}º reforço`;
-  }
-  return v.numeroDose ? ordinalDose(v.numeroDose) : '';
 };
 
 const todayIso = (): string => new Date().toISOString().split('T')[0];

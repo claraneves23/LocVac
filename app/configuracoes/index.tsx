@@ -10,9 +10,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { Stack, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
@@ -26,6 +25,7 @@ export default function Configuracoes() {
   const { reset } = useAppContext();
   const router = useRouter();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const keyboardHeight = useKeyboardHeight();
 
   const [modalVisivel, setModalVisivel] = useState(false);
   const [senha, setSenha] = useState('');
@@ -141,10 +141,7 @@ export default function Configuracoes() {
         animationType="fade"
         onRequestClose={fecharModal}
       >
-        <KeyboardAvoidingView
-          style={styles.modalBackdrop}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <View style={[styles.modalBackdrop, { paddingBottom: keyboardHeight }]}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Confirmar exclusão</Text>
             <Text style={styles.modalText}>
@@ -189,7 +186,7 @@ export default function Configuracoes() {
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );

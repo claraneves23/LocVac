@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
 import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
+import { useKeyboardHeight } from '../../../src/hooks/useKeyboardHeight';
 import { DateField } from '../../redesign';
 
 type MandatoryVaccineModalProps = {
@@ -53,6 +54,7 @@ export default function MandatoryVaccineModal({
 }: MandatoryVaccineModalProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const keyboardHeight = useKeyboardHeight();
   const title = vaccineName ?? '';
 
   return (
@@ -65,7 +67,7 @@ export default function MandatoryVaccineModal({
       onRequestClose={onClose}
     >
       <StatusBar style="light" backgroundColor={colors.dimDark} translucent />
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { paddingBottom: keyboardHeight }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>

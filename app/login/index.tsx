@@ -12,7 +12,6 @@ import {
   Platform,
   ActivityIndicator,
   Image,
-  Keyboard,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -23,6 +22,8 @@ import { useAppContext } from '../../src/context/AppContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
 import { validarSenha } from '../../src/utils/passwordValidator';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
+import { useScrollToFocusedInput } from '../../src/hooks/useScrollToFocusedInput';
 import { PasswordRequirements } from '../../components/redesign';
 import { makeStyles } from './styles';
 
@@ -52,10 +53,8 @@ export default function Login() {
       return next;
     });
 
-  const scrollRef = useRef<ScrollView>(null);
-  const focusedInputRef = useRef<TextInput | null>(null);
-  const currentScrollY = useRef(0);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardHeight = useKeyboardHeight();
+  const { scrollRef, onScroll, bindFocus } = useScrollToFocusedInput();
 
   const emailRef = useRef<TextInput>(null);
   const senhaRef = useRef<TextInput>(null);
@@ -64,43 +63,6 @@ export default function Login() {
   const modeAnim = useRef(new Animated.Value(0)).current;
   const [tabWidth, setTabWidth] = useState(0);
   const [extraFieldHeight, setExtraFieldHeight] = useState(110);
-
-  useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      const input = focusedInputRef.current;
-      const scroll = scrollRef.current;
-      if (!input || !scroll) return;
-      setTimeout(() => {
-        try {
-          (input as any).measure?.(
-            (_x: number, _y: number, _w: number, h: number, _pageX: number, pageY: number) => {
-              const keyboardTop = e.endCoordinates.screenY;
-              const inputBottom = pageY + h + 24;
-              if (inputBottom > keyboardTop) {
-                const delta = inputBottom - keyboardTop;
-                scroll.scrollTo({
-                  y: currentScrollY.current + delta,
-                  animated: true,
-                });
-              }
-            },
-          );
-        } catch {}
-      }, 100);
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  const focusFor = (ref: React.RefObject<TextInput | null>) => () => {
-    focusedInputRef.current = ref.current;
-  };
 
   const resetFields = () => {
     setEmail('');
@@ -243,7 +205,7 @@ export default function Login() {
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          onScroll={(e) => { currentScrollY.current = e.nativeEvent.contentOffset.y; }}
+          onScroll={onScroll}
           scrollEventThrottle={16}
         >
           <View style={styles.logoContainer}>
@@ -294,7 +256,7 @@ export default function Login() {
                   style={styles.input}
                   value={email}
                   onChangeText={(v) => { setEmail(v); clearError('email'); }}
-                  onFocus={focusFor(emailRef)}
+                  onFocus={bindFocus(emailRef)}
                   placeholder="seu@email.com"
                   placeholderTextColor={colors.ink3}
                   maxLength={254}
@@ -315,7 +277,7 @@ export default function Login() {
                   style={styles.input}
                   value={senha}
                   onChangeText={(v) => { setSenha(v); clearError('senha'); }}
-                  onFocus={focusFor(senhaRef)}
+                  onFocus={bindFocus(senhaRef)}
                   placeholder="••••••••"
                   placeholderTextColor={colors.ink3}
                   maxLength={72}
@@ -364,7 +326,7 @@ export default function Login() {
                     style={styles.input}
                     value={confirmarSenha}
                     onChangeText={(v) => { setConfirmarSenha(v); clearError('confirmarSenha'); }}
-                    onFocus={focusFor(confirmarSenhaRef)}
+                    onFocus={bindFocus(confirmarSenhaRef)}
                     placeholder="Repita a senha"
                     placeholderTextColor={colors.ink3}
                     maxLength={72}

@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Keyboard,
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,6 +30,9 @@ import {
   sanitizeCity,
 } from '../../src/utils/addressSanitizers';
 import { minBirthDate } from '../../src/utils/dateBounds';
+import { formatCep, formatCns, formatCpf, formatPhone } from '../../src/utils/format';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
+import { useScrollToFocusedInput } from '../../src/hooks/useScrollToFocusedInput';
 import { DateField } from '../../components/redesign';
 import { makeStyles } from './styles';
 
@@ -66,7 +68,7 @@ export default function CadastroTitular() {
   const [step, setStep] = useState<1 | 2>(1);
   const [draftReady, setDraftReady] = useState(false);
 
-  type FieldKey = 'nome' | 'dataNascimento' | 'cpf' | 'sexoBiologico' | 'cep' | 'telefone';
+  type FieldKey = 'nome' | 'dataNascimento' | 'cpf' | 'cns' | 'sexoBiologico' | 'cep' | 'telefone';
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const clearError = (field: FieldKey) =>
     setErrors((current) => {
@@ -76,20 +78,19 @@ export default function CadastroTitular() {
       return next;
     });
 
-  const scrollRef = useRef<ScrollView>(null);
-  const focusedInputRef = useRef<TextInput | null>(null);
-  const currentScrollY = useRef(0);
   const lastFetchedCep = useRef<string>('');
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardHeight = useKeyboardHeight();
+  const { scrollRef, onScroll, bindFocus, currentScrollY } = useScrollToFocusedInput();
 
   const nomeRef = useRef<TextInput>(null);
   const cpfRef = useRef<TextInput>(null);
+  const cnsRef = useRef<TextInput>(null);
   const cepRef = useRef<TextInput>(null);
   const telefoneRef = useRef<TextInput>(null);
   const dataNascimentoRef = useRef<View>(null);
   const sexoBiologicoRef = useRef<View>(null);
 
-  const FIELD_ORDER: FieldKey[] = ['nome', 'dataNascimento', 'cpf', 'sexoBiologico', 'cep', 'telefone'];
+  const FIELD_ORDER: FieldKey[] = ['nome', 'dataNascimento', 'cpf', 'cns', 'sexoBiologico', 'cep', 'telefone'];
 
   const scrollToFirstError = (currentErrors: Partial<Record<FieldKey, string>>) => {
     const firstField = FIELD_ORDER.find((f) => currentErrors[f]);
@@ -98,6 +99,7 @@ export default function CadastroTitular() {
       nome: nomeRef,
       dataNascimento: dataNascimentoRef,
       cpf: cpfRef,
+      cns: cnsRef,
       sexoBiologico: sexoBiologicoRef,
       cep: cepRef,
       telefone: telefoneRef,
@@ -164,41 +166,6 @@ export default function CadastroTitular() {
   }, [draftReady, nome, telefone, dataNascimento, cpf, cns, sexoBiologico,
       cep, rua, numero, complemento, bairro, municipio, estado, step]);
 
-  useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      const input = focusedInputRef.current;
-      const scroll = scrollRef.current;
-      if (!input || !scroll) return;
-      setTimeout(() => {
-        try {
-          (input as any).measure?.(
-            (_x: number, _y: number, _w: number, h: number, _pageX: number, pageY: number) => {
-              const keyboardTop = e.endCoordinates.screenY;
-              const inputBottom = pageY + h + 24;
-              if (inputBottom > keyboardTop) {
-                const delta = inputBottom - keyboardTop;
-                scroll.scrollTo({
-                  y: currentScrollY.current + delta,
-                  animated: true,
-                });
-              }
-            },
-          );
-        } catch {}
-      }, 100);
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  const focusFor = (ref: React.RefObject<TextInput | null>) => () => {
-    focusedInputRef.current = ref.current;
-  };
-
   const fetchCep = async (cep: string) => {
     const digits = cep.replace(/\D/g, '');
     if (digits.length !== 8) return;
@@ -214,33 +181,20 @@ export default function CadastroTitular() {
     if (data.uf) setEstado(data.uf as EstadoUF);
   };
 
-  const formatCpf = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-  };
-
-  const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  };
-
-  const formatCep = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 8);
-    if (digits.length <= 5) return digits;
-    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-  };
-
-  const formatCns = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 15);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    if (digits.length <= 11) return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)} ${digits.slice(11)}`;
+  const isCpfValido = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(digits)) return false;
+    const calcDv = (slice: string, factorStart: number) => {
+      let soma = 0;
+      for (let i = 0; i < slice.length; i++) soma += Number(slice.charAt(i)) * (factorStart - i);
+      const resto = (soma * 10) % 11;
+      return resto === 10 ? 0 : resto;
+    };
+    const dv1 = calcDv(digits.substring(0, 9), 10);
+    if (dv1 !== Number(digits.charAt(9))) return false;
+    const dv2 = calcDv(digits.substring(0, 10), 11);
+    return dv2 === Number(digits.charAt(10));
   };
 
   const isCnsValido = (value: string) => {
@@ -300,9 +254,15 @@ export default function CadastroTitular() {
     const novoErros: Partial<Record<FieldKey, string>> = {};
     if (!nome.trim()) novoErros.nome = 'Campo obrigatório!';
     if (!dataNascimento.trim()) novoErros.dataNascimento = 'Campo obrigatório!';
-    if (!cpf.trim()) novoErros.cpf = 'Campo obrigatório!';
+    const cpfDigits = cpf.replace(/\D/g, '');
+    if (!cpfDigits) novoErros.cpf = 'Campo obrigatório!';
+    else if (!isCpfValido(cpfDigits)) novoErros.cpf = 'CPF inválido!';
+    const cnsDigits = cns.replace(/\D/g, '');
+    if (cnsDigits && !isCnsValido(cnsDigits)) novoErros.cns = 'CNS inválido!';
     if (!sexoBiologico) novoErros.sexoBiologico = 'Campo obrigatório!';
-    if (!telefone.trim()) novoErros.telefone = 'Campo obrigatório!';
+    const telDigits = telefone.replace(/\D/g, '');
+    if (!telDigits) novoErros.telefone = 'Campo obrigatório!';
+    else if (telDigits.length < 10) novoErros.telefone = 'Telefone inválido!';
     if (Object.keys(novoErros).length > 0) {
       setErrors(novoErros);
       scrollToFirstError(novoErros);
@@ -323,6 +283,13 @@ export default function CadastroTitular() {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
+  const goToStep1WithError = (field: FieldKey, message: string) => {
+    const novoErros = { [field]: message } as Partial<Record<FieldKey, string>>;
+    setErrors(novoErros);
+    setStep(1);
+    scrollToFirstError(novoErros);
+  };
+
   const handleSalvar = async () => {
     if (!validarEtapa1()) {
       setStep(1);
@@ -338,10 +305,6 @@ export default function CadastroTitular() {
     setErrors({});
 
     const cnsDigits = cns.replace(/\D/g, '');
-    if (cnsDigits && !isCnsValido(cnsDigits)) {
-      Alert.alert('Erro', 'CNS inválido. Verifique o número digitado.');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -366,18 +329,21 @@ export default function CadastroTitular() {
       const status = error?.response?.status;
       const detail: string = error?.response?.data?.detail ?? '';
 
-      let message: string;
       if (status === 400) {
-        message = 'CPF inválido. Verifique o número digitado.';
-      } else if (status === 409 && detail.includes('CPF')) {
-        message = 'Este CPF já está cadastrado.';
-      } else if (status === 409 && detail.includes('CNS')) {
-        message = 'Este CNS já está cadastrado.';
-      } else if (status === 409) {
-        message = 'Você já tem um titular cadastrado.';
-      } else {
-        message = 'Erro ao salvar. Verifique os dados e tente novamente.';
+        goToStep1WithError('cpf', 'CPF inválido!');
+        return;
       }
+      if (status === 409 && detail.includes('CPF')) {
+        goToStep1WithError('cpf', 'Este CPF já está cadastrado.');
+        return;
+      }
+      if (status === 409 && detail.includes('CNS')) {
+        goToStep1WithError('cns', 'Este CNS já está cadastrado.');
+        return;
+      }
+      const message = status === 409
+        ? 'Você já tem um titular cadastrado.'
+        : 'Erro ao salvar. Verifique os dados e tente novamente.';
       Alert.alert('Erro', message);
     } finally {
       setLoading(false);
@@ -401,7 +367,7 @@ export default function CadastroTitular() {
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + keyboardHeight }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          onScroll={(e) => { currentScrollY.current = e.nativeEvent.contentOffset.y; }}
+          onScroll={onScroll}
           scrollEventThrottle={16}
         >
           <View style={styles.logoContainer}>
@@ -436,7 +402,7 @@ export default function CadastroTitular() {
                 style={[styles.input, errors.nome && styles.inputError]}
                 value={nome}
                 onChangeText={(v) => { setNome(sanitizeName(v)); clearError('nome'); }}
-                onFocus={focusFor(nomeRef)}
+                onFocus={bindFocus(nomeRef)}
                 placeholder="Digite seu nome"
                 placeholderTextColor={colors.ink3}
                 maxLength={100}
@@ -470,7 +436,7 @@ export default function CadastroTitular() {
                 style={[styles.input, errors.cpf && styles.inputError]}
                 value={cpf}
                 onChangeText={(v) => { setCpf(formatCpf(v)); clearError('cpf'); }}
-                onFocus={focusFor(cpfRef)}
+                onFocus={bindFocus(cpfRef)}
                 placeholder="000.000.000-00"
                 placeholderTextColor={colors.ink3}
                 keyboardType="numeric"
@@ -482,14 +448,17 @@ export default function CadastroTitular() {
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>CNS</Text>
               <TextInput
-                style={styles.input}
+                ref={cnsRef}
+                style={[styles.input, errors.cns && styles.inputError]}
                 value={cns}
-                onChangeText={(v) => setCns(formatCns(v))}
+                onChangeText={(v) => { setCns(formatCns(v)); clearError('cns'); }}
+                onFocus={bindFocus(cnsRef)}
                 placeholder="000 0000 0000 0000"
                 placeholderTextColor={colors.ink3}
                 keyboardType="numeric"
                 maxLength={18}
               />
+              {errors.cns && <Text style={styles.errorText}>{errors.cns}</Text>}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -530,7 +499,7 @@ export default function CadastroTitular() {
                 style={[styles.input, errors.telefone && styles.inputError]}
                 value={telefone}
                 onChangeText={(v) => { setTelefone(formatPhone(v)); clearError('telefone'); }}
-                onFocus={focusFor(telefoneRef)}
+                onFocus={bindFocus(telefoneRef)}
                 placeholder="(00) 00000-0000"
                 placeholderTextColor={colors.ink3}
                 maxLength={15}
@@ -555,7 +524,7 @@ export default function CadastroTitular() {
                   clearError('cep');
                   if (formatted.replace(/\D/g, '').length === 8) fetchCep(formatted);
                 }}
-                onFocus={focusFor(cepRef)}
+                onFocus={bindFocus(cepRef)}
                 placeholder="00000-000"
                 placeholderTextColor={colors.ink3}
                 keyboardType="numeric"

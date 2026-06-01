@@ -50,6 +50,13 @@ import CampaignModal from '../../components/modals/CampaignModal';
 import { makeStyles } from '../../src/styles/home';
 import { useTheme } from '../../src/context/ThemeContext';
 import { isoToDate } from '../../src/utils/dateBounds';
+import {
+  formatDateToBR,
+  formatSex,
+  formatCns,
+  formatDoseLabel,
+  formatAge,
+} from '../../src/utils/format';
 
 const SELECTED_PROFILE_KEY = 'selectedProfileId';
 
@@ -61,55 +68,10 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'campanhas', label: 'Campanhas' },
 ];
 
-const formatDateToBR = (isoDate: string | undefined): string => {
-  if (!isoDate) return '';
-  const [year, month, day] = isoDate.split('-');
-  return `${day}/${month}/${year}`;
-};
-
 const formatId = (id: string | undefined): string => {
   if (!id) return 'LV-XXXX';
   const padded = id.padStart(4, '0');
   return `LV-${new Date().getFullYear()}-${padded.slice(-4)}`;
-};
-
-const formatSex = (sex: 'M' | 'F' | 'Outro' | undefined): string => {
-  if (sex === 'M') return 'Masculino';
-  if (sex === 'F') return 'Feminino';
-  return 'Outro';
-};
-
-const formatCNS = (cns: string): string => {
-  const d = cns.replace(/\D/g, '');
-  if (d.length === 15) return `${d.slice(0, 3)} ${d.slice(3, 7)} ${d.slice(7, 11)} ${d.slice(11)}`;
-  return cns;
-};
-
-const ordinalDose = (n: number): string => {
-  if (n === 1) return '1ª dose';
-  if (n === 2) return '2ª dose';
-  if (n === 3) return '3ª dose';
-  return `${n}ª dose`;
-};
-
-const formatDoseLabel = (v: VacinaDTO): string => {
-  if (!v.tipoDose) return '';
-  if (v.tipoDose === 'UNICA') return 'Dose única';
-  if (v.tipoDose === 'REFORCO') {
-    if (!v.numeroDose || v.numeroDose === 1) return 'Reforço';
-    return `${v.numeroDose}º reforço`;
-  }
-  return v.numeroDose ? ordinalDose(v.numeroDose) : '';
-};
-
-const formatAge = (months: number): string => {
-  if (months === 0) return 'Ao nascer';
-  if (months === 1) return '1 mês';
-  if (months < 12) return `${months} meses`;
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  if (m === 0) return y === 1 ? '1 ano' : `${y} anos`;
-  return `${y} ano${y > 1 ? 's' : ''} e ${m} mês${m > 1 ? 'es' : ''}`;
 };
 
 export default function Index() {
@@ -557,29 +519,34 @@ export default function Index() {
               </View>
             </View>
 
-            {(selectedProfile.city || selectedProfile.state || selectedProfile.birthPlace) && (
-              <View style={styles.passportInfoRow}>
-                {(selectedProfile.city || selectedProfile.state) ? (
-                  <View style={styles.passportInfoItem}>
-                    <Text style={styles.passportInfoLabel}>Município/UF</Text>
-                    <Text style={styles.passportInfoValue} numberOfLines={1}>
-                      {[selectedProfile.city, selectedProfile.state].filter(Boolean).join(' - ')}
-                    </Text>
-                  </View>
-                ) : null}
-                {selectedProfile.birthPlace ? (
-                  <View style={styles.passportInfoItem}>
-                    <Text style={styles.passportInfoLabel}>Local de Nasc.</Text>
-                    <Text style={styles.passportInfoValue} numberOfLines={1}>{selectedProfile.birthPlace}</Text>
-                  </View>
-                ) : null}
-              </View>
-            )}
+            {(() => {
+              const birthPlace = [selectedProfile.birthCity, selectedProfile.birthState].filter(Boolean).join(' - ');
+              const hasAddress = selectedProfile.city || selectedProfile.state;
+              if (!hasAddress && !birthPlace) return null;
+              return (
+                <View style={styles.passportInfoRow}>
+                  {hasAddress ? (
+                    <View style={styles.passportInfoItem}>
+                      <Text style={styles.passportInfoLabel}>Município/UF</Text>
+                      <Text style={styles.passportInfoValue} numberOfLines={1}>
+                        {[selectedProfile.city, selectedProfile.state].filter(Boolean).join(' - ')}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {birthPlace ? (
+                    <View style={styles.passportInfoItem}>
+                      <Text style={styles.passportInfoLabel}>Local de Nasc.</Text>
+                      <Text style={styles.passportInfoValue} numberOfLines={1}>{birthPlace}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })()}
 
             {selectedProfile.cns ? (
               <View style={styles.passportInfoItem}>
                 <Text style={styles.passportInfoLabel}>CNS</Text>
-                <Text style={styles.passportInfoValue}>{formatCNS(selectedProfile.cns)}</Text>
+                <Text style={styles.passportInfoValue}>{formatCns(selectedProfile.cns)}</Text>
               </View>
             ) : null}
 

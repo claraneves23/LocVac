@@ -43,6 +43,15 @@ import { radii, spacing, typography, shadows, Tone } from '../../src/theme/token
 import { Avatar, ScreenTitle, DateField } from '../../components/redesign';
 import { makeStyles } from '../../src/styles/user';
 import { useTheme } from '../../src/context/ThemeContext';
+import {
+  formatCep,
+  formatCns,
+  formatCpf,
+  formatDateToBR,
+  formatPhone,
+} from '../../src/utils/format';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
+import { fetchMunicipios } from '../../src/utils/municipios';
 
 const SEX_OPTIONS = ['M', 'F'] as const;
 const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
@@ -55,7 +64,8 @@ type DraftDependent = {
   id?: string;
   name: string;
   birthDate: string;
-  birthPlace?: string;
+  birthCity?: string;
+  birthState?: EstadoUF | '';
   relationship: string;
   guardianName?: string;
   sex: 'M' | 'F' | '';
@@ -94,6 +104,7 @@ export default function User() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { mainUser, dependents, usuarioId, refreshDependents, refreshMainUser } = useAppContext();
+  const keyboardHeight = useKeyboardHeight();
 
   // — dependent modal state —
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -101,8 +112,13 @@ export default function User() {
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
   const [savingDependent, setSavingDependent] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
+  const [showBirthStatePicker, setShowBirthStatePicker] = useState(false);
+  const [showBirthCityPicker, setShowBirthCityPicker] = useState(false);
+  const [birthCityOptions, setBirthCityOptions] = useState<string[]>([]);
+  const [birthCitySearch, setBirthCitySearch] = useState('');
+  const [loadingBirthCities, setLoadingBirthCities] = useState(false);
   const [draft, setDraft] = useState<DraftDependent>({
-    name: '', birthDate: '', birthPlace: '', relationship: '',
+    name: '', birthDate: '', birthCity: '', birthState: '', relationship: '',
     guardianName: '', sex: '', photoUri: undefined,
     address: '', addressNumber: '', neighborhood: '', city: '', state: '', zipCode: '', phone: '',
   });
@@ -146,42 +162,6 @@ export default function User() {
     };
     updateSystemBars();
   }, [anyModalOpen, isDark]);
-
-  // — formatters —
-  const formatDateToBR = (isoDate: string): string => {
-    if (!isoDate) return '';
-    const [year, month, day] = isoDate.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
-  const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  };
-
-  const formatCep = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 8);
-    if (digits.length <= 5) return digits;
-    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-  };
-
-  const formatCpf = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-  };
-
-  const formatCns = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 15);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    if (digits.length <= 11) return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7, 11)} ${digits.slice(11)}`;
-  };
 
   const lookupCep = async (cep: string) => {
     const digits = cep.replace(/\D/g, '');
@@ -311,11 +291,25 @@ export default function User() {
   };
 
   const resetDraft = () => {
-    setDraft({ name: '', birthDate: '', birthPlace: '', relationship: '', guardianName: '', sex: '',
+    setDraft({ name: '', birthDate: '', birthCity: '', birthState: '', relationship: '', guardianName: '', sex: '',
       photoUri: undefined, cpf: '', cns: '', zipCode: '', address: '', addressNumber: '', complement: '', neighborhood: '', city: '', state: '', phone: '' });
     setShowRelationshipPicker(false);
     setShowStatePicker(false);
+    setShowBirthStatePicker(false);
+    setShowBirthCityPicker(false);
+    setBirthCityOptions([]);
+    setBirthCitySearch('');
     setErrors({});
+  };
+
+  const loadBirthCities = async (uf: string) => {
+    setLoadingBirthCities(true);
+    try {
+      const cidades = await fetchMunicipios(uf);
+      setBirthCityOptions(cidades);
+    } finally {
+      setLoadingBirthCities(false);
+    }
   };
 
   const titularAddressFields = () => {
@@ -360,7 +354,8 @@ export default function User() {
       id: dependent.id,
       name: dependent.name,
       birthDate: dependent.birthDate,
-      birthPlace: dependent.birthPlace || '',
+      birthCity: dependent.birthCity || '',
+      birthState: (dependent.birthState as EstadoUF) || '',
       relationship: dependent.relationship || '',
       guardianName: isTitularGuardian ? (mainUser?.name || '') : (dependent.guardianName || ''),
       sex: dependent.sex === 'M' || dependent.sex === 'F' ? dependent.sex : '',
@@ -379,6 +374,11 @@ export default function User() {
     setSameAddressAsTitular(matchesTitular);
     originalDependentPhoto.current = dependent.photoUri;
     setShowRelationshipPicker(false);
+    setShowBirthStatePicker(false);
+    setShowBirthCityPicker(false);
+    setBirthCitySearch('');
+    setBirthCityOptions([]);
+    if (dependent.birthState) loadBirthCities(dependent.birthState);
     setErrors({});
     modalScrollY.current = 0;
     setIsModalOpen(true);
@@ -648,7 +648,7 @@ export default function User() {
         onRequestClose={() => setIsTitularModalOpen(false)}
       >
         <StatusBar style="light" backgroundColor={colors.dimDark} translucent />
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { paddingBottom: keyboardHeight }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsTitularModalOpen(false)} />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
@@ -920,7 +920,7 @@ export default function User() {
         onRequestClose={() => setIsModalOpen(false)}
       >
         <StatusBar style="light" backgroundColor={colors.dimDark} translucent />
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { paddingBottom: keyboardHeight }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsModalOpen(false)} />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
@@ -1066,14 +1066,92 @@ export default function User() {
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Local de nascimento</Text>
-                <TextInput
-                  style={styles.input}
-                  value={draft.birthPlace}
-                  onChangeText={(v) => setDraft((c) => ({ ...c, birthPlace: v }))}
-                  placeholder="Ex: São Paulo - SP"
-                  placeholderTextColor={colors.ink4}
-                  maxLength={100}
-                />
+                <Pressable
+                  style={styles.dateButton}
+                  onPress={() => { setShowBirthStatePicker(!showBirthStatePicker); setShowBirthCityPicker(false); }}
+                >
+                  <Text style={draft.birthState ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                    {draft.birthState || 'Selecionar estado'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
+                </Pressable>
+                {showBirthStatePicker && (
+                  <View style={styles.pickerDropdown}>
+                    <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+                      {ESTADO_OPTIONS.map((uf) => (
+                        <Pressable
+                          key={uf}
+                          style={[styles.pickerOption, draft.birthState === uf && styles.pickerOptionActive]}
+                          onPress={() => {
+                            const changed = draft.birthState !== uf;
+                            setDraft((c) => ({ ...c, birthState: uf, ...(changed && { birthCity: '' }) }));
+                            setShowBirthStatePicker(false);
+                            if (changed) {
+                              setBirthCityOptions([]);
+                              setBirthCitySearch('');
+                              loadBirthCities(uf);
+                            }
+                          }}
+                        >
+                          <Text style={[styles.pickerOptionText, draft.birthState === uf && styles.pickerOptionTextActive]}>{uf}</Text>
+                          {draft.birthState === uf && <Ionicons name="checkmark" size={18} color={colors.brandInk} />}
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+                <Pressable
+                  style={[styles.dateButton, { marginTop: 8 }, !draft.birthState && styles.inputReadonly]}
+                  onPress={() => {
+                    if (!draft.birthState) return;
+                    setShowBirthCityPicker(!showBirthCityPicker);
+                    setShowBirthStatePicker(false);
+                  }}
+                  disabled={!draft.birthState}
+                >
+                  <Text style={draft.birthCity ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                    {draft.birthCity || (draft.birthState ? 'Selecionar cidade' : 'Selecione um estado primeiro')}
+                  </Text>
+                  {loadingBirthCities ? (
+                    <ActivityIndicator size="small" color={colors.brandInk} />
+                  ) : (
+                    <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
+                  )}
+                </Pressable>
+                {showBirthCityPicker && draft.birthState && (
+                  <View style={styles.pickerDropdown}>
+                    <TextInput
+                      style={[styles.input, { margin: 8 }]}
+                      value={birthCitySearch}
+                      onChangeText={setBirthCitySearch}
+                      placeholder="Buscar cidade..."
+                      placeholderTextColor={colors.ink4}
+                    />
+                    <ScrollView style={styles.pickerScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                      {birthCityOptions
+                        .filter((nome) => nome.toLowerCase().includes(birthCitySearch.trim().toLowerCase()))
+                        .map((nome) => (
+                          <Pressable
+                            key={nome}
+                            style={[styles.pickerOption, draft.birthCity === nome && styles.pickerOptionActive]}
+                            onPress={() => {
+                              setDraft((c) => ({ ...c, birthCity: nome }));
+                              setShowBirthCityPicker(false);
+                              setBirthCitySearch('');
+                            }}
+                          >
+                            <Text style={[styles.pickerOptionText, draft.birthCity === nome && styles.pickerOptionTextActive]}>{nome}</Text>
+                            {draft.birthCity === nome && <Ionicons name="checkmark" size={18} color={colors.brandInk} />}
+                          </Pressable>
+                        ))}
+                      {!loadingBirthCities && birthCityOptions.length === 0 && (
+                        <Text style={[styles.dateButtonText, { padding: 12, textAlign: 'center' }]}>
+                          Nenhuma cidade encontrada.
+                        </Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
               <View style={styles.fieldGroup}>
