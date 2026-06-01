@@ -104,10 +104,10 @@ export default function CadastroTitular() {
       cep: cepRef,
       telefone: telefoneRef,
     };
-    const ref = refMap[firstField];
-    const scroll = scrollRef.current;
-    if (!ref?.current || !scroll) return;
     setTimeout(() => {
+      const ref = refMap[firstField];
+      const scroll = scrollRef.current;
+      if (!ref?.current || !scroll) return;
       try {
         (ref.current as any).measure?.(
           (_x: number, _y: number, _w: number, h: number, _pageX: number, pageY: number) => {
@@ -122,7 +122,7 @@ export default function CadastroTitular() {
           },
         );
       } catch {}
-    }, 80);
+    }, 120);
   };
 
   useEffect(() => {

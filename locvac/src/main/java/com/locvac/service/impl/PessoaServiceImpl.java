@@ -95,11 +95,11 @@ public class PessoaServiceImpl implements PessoaService {
     public PessoaResponseDTO cadastrarTitular(PessoaRequestDTO dto) {
         TokenData dados = usuarioAutenticado();
 
+        validacaoCpfUtils.validarCpfDuplicado(dto.cpf());
+        validacaoCnsUtils.validarCnsDuplicado(dto.cns());
         if (usuarioPessoaRepository.existsByUsuarioIdAndTipoVinculo(dados.usuarioId(), TipoVinculo.TITULAR)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Titular já cadastrado para este usuário.");
         }
-        validacaoCpfUtils.validarCpfDuplicado(dto.cpf());
-        validacaoCnsUtils.validarCnsDuplicado(dto.cns());
 
         Usuario usuario = usuarioRepository.findById(dados.usuarioId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado."));

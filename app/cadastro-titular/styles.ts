@@ -163,6 +163,7 @@ export const makeStyles = (colors: Colors) => StyleSheet.create({
   },
   stepActions: {
     flexDirection: 'row',
+    alignItems: 'stretch',
     gap: spacing.sm,
     marginTop: spacing.sm,
   },
@@ -171,7 +172,7 @@ export const makeStyles = (colors: Colors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: radii.sm + 3,
     borderWidth: 1,
     borderColor: colors.brandInk,
@@ -185,5 +186,6 @@ export const makeStyles = (colors: Colors) => StyleSheet.create({
   },
   stepSubmitButton: {
     flex: 1,
+    marginTop: 0,
   },
 });
