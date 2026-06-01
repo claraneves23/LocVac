@@ -48,6 +48,11 @@ public record PessoaRequestDTO(
 
         Estado estado,
 
+        @Size(max = 100)
+        String naturalidadeMunicipio,
+
+        Estado naturalidadeEstado,
+
         @NotBlank(message = "O telefone é obrigatório")
         @Pattern(regexp = "\\d{10,11}", message = "Telefone inválido")
         String telefone,

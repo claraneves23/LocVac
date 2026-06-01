@@ -152,6 +152,8 @@ public class PessoaServiceImpl implements PessoaService {
         pessoa.setComplemento(dto.complemento());
         pessoa.setMunicipio(dto.municipio());
         pessoa.setEstado(dto.estado());
+        pessoa.setNaturalidadeMunicipio(dto.naturalidadeMunicipio());
+        pessoa.setNaturalidadeEstado(dto.naturalidadeEstado());
         pessoa.setTelefone(dto.telefone());
         pessoa.setNomeResponsavel(dto.nomeResponsavel());
         if (dto.gruposRiscoIds() != null) {

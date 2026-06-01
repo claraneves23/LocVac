@@ -6,24 +6,12 @@ import { FamilyMember } from '../../../src/types/vaccination';
 import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { Avatar } from '../../redesign';
+import { formatCpf, formatDateToBR as formatDateToBRBase, formatSex } from '../../../src/utils/format';
+import { formatBirthPlace } from '../../../src/utils/municipios';
 
 const formatDateToBR = (isoDate: string | undefined): string => {
-  if (!isoDate) return '—';
-  const [year, month, day] = isoDate.split('-');
-  return `${day}/${month}/${year}`;
-};
-
-const formatCpf = (value: string | undefined): string | undefined => {
-  if (!value) return undefined;
-  const digits = value.replace(/\D/g, '');
-  if (digits.length !== 11) return value;
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-};
-
-const formatSex = (sex: string) => {
-  if (sex === 'M') return 'Masculino';
-  if (sex === 'F') return 'Feminino';
-  return 'Outro';
+  const formatted = formatDateToBRBase(isoDate);
+  return formatted || '—';
 };
 
 type InfoRowProps = { label: string; value?: string; styles: ReturnType<typeof makeStyles> };
@@ -85,7 +73,7 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
             <View style={styles.infoCard}>
               <InfoRow label="Nascimento" value={formatDateToBR(dependent.birthDate)} styles={styles} />
               <InfoRow label="Sexo" value={formatSex(dependent.sex)} styles={styles} />
-              <InfoRow label="Local de nascimento" value={dependent.birthPlace} styles={styles} />
+              <InfoRow label="Local de nascimento" value={formatBirthPlace(dependent.birthCity, dependent.birthState)} styles={styles} />
               <InfoRow label="Responsável" value={dependent.guardianName} styles={styles} />
               <InfoRow label="CPF" value={formatCpf(dependent.cpf)} styles={styles} />
               <InfoRow label="CNS" value={dependent.cns} styles={styles} />

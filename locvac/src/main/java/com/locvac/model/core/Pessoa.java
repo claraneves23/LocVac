@@ -62,6 +62,13 @@ public class Pessoa {
     @Column
     private Estado estado;
 
+    @Column(name = "naturalidade_municipio", length = 100)
+    private String naturalidadeMunicipio;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "naturalidade_estado")
+    private Estado naturalidadeEstado;
+
     @Column(nullable = false)
     private  boolean ativo;
 
@@ -123,6 +130,8 @@ public class Pessoa {
     public void setBairro(String bairro) { this.bairro = bairro; }
     public void setMunicipio(String municipio) { this.municipio = municipio; }
     public void setEstado(Estado estado) { this.estado = estado; }
+    public void setNaturalidadeMunicipio(String naturalidadeMunicipio) { this.naturalidadeMunicipio = naturalidadeMunicipio; }
+    public void setNaturalidadeEstado(Estado naturalidadeEstado) { this.naturalidadeEstado = naturalidadeEstado; }
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
@@ -180,6 +189,8 @@ public class Pessoa {
     public String getBairro() { return bairro; }
     public String getMunicipio() { return municipio; }
     public Estado getEstado() { return estado; }
+    public String getNaturalidadeMunicipio() { return naturalidadeMunicipio; }
+    public Estado getNaturalidadeEstado() { return naturalidadeEstado; }
 
     public boolean isAtivo() {
         return ativo;

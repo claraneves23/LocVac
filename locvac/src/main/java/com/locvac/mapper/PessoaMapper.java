@@ -23,6 +23,8 @@ public class PessoaMapper {
         pessoa.setBairro(dto.bairro());
         pessoa.setMunicipio(dto.municipio());
         pessoa.setEstado(dto.estado());
+        pessoa.setNaturalidadeMunicipio(dto.naturalidadeMunicipio());
+        pessoa.setNaturalidadeEstado(dto.naturalidadeEstado());
         pessoa.setTelefone(dto.telefone());
         pessoa.setFotoUrl(dto.fotoUrl());
         pessoa.setNomeResponsavel(dto.nomeResponsavel());
@@ -47,6 +49,8 @@ public class PessoaMapper {
                 pessoa.getBairro(),
                 pessoa.getMunicipio(),
                 pessoa.getEstado(),
+                pessoa.getNaturalidadeMunicipio(),
+                pessoa.getNaturalidadeEstado(),
                 pessoa.getTelefone(),
                 pessoa.getFotoUrl(),
                 pessoa.getNomeResponsavel(),

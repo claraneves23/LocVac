@@ -19,6 +19,8 @@ public record PessoaResponseDTO(
         String bairro,
         String municipio,
         Estado estado,
+        String naturalidadeMunicipio,
+        Estado naturalidadeEstado,
         String telefone,
         String fotoUrl,
         String nomeResponsavel,
