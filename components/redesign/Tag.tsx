@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { type Tone, typography } from '../../src/theme/tokens';
+import { type Tone, scaleTypography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 
 type Props = {
   tone?: Tone;
@@ -13,6 +15,8 @@ type Props = {
 
 export default function Tag({ tone = 'brand', icon, children, solid = false, style }: Props) {
   const { colors } = useTheme();
+  const { fontScale } = useAccessibility();
+  const typography = useMemo(() => scaleTypography(fontScale), [fontScale]);
   const toneMap: Record<Tone, { bg: string; ink: string }> = {
     brand:   { bg: colors.brandSoft,   ink: colors.brandInk },
     coral:   { bg: colors.coralSoft,   ink: colors.coralInk },

@@ -43,6 +43,7 @@ import { radii, spacing, typography, shadows, Tone } from '../../src/theme/token
 import { Avatar, ScreenTitle, DateField } from '../../components/redesign';
 import { makeStyles } from '../../src/styles/user';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import {
   formatCep,
   formatCns,
@@ -103,7 +104,8 @@ type DraftTitular = {
 export default function User() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const { mainUser, dependents, usuarioId, refreshDependents, refreshMainUser } = useAppContext();
   const keyboardHeight = useKeyboardHeight();
 

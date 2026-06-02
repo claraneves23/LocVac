@@ -85,6 +85,31 @@ export const typography = {
   mono:     { fontFamily: fontFamily.mono,    fontSize: 11, letterSpacing: 0.2 } as TextStyle,
 };
 
+/**
+ * Retorna uma cópia da tipografia com fontSize/lineHeight multiplicados pelo
+ * fator do app (P/M/G/GG). A escala do SISTEMA é aplicada por cima
+ * automaticamente pelo React Native (allowFontScaling), compondo o híbrido.
+ */
+const _typographyCache = new Map<number, typeof typography>();
+export const scaleTypography = (scale: number): typeof typography => {
+  if (scale === 1) return typography;
+  const cached = _typographyCache.get(scale);
+  if (cached) return cached;
+  const out = {} as Record<keyof typeof typography, TextStyle>;
+  (Object.keys(typography) as (keyof typeof typography)[]).forEach((k) => {
+    const t = typography[k];
+    out[k] = {
+      ...t,
+      fontSize: typeof t.fontSize === 'number' ? Math.round(t.fontSize * scale) : t.fontSize,
+      lineHeight:
+        typeof t.lineHeight === 'number' ? Math.round(t.lineHeight * scale) : t.lineHeight,
+    };
+  });
+  const result = out as typeof typography;
+  _typographyCache.set(scale, result);
+  return result;
+};
+
 export const shadows = {
   sm: {
     shadowColor: '#1A2422',
@@ -140,6 +165,75 @@ export const darkColors: Colors = {
   dangerSoft:  '#280E0A',
   dangerInk:   '#E07868',
   dimDark: 'rgba(0, 0, 0, 0.75)',
+  white:   '#FFFFFF',
+};
+
+// Paletas de alto contraste — texto/bordas reforçados para WCAG AAA.
+export const highContrastColors: Colors = {
+  bg:        '#FFFFFF',
+  bgElev:    '#FFFFFF',
+  bgMuted:   '#F0F0F0',
+  bgSheet:   '#FFFFFF',
+  ink:   '#000000',
+  ink2:  '#1A1A1A',
+  ink3:  '#2E2E2E',
+  ink4:  '#3D3D3D',
+  line:        '#000000',
+  lineStrong:  '#000000',
+  brand:     '#022D3C',
+  brand2:    '#011E29',
+  brandSoft: '#D7E5EB',
+  brandInk:  '#022D3C',
+  coral:     '#9A3318',
+  coralSoft: '#F2D6CB',
+  coralInk:  '#511A0B',
+  ochre:     '#6E5410',
+  ochreSoft: '#EFE2BB',
+  ochreInk:  '#3F2F07',
+  success:     '#1B6238',
+  successSoft: '#CBE9D5',
+  successInk:  '#0A331C',
+  warn:        '#7E5200',
+  warnSoft:    '#F1E0B6',
+  warnInk:     '#412B00',
+  danger:      '#992318',
+  dangerSoft:  '#F2D0CA',
+  dangerInk:   '#52110B',
+  dimDark: 'rgba(0, 0, 0, 0.6)',
+  white:   '#FFFFFF',
+};
+
+export const highContrastDarkColors: Colors = {
+  bg:        '#000000',
+  bgElev:    '#0B0B0B',
+  bgMuted:   '#161616',
+  bgSheet:   '#000000',
+  ink:   '#FFFFFF',
+  ink2:  '#F2F2F2',
+  ink3:  '#E2E2E2',
+  ink4:  '#CCCCCC',
+  line:        '#FFFFFF',
+  lineStrong:  '#FFFFFF',
+  brand:     '#0E7BA0',
+  brand2:    '#0A6383',
+  brandSoft: '#062028',
+  brandInk:  '#A6E6F7',
+  coral:     '#E89070',
+  coralSoft: '#2A1308',
+  coralInk:  '#F4C3B0',
+  ochre:     '#D9B85E',
+  ochreSoft: '#2A2008',
+  ochreInk:  '#EFD79A',
+  success:     '#5FBE84',
+  successSoft: '#08200F',
+  successInk:  '#9CE3B8',
+  warn:        '#E3B24A',
+  warnSoft:    '#2A2008',
+  warnInk:     '#F0D58A',
+  danger:      '#EA7565',
+  dangerSoft:  '#280A06',
+  dangerInk:   '#F6B7AC',
+  dimDark: 'rgba(0, 0, 0, 0.85)',
   white:   '#FFFFFF',
 };
 

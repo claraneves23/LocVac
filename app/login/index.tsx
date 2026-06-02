@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { login, iniciarCadastro } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
 import { validarSenha } from '../../src/utils/passwordValidator';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
@@ -33,7 +34,8 @@ export default function Login() {
   const router = useRouter();
   const { loadAll } = useAppContext();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const [mode, setMode] = useState<Mode>('login');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

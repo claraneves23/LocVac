@@ -11,8 +11,9 @@ import {
 import { useMemo, useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CarrosselConteudoDTO } from '../../../../src/types/info';
-import { type Colors, radii, shadows, spacing, typography } from '../../../../src/theme/tokens';
+import { type Colors, radii, shadows, spacing, scaleTypography } from '../../../../src/theme/tokens';
 import { useTheme } from '../../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../../src/context/AccessibilityContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -22,7 +23,8 @@ type Props = { secoes: CarrosselConteudoDTO[] };
 
 export default function DuvidasFrequentesLayout({ secoes }: Props) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const [openId, setOpenId] = useState<number | null>(null);
 
   const toggle = (id: number) => {
@@ -92,7 +94,7 @@ export default function DuvidasFrequentesLayout({ secoes }: Props) {
   );
 }
 
-const makeStyles = (c: Colors) =>
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) =>
   StyleSheet.create({
     scroll: { flex: 1 },
     scrollInner: {

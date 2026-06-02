@@ -6,8 +6,9 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CarrosselConteudoDTO } from '../../../../src/types/info';
-import { type Colors, radii, shadows, spacing, typography } from '../../../../src/theme/tokens';
+import { type Colors, radii, shadows, spacing, scaleTypography } from '../../../../src/theme/tokens';
 import { useTheme } from '../../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../../src/context/AccessibilityContext';
 
 type Props = { secoes: CarrosselConteudoDTO[] };
 
@@ -33,7 +34,8 @@ const GROUP_META: Record<PublicGroup, { label: string; icon: React.ComponentProp
 
 export default function CronogramaTimeline({ secoes }: Props) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
 
   // agrupa as secoes por publico
   const grupos = useMemo(() => {
@@ -136,7 +138,7 @@ const DOT_SIZE = 14;
 const DOT_INNER = 6;
 const LEFT_COL_WIDTH = 28;
 
-const makeStyles = (c: Colors) =>
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) =>
   StyleSheet.create({
     scroll: { flex: 1 },
     scrollInner: {

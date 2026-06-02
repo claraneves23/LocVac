@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type Colors, shadows } from '../../src/theme/tokens';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { setNavigationDirection } from '../../src/navigation-direction';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -27,6 +28,7 @@ const tabs: Tab[] = [
 
 export default function BottomTabs() {
   const { colors } = useTheme();
+  const { reduceMotion } = useAccessibility();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const pathname = usePathname();
@@ -46,7 +48,7 @@ export default function BottomTabs() {
   ).current;
 
   useEffect(() => {
-    const duration = 220;
+    const duration = reduceMotion ? 0 : 220;
     const easing = Easing.out(Easing.quad);
     Animated.parallel([
       ...progress.map((value, idx) =>
@@ -66,7 +68,7 @@ export default function BottomTabs() {
         })
       ),
     ]).start();
-  }, [currentIdx, progress, progressNative]);
+  }, [currentIdx, progress, progressNative, reduceMotion]);
 
   return (
     <View style={[styles.wrapper, { paddingBottom: insets.bottom + 12 }]} pointerEvents="box-none">
@@ -101,6 +103,11 @@ export default function BottomTabs() {
           return (
             <AnimatedPressable
               key={tab.id}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: active }}
+              accessibilityHint={active ? undefined : `Ir para ${tab.label}`}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               onPress={() => {
                 if (active) return;
                 if (currentIdx !== -1) {

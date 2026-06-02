@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { type Colors, radii, spacing, typography } from '../../src/theme/tokens';
+import { type Colors, radii, spacing, scaleTypography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 
 type Props = {
   value: string;
@@ -53,7 +54,8 @@ export default function DateField({
   editable = true,
 }: Props) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const [text, setText] = useState(isoToBR(value));
   const [show, setShow] = useState(false);
 
@@ -140,8 +142,9 @@ export default function DateField({
   );
 }
 
-const makeStyles = (c: Colors) =>
-  StyleSheet.create({
+const makeStyles = (c: Colors, fontScale = 1) => {
+  const typography = scaleTypography(fontScale);
+  return StyleSheet.create({
     row: {
       backgroundColor: c.bgMuted,
       borderRadius: radii.sm + 3,
@@ -165,3 +168,4 @@ const makeStyles = (c: Colors) =>
       padding: 8,
     },
   });
+};

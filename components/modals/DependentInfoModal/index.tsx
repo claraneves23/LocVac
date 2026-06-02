@@ -3,8 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
 import { FamilyMember } from '../../../src/types/vaccination';
-import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
+import { type Colors, radii, spacing, scaleTypography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../src/context/AccessibilityContext';
 import { Avatar } from '../../redesign';
 import { formatCpf, formatDateToBR as formatDateToBRBase, formatSex } from '../../../src/utils/format';
 import { formatBirthPlace } from '../../../src/utils/municipios';
@@ -33,7 +34,8 @@ type DependentInfoModalProps = {
 
 export default function DependentInfoModal({ visible, dependent, onClose }: DependentInfoModalProps) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   if (!dependent) return null;
 
   return (
@@ -96,7 +98,7 @@ export default function DependentInfoModal({ visible, dependent, onClose }: Depe
   );
 }
 
-const makeStyles = (c: Colors) => StyleSheet.create({
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: c.dimDark,

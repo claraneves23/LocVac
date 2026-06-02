@@ -20,6 +20,7 @@ import { CarrosselItemDTO } from '../../src/types/info';
 import { VacinaDTO } from '../../src/service/mandatoryVaccineService';
 import { makeStyles } from '../../src/styles/infos';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import Skeleton from '../../components/redesign/Skeleton';
 
 type AgeGroupId = 'all' | 'baby' | 'child' | 'teen' | 'adult' | 'senior' | 'pregnant';
@@ -73,7 +74,8 @@ const overlapsGroup = (vaccine: VacinaDTO, group: AgeGroup): boolean => {
 
 export default function Infos() {
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const TONE_BG: Record<string, string> = { brand: colors.brandSoft, coral: colors.coralSoft, ochre: colors.ochreSoft };
   const TONE_INK: Record<string, string> = { brand: colors.brandInk, coral: colors.coralInk, ochre: colors.ochreInk };
   const router = useRouter();

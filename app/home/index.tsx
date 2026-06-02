@@ -49,6 +49,7 @@ import OtherVaccineModal from '../../components/modals/OtherVaccineModal';
 import CampaignModal from '../../components/modals/CampaignModal';
 import { makeStyles } from '../../src/styles/home';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { isoToDate } from '../../src/utils/dateBounds';
 import {
   formatDateToBR,
@@ -76,7 +77,8 @@ const formatId = (id: string | undefined): string => {
 
 export default function Index() {
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const { mainUser, dependents } = useAppContext();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -833,7 +835,8 @@ function SectionHeader({
   onQuickFill?: () => void;
 }) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   return (
     <View style={styles.sectionHeader}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
@@ -858,7 +861,8 @@ function SectionHeader({
 
 function IndexSkeleton() {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const sectionWidths = [100, 80, 68] as const;
   return (
     <>

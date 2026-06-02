@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from '../../src/service/authService';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { makeStyles } from './styles';
 
 const RESEND_COOLDOWN = 60;
@@ -27,7 +28,8 @@ export default function RedefinirSenha() {
   const params = useLocalSearchParams<{ email: string }>();
   const email = (params.email as string) || '';
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
 
   const [codigo, setCodigo] = useState('');
   const [novaSenha, setNovaSenha] = useState('');

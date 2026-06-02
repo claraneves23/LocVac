@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { confirmarCadastro, reenviarCodigo } from '../../src/service/authService';
 import { notificarBoasVindasSeNecessario } from '../../src/utils/pushNotifications';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { makeStyles } from './styles';
 
 const RESEND_COOLDOWN = 60;
@@ -26,7 +27,8 @@ export default function VerificarEmail() {
   const params = useLocalSearchParams<{ email: string }>();
   const email = (params.email as string) || '';
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
 
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);

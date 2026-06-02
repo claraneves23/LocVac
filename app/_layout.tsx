@@ -7,6 +7,7 @@ import BottomTabs from '../components/redesign/BottomTabs';
 import { getNavigationDirection } from '../src/navigation-direction';
 import { AppProvider, useAppContext } from '../src/context/AppContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
+import { AccessibilityProvider, useAccessibility } from '../src/context/AccessibilityContext';
 import { setAuthErrorCallback } from '../src/service/authService';
 import {
   configurarHandlerNotificacao,
@@ -34,15 +35,18 @@ const PUBLIC_ROUTES = ['/login', '/verificar-email', '/esqueci-senha', '/redefin
 export default function Layout() {
   return (
     <ThemeProvider>
-      <AppProvider>
-        <LayoutContent />
-      </AppProvider>
+      <AccessibilityProvider>
+        <AppProvider>
+          <LayoutContent />
+        </AppProvider>
+      </AccessibilityProvider>
     </ThemeProvider>
   );
 }
 
 function LayoutContent() {
   const { colors, isDark } = useTheme();
+  const { reduceMotion } = useAccessibility();
   const pathname = usePathname();
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -50,6 +54,10 @@ function LayoutContent() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      pulseAnim.setValue(1);
+      return;
+    }
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 0.25, duration: 850, useNativeDriver: true }),
@@ -58,7 +66,7 @@ function LayoutContent() {
     );
     loop.start();
     return () => loop.stop();
-  }, []);
+  }, [reduceMotion]);
 
   useEffect(() => {
     setAuthErrorCallback(() => router.replace('/login'));
@@ -157,7 +165,9 @@ function LayoutContent() {
       <View style={styles.contentContainer}>
         <Stack
           screenOptions={({ route }) => ({
-            animation: isMainTabRoute(route.name)
+            animation: reduceMotion
+              ? 'none'
+              : isMainTabRoute(route.name)
               ? getNavigationDirection() === 'left'
                 ? 'slide_from_left'
                 : 'slide_from_right'

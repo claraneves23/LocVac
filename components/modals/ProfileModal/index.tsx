@@ -3,8 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
 import { FamilyMember } from '../../../src/types/vaccination';
-import { type Colors, radii, spacing, typography, shadows, Tone } from '../../../src/theme/tokens';
+import { type Colors, radii, spacing, scaleTypography, shadows, Tone } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../src/context/AccessibilityContext';
 import { Avatar } from '../../redesign';
 
 const TONES: Tone[] = ['brand', 'coral', 'ochre'];
@@ -25,7 +26,8 @@ export default function ProfileModal({
   onClose,
 }: ProfileModalProps) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   return (
     <Modal
       visible={visible}
@@ -94,7 +96,7 @@ export default function ProfileModal({
   );
 }
 
-const makeStyles = (c: Colors) => StyleSheet.create({
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: c.dimDark,

@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { type Colors, radii, shadows, spacing, typography } from '../../../src/theme/tokens';
+import { type Colors, radii, shadows, spacing, scaleTypography } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../src/context/AccessibilityContext';
 import { DateField } from '../../redesign';
 import { registrarDose, VacinaDTO } from '../../../src/service/mandatoryVaccineService';
 import { MandatoryVaccineRecord } from '../../../src/types/vaccination';
@@ -42,7 +43,8 @@ export default function QuickFillVaccinesModal({
   minimumDate,
 }: Props) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const [pending, setPending] = useState<Record<string, PendingEntry>>({});
   const [saving, setSaving] = useState(false);
 
@@ -219,7 +221,7 @@ export default function QuickFillVaccinesModal({
   );
 }
 
-const makeStyles = (c: Colors) =>
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) =>
   StyleSheet.create({
     overlay: {
       flex: 1,

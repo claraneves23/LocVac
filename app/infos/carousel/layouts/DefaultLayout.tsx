@@ -1,14 +1,16 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useMemo } from 'react';
 import { CarrosselConteudoDTO } from '../../../../src/types/info';
-import { type Colors, radii, shadows, spacing, typography } from '../../../../src/theme/tokens';
+import { type Colors, radii, shadows, spacing, scaleTypography } from '../../../../src/theme/tokens';
 import { useTheme } from '../../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../../src/context/AccessibilityContext';
 
 type Props = { secoes: CarrosselConteudoDTO[] };
 
 export default function DefaultLayout({ secoes }: Props) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   return (
     <ScrollView
       style={styles.content}
@@ -35,7 +37,7 @@ export default function DefaultLayout({ secoes }: Props) {
   );
 }
 
-const makeStyles = (c: Colors) =>
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) =>
   StyleSheet.create({
     content: { flex: 1 },
     contentInner: {

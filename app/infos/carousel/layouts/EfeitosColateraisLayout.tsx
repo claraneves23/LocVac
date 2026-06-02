@@ -2,8 +2,9 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useMemo } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CarrosselConteudoDTO } from '../../../../src/types/info';
-import { type Colors, makeTonePairs, radii, shadows, spacing, typography, Tone } from '../../../../src/theme/tokens';
+import { type Colors, makeTonePairs, radii, shadows, spacing, scaleTypography, Tone } from '../../../../src/theme/tokens';
 import { useTheme } from '../../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../../src/context/AccessibilityContext';
 
 type Props = { secoes: CarrosselConteudoDTO[] };
 
@@ -29,7 +30,8 @@ const detectSeverity = (titulo: string): SeverityKey => {
 
 export default function EfeitosColateraisLayout({ secoes }: Props) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const tonePairs = useMemo(() => makeTonePairs(colors), [colors]);
 
   return (
@@ -80,7 +82,7 @@ export default function EfeitosColateraisLayout({ secoes }: Props) {
   );
 }
 
-const makeStyles = (c: Colors) =>
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) =>
   StyleSheet.create({
     scroll: { flex: 1 },
     scrollInner: {

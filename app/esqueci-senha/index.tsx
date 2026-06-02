@@ -17,12 +17,14 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { solicitarRecuperacaoSenha } from '../../src/service/authService';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { makeStyles } from './styles';
 
 export default function EsqueciSenha() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);

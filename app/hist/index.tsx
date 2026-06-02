@@ -23,6 +23,7 @@ import {
 import Tag from '../../components/redesign/Tag';
 import { makeStyles } from '../../src/styles/hist';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { formatAge, formatDateToBR } from '../../src/utils/format';
 
 type ActiveTab = 'history' | 'pending';
@@ -76,7 +77,8 @@ const TYPE_LABEL: Record<EntryType, string> = {
 
 export default function Search() {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const { mainUser, dependents } = useAppContext();
   const [activeTab, setActiveTab] = useState<ActiveTab>('history');
   const [filterProfile, setFilterProfile] = useState<string | null>(null);

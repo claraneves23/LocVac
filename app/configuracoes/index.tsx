@@ -16,15 +16,25 @@ import { Stack, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility, type FontScalePref } from '../../src/context/AccessibilityContext';
 import { useAppContext } from '../../src/context/AppContext';
 import { logout, excluirConta } from '../../src/service/authService';
-import { radii, spacing, typography, type Colors } from '../../src/theme/tokens';
+import { radii, spacing, scaleTypography, type Colors } from '../../src/theme/tokens';
+
+const FONT_OPTIONS: { pref: FontScalePref; label: string; short: string; size: number }[] = [
+  { pref: 'P', label: 'Pequeno', short: 'P', size: 13 },
+  { pref: 'M', label: 'Médio', short: 'M', size: 16 },
+  { pref: 'G', label: 'Grande', short: 'G', size: 19 },
+  { pref: 'GG', label: 'Muito grande', short: 'GG', size: 22 },
+];
 
 export default function Configuracoes() {
-  const { isDark, colors, toggleTheme } = useTheme();
+  const { isDark, colors, toggleTheme, highContrast, toggleHighContrast } = useTheme();
+  const { reduceMotion, setReduceMotionPref, fontScalePref, setFontScalePref, fontScale } =
+    useAccessibility();
   const { reset } = useAppContext();
   const router = useRouter();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const keyboardHeight = useKeyboardHeight();
 
   const [modalVisivel, setModalVisivel] = useState(false);
@@ -95,7 +105,14 @@ export default function Configuracoes() {
       <Stack.Screen options={{ animation: 'slide_from_right', headerShown: false }} />
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          hitSlop={8}
+        >
           <Ionicons name="chevron-back" size={20} color={colors.ink} />
         </TouchableOpacity>
       </View>
@@ -113,13 +130,95 @@ export default function Configuracoes() {
               onValueChange={toggleTheme}
               trackColor={{ false: colors.line, true: colors.brand }}
               thumbColor={colors.white}
+              accessibilityLabel="Modo escuro"
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Acessibilidade</Text>
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="pulse-outline" size={20} color={colors.brandInk} />
+              <View style={styles.rowTextWrap}>
+                <Text style={styles.rowLabel}>Reduzir movimento</Text>
+                <Text style={styles.rowHint}>Diminui animações e transições</Text>
+              </View>
+            </View>
+            <Switch
+              value={reduceMotion}
+              onValueChange={(v) => setReduceMotionPref(v ? 'on' : 'off')}
+              trackColor={{ false: colors.line, true: colors.brand }}
+              thumbColor={colors.white}
+              accessibilityLabel="Reduzir movimento"
+              accessibilityHint="Diminui animações e transições da interface"
+            />
+          </View>
+
+          <View style={styles.fontCard}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="text-outline" size={20} color={colors.brandInk} />
+              <View style={styles.rowTextWrap}>
+                <Text style={styles.rowLabel}>Tamanho da fonte</Text>
+                <Text style={styles.rowHint}>Multiplica sobre o ajuste do aparelho</Text>
+              </View>
+            </View>
+            <View style={styles.segment}>
+              {FONT_OPTIONS.map((opt) => {
+                const active = fontScalePref === opt.pref;
+                return (
+                  <TouchableOpacity
+                    key={opt.pref}
+                    style={[styles.segmentBtn, active && styles.segmentBtnActive]}
+                    onPress={() => setFontScalePref(opt.pref)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`Tamanho da fonte: ${opt.label}`}
+                  >
+                    <Text
+                      style={[styles.segmentLetter, { fontSize: opt.size }, active && styles.segmentTextActive]}
+                      allowFontScaling={false}
+                    >
+                      A
+                    </Text>
+                    <Text style={[styles.segmentCaption, active && styles.segmentTextActive]}>
+                      {opt.short}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="contrast-outline" size={20} color={colors.brandInk} />
+              <View style={styles.rowTextWrap}>
+                <Text style={styles.rowLabel}>Alto contraste</Text>
+                <Text style={styles.rowHint}>Cores e bordas mais fortes</Text>
+              </View>
+            </View>
+            <Switch
+              value={highContrast}
+              onValueChange={toggleHighContrast}
+              trackColor={{ false: colors.line, true: colors.brand }}
+              thumbColor={colors.white}
+              accessibilityLabel="Alto contraste"
+              accessibilityHint="Aumenta o contraste de cores e bordas"
             />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Conta</Text>
-          <TouchableOpacity style={styles.logoutRow} onPress={handleLogout} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.logoutRow}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Sair da conta"
+          >
             <Ionicons name="log-out-outline" size={20} color={colors.coralInk} />
             <Text style={styles.logoutText}>Sair da conta</Text>
           </TouchableOpacity>
@@ -128,6 +227,8 @@ export default function Configuracoes() {
             style={styles.deleteRow}
             onPress={abrirConfirmacaoExclusao}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Excluir conta"
           >
             <Ionicons name="trash-outline" size={20} color={colors.coralInk} />
             <Text style={styles.deleteText}>Excluir conta</Text>
@@ -142,7 +243,7 @@ export default function Configuracoes() {
         onRequestClose={fecharModal}
       >
         <View style={[styles.modalBackdrop, { paddingBottom: keyboardHeight }]}>
-          <View style={styles.modalCard}>
+          <View style={styles.modalCard} accessibilityViewIsModal accessibilityLabel="Confirmar exclusão de conta">
             <Text style={styles.modalTitle}>Confirmar exclusão</Text>
             <Text style={styles.modalText}>
               Para confirmar, informe sua senha atual. Após esta etapa, sua conta será apagada
@@ -162,13 +263,20 @@ export default function Configuracoes() {
               }}
               editable={!enviando}
             />
-            {erro ? <Text style={styles.erroText}>{erro}</Text> : null}
+            {erro ? (
+              <Text style={styles.erroText} accessibilityLiveRegion="polite" accessibilityRole="alert">
+                {erro}
+              </Text>
+            ) : null}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalBtn, styles.modalCancel]}
                 onPress={fecharModal}
                 disabled={enviando}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar"
+                accessibilityState={{ disabled: enviando }}
               >
                 <Text style={styles.modalCancelText}>Cancelar</Text>
               </TouchableOpacity>
@@ -177,6 +285,9 @@ export default function Configuracoes() {
                 onPress={confirmarExclusao}
                 disabled={enviando}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Excluir conta"
+                accessibilityState={{ disabled: enviando, busy: enviando }}
               >
                 {enviando ? (
                   <ActivityIndicator color={colors.white} />
@@ -192,7 +303,7 @@ export default function Configuracoes() {
   );
 }
 
-const makeStyles = (c: Colors) => StyleSheet.create({
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: c.bg,
@@ -241,10 +352,61 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    flex: 1,
+    minWidth: 0,
+  },
+  rowTextWrap: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
   rowLabel: {
     ...typography.body,
     color: c.ink,
+  },
+  rowHint: {
+    ...typography.small,
+    color: c.ink3,
+  },
+  fontCard: {
+    backgroundColor: c.bgElev,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: c.line,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  segment: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  segmentBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: c.line,
+    backgroundColor: c.bgMuted,
+    gap: 2,
+  },
+  segmentBtnActive: {
+    borderColor: c.brand,
+    backgroundColor: c.brandSoft,
+  },
+  segmentLetter: {
+    color: c.ink2,
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+  segmentCaption: {
+    ...typography.caption,
+    color: c.ink3,
+  },
+  segmentTextActive: {
+    color: c.brandInk,
   },
   logoutRow: {
     flexDirection: 'row',

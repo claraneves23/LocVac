@@ -6,9 +6,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchInformativosPorVacina, fetchEfeitosColateraisPorVacina } from '../../src/service/infoService';
 import { VacinaInformativoDTO, EfeitoColateralDTO } from '../../src/types/info';
-import { type Colors, radii, shadows, spacing, typography, makeTonePairs, Tone } from '../../src/theme/tokens';
+import { type Colors, radii, shadows, spacing, scaleTypography, makeTonePairs, Tone } from '../../src/theme/tokens';
 import { ScreenTitle } from '../../components/redesign';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 
 const SEVERIDADE_TONE: Record<EfeitoColateralDTO['severidade'], Tone> = {
   LEVE: 'success',
@@ -26,7 +27,8 @@ export default function VaccineDetails() {
   const { vaccineId, vaccineName } = useLocalSearchParams<{ vaccineId: string; vaccineName: string }>();
   const router = useRouter();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const tonePairs = useMemo(() => makeTonePairs(colors), [colors]);
   const [informativos, setInformativos] = useState<VacinaInformativoDTO[]>([]);
   const [efeitos, setEfeitos] = useState<EfeitoColateralDTO[]>([]);
@@ -176,7 +178,7 @@ export default function VaccineDetails() {
   );
 }
 
-const makeStyles = (c: Colors) => StyleSheet.create({
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: c.bg,

@@ -2,8 +2,9 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
 import Avatar from './Avatar';
-import { type Colors, typography } from '../../src/theme/tokens';
+import { type Colors, scaleTypography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { FamilyMember } from '../../src/types/vaccination';
 
 type Props = {
@@ -13,7 +14,8 @@ type Props = {
 
 export default function AppHeader({ profile, onSwitch }: Props) {
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   return (
     <View style={styles.header}>
       <View style={styles.brandRow}>
@@ -21,14 +23,23 @@ export default function AppHeader({ profile, onSwitch }: Props) {
           source={isDark ? require('../../assets/images/logodark.png') : require('../../assets/images/logo.png')}
           style={styles.brandLogo}
           resizeMode="contain"
+          accessibilityElementsHidden
+          importantForAccessibility="no"
         />
         <View style={{ marginLeft: 10 }}>
-          <Text style={styles.brandTitle}>LocVac</Text>
+          <Text style={styles.brandTitle} accessibilityRole="header">LocVac</Text>
           <Text style={styles.brandSub}>Carteira digital familiar</Text>
         </View>
       </View>
 
-      <Pressable onPress={onSwitch} style={styles.profileBtn}>
+      <Pressable
+        onPress={onSwitch}
+        style={styles.profileBtn}
+        accessibilityRole="button"
+        accessibilityLabel={`Perfil atual: ${profile?.name || 'LocVac'}`}
+        accessibilityHint="Toque para trocar de perfil"
+        hitSlop={8}
+      >
         <Avatar
           name={profile?.name || 'L'}
           photoUri={profile?.photoUri}
@@ -41,7 +52,9 @@ export default function AppHeader({ profile, onSwitch }: Props) {
   );
 }
 
-const makeStyles = (c: Colors) => StyleSheet.create({
+const makeStyles = (c: Colors, fontScale = 1) => {
+  const typography = scaleTypography(fontScale);
+  return StyleSheet.create({
   header: {
     paddingTop: 48,
     paddingHorizontal: 20,
@@ -86,4 +99,5 @@ const makeStyles = (c: Colors) => StyleSheet.create({
     borderColor: c.line,
     backgroundColor: c.bgElev,
   },
-});
+  });
+};

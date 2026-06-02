@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { cadastrarTitular, logout } from '../../src/service/authService';
 import { useAppContext } from '../../src/context/AppContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAccessibility } from '../../src/context/AccessibilityContext';
 import { joinAddress } from '../../src/utils/address';
 import { sanitizeName } from '../../src/utils/nameSanitizer';
 import {
@@ -47,7 +48,8 @@ export default function CadastroTitular() {
   const router = useRouter();
   const { loadAll, reset } = useAppContext();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const [loading, setLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 

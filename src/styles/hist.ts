@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { type Colors, radii, typography } from '../theme/tokens';
+import { type Colors, radii, scaleTypography } from '../theme/tokens';
 
-export const makeStyles = (c: Colors) => StyleSheet.create({
+export const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: c.bg,

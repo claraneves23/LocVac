@@ -2,8 +2,9 @@ import { View, Text, Pressable, Modal, ScrollView, StyleSheet, ActivityIndicator
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
-import { type Colors, radii, spacing, typography, shadows } from '../../../src/theme/tokens';
+import { type Colors, radii, spacing, scaleTypography, shadows } from '../../../src/theme/tokens';
 import { useTheme } from '../../../src/context/ThemeContext';
+import { useAccessibility } from '../../../src/context/AccessibilityContext';
 import { useKeyboardHeight } from '../../../src/hooks/useKeyboardHeight';
 import { DateField } from '../../redesign';
 
@@ -37,7 +38,8 @@ export default function CampaignModal({
   minimumDate,
 }: CampaignModalProps) {
   const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { fontScale } = useAccessibility();
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const keyboardHeight = useKeyboardHeight();
   return (
     <Modal
@@ -127,7 +129,7 @@ export default function CampaignModal({
   );
 }
 
-const makeStyles = (c: Colors) => StyleSheet.create({
+const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontScale)) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: c.dimDark,
