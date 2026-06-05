@@ -1495,51 +1495,6 @@ export default function User() {
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <View style={styles.helpSection}>
                 <View style={styles.helpIconRow}>
-                  <Ionicons name="wallet-outline" size={20} color={colors.brandInk} />
-                  <Text style={styles.helpSectionTitle}>Carteira de vacinação</Text>
-                </View>
-                <Text style={styles.helpText}>
-                  Registre e acompanhe vacinas obrigatórias do calendário nacional, vacinas adicionais e participações em campanhas. Toque em qualquer vacina para marcar como aplicada e preencher os detalhes.
-                </Text>
-              </View>
-              <View style={styles.helpSection}>
-                <View style={styles.helpIconRow}>
-                  <Ionicons name="time-outline" size={20} color={colors.brandInk} />
-                  <Text style={styles.helpSectionTitle}>Histórico</Text>
-                </View>
-                <Text style={styles.helpText}>
-                  Consulte todos os registros de vacinação do perfil selecionado em ordem cronológica.
-                </Text>
-              </View>
-              <View style={styles.helpSection}>
-                <View style={styles.helpIconRow}>
-                  <Ionicons name="book-outline" size={20} color={colors.brandInk} />
-                  <Text style={styles.helpSectionTitle}>Informações</Text>
-                </View>
-                <Text style={styles.helpText}>
-                  Explore o guia de vacinas por faixa etária e acesse conteúdos educativos sobre imunização.
-                </Text>
-              </View>
-              <View style={styles.helpSection}>
-                <View style={styles.helpIconRow}>
-                  <Ionicons name="people-outline" size={20} color={colors.brandInk} />
-                  <Text style={styles.helpSectionTitle}>Dependentes</Text>
-                </View>
-                <Text style={styles.helpText}>
-                  Adicione filhos, idosos ou outros familiares na aba Perfil para acompanhar a vacinação deles separadamente.
-                </Text>
-              </View>
-              <View style={styles.helpSection}>
-                <View style={styles.helpIconRow}>
-                  <Ionicons name="person-outline" size={20} color={colors.brandInk} />
-                  <Text style={styles.helpSectionTitle}>Perfis</Text>
-                </View>
-                <Text style={styles.helpText}>
-                  Na carteira de vacinação, toque no ícone de perfil no cabeçalho para alternar entre o seu perfil e o de dependentes cadastrados.
-                </Text>
-              </View>
-              <View style={styles.helpSection}>
-                <View style={styles.helpIconRow}>
                   <Ionicons name="shield-checkmark-outline" size={20} color={colors.brandInk} />
                   <Text style={styles.helpSectionTitle}>Política de Privacidade</Text>
                 </View>

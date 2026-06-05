@@ -347,7 +347,7 @@ export default function Infos() {
             <View style={[styles.groupIcon, { backgroundColor: colors.brandSoft, alignSelf: 'center', marginTop: 8 }]}>
               <Ionicons name="help-circle-outline" size={22} color={colors.brandInk} />
             </View>
-            <Text style={styles.modalTitle}>O que é a Biblioteca?</Text>
+            <Text style={styles.modalTitle}>Sobre as Informações</Text>
             <Text style={styles.modalText}>
               Aqui você encontra informações detalhadas sobre cada vacina e conteúdos sobre vacinação,
               organizados por faixa etária.
