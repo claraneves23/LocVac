@@ -53,8 +53,11 @@ function LayoutContent() {
   const { isLoading: appLoading } = useAppContext();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  const isOnPublicOrSetup = PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular';
+  const showLoading = (checkingAuth || appLoading) && !isOnPublicOrSetup;
+
   useEffect(() => {
-    if (reduceMotion) {
+    if (reduceMotion || !showLoading) {
       pulseAnim.setValue(1);
       return;
     }
@@ -66,7 +69,7 @@ function LayoutContent() {
     );
     loop.start();
     return () => loop.stop();
-  }, [reduceMotion]);
+  }, [reduceMotion, showLoading]);
 
   useEffect(() => {
     setAuthErrorCallback(() => router.replace('/login'));
@@ -146,9 +149,8 @@ function LayoutContent() {
   }, []);
 
   const hideBottomBar = HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
-  const isOnPublicOrSetup = PUBLIC_ROUTES.includes(pathname) || pathname === '/cadastro-titular';
 
-  if ((checkingAuth || appLoading) && !isOnPublicOrSetup) {
+  if (showLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.bgMuted }]}>
         <Animated.Image
