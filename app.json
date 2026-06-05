@@ -63,7 +63,8 @@
         }
       ],
       "./plugins/withTransparentNavBar",
-      "./plugins/withAdiRegistration"
+      "./plugins/withAdiRegistration",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "router": {},

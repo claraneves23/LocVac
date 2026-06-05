@@ -53,6 +53,15 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
 	return response.data;
 }
 
+export async function loginComGoogle(idToken: string): Promise<AuthResponse> {
+	const response = await axios.post<AuthResponse>(`${API_BASE}/auth/google`, { idToken });
+	await saveTokens(response.data);
+	if (response.data.idPessoa) {
+		await AsyncStorage.setItem(PESSOA_ID_KEY, String(response.data.idPessoa));
+	}
+	return response.data;
+}
+
 export async function iniciarCadastro(data: IniciarCadastroRequest): Promise<void> {
 	const payload = { email: data.email.trim().toLowerCase(), senha: data.senha };
 	await axios.post(`${API_BASE}/usuarios/cadastro/iniciar`, payload);
@@ -222,6 +231,7 @@ const processQueue = (error: any, token: string | null = null) => {
 axios.interceptors.request.use(async (config) => {
 	if (
 		config.url?.includes('/auth/login') ||
+		config.url?.includes('/auth/google') ||
 		config.url?.includes('/auth/refresh') ||
 		config.url?.includes('/usuarios/cadastro/iniciar') ||
 		config.url?.includes('/usuarios/cadastro/confirmar') ||
@@ -253,7 +263,8 @@ axios.interceptors.response.use(
 			(status === 401 || status === 403) &&
 			!original._retry &&
 			!original.url?.includes('/auth/refresh') &&
-			!original.url?.includes('/auth/login')
+			!original.url?.includes('/auth/login') &&
+			!original.url?.includes('/auth/google')
 		) {
 			if (isRefreshing) {
 				return new Promise((resolve, reject) => {

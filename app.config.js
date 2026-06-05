@@ -32,7 +32,7 @@ module.exports = {
       predictiveBackGestureEnabled: false,
       softwareKeyboardLayoutMode: "resize",
       package: IS_DEV ? "com.devvale.LocVac.dev" : "com.devvale.LocVac",
-      googleServicesFile: "./google-services.json",
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
       permissions: ["CAMERA", "READ_MEDIA_IMAGES", "POST_NOTIFICATIONS"],
     },
     androidNavigationBar: {
@@ -62,6 +62,7 @@ module.exports = {
       ],
       "./plugins/withTransparentNavBar",
       "./plugins/withAdiRegistration",
+      "@react-native-google-signin/google-signin",
     ],
     extra: {
       router: {},

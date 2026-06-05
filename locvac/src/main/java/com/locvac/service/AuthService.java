@@ -19,4 +19,6 @@ public interface AuthService {
 
     AuthResponse autenticarUsuario(Usuario usuario);
 
+    AuthResponse loginComGoogle(GoogleLoginRequest request);
+
 }
