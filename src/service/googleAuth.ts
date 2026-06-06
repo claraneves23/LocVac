@@ -6,7 +6,7 @@ import {
 // Web client ID do Google Cloud Console (mesmo projeto do Firebase).
 // É público (vai para o cliente), então pode ficar no código.
 const WEB_CLIENT_ID =
-  '615198020751-5lv1eq7tda2ahogr429mmgti70nsfrot.apps.googleusercontent.com';
+  '203043191217-aotpfsc34q18r5otaup4kluac3ahit50.apps.googleusercontent.com';
 
 let configured = false;
 
