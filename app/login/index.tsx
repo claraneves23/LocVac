@@ -17,7 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { login, iniciarCadastro } from '../../src/service/authService';
+import { login, iniciarCadastro, loginComGoogle } from '../../src/service/authService';
+import { obterIdTokenGoogle, GoogleSignInCancelado, configureGoogleSignin } from '../../src/service/googleAuth';
 import { useAppContext } from '../../src/context/AppContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAccessibility } from '../../src/context/AccessibilityContext';
@@ -182,6 +183,47 @@ export default function Login() {
         message = 'Ocorreu um erro inesperado. Tente novamente em instantes.';
       }
       Alert.alert(title, message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    configureGoogleSignin();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const idToken = await obterIdTokenGoogle();
+      const auth = await loginComGoogle(idToken);
+      // Usuário novo via Google ainda não tem titular (idPessoa null) → completa o cadastro
+      if (auth.idPessoa) {
+        await loadAll();
+        router.replace('/home');
+      } else {
+        router.replace('/cadastro-titular');
+      }
+    } catch (error: any) {
+      if (error instanceof GoogleSignInCancelado) return;
+      console.error('[GoogleLogin] erro:', error);
+
+      let message: string;
+      if (error?.response) {
+        // Chegou ao servidor, mas ele retornou erro (404 = endpoint não deployado, 401, 500…)
+        const status = error.response.status;
+        const detail = error.response.data?.detail ?? error.response.data?.message ?? '';
+        message = `Servidor respondeu ${status}. ${detail}`.trim();
+      } else if (error?.code) {
+        // Erro nativo do Google Sign-In (ex.: DEVELOPER_ERROR, PLAY_SERVICES_NOT_AVAILABLE)
+        message = `Erro do Google: ${error.code}${error?.message ? ` — ${error.message}` : ''}`;
+      } else if (error?.request) {
+        // Requisição enviada, sem resposta — API fora do ar / rede / cold start
+        message = 'Sem resposta do servidor (API fora do ar ou rede). Tente novamente.';
+      } else {
+        message = error?.message ?? 'Erro desconhecido no login com Google.';
+      }
+      Alert.alert('Erro (diagnóstico)', message);
     } finally {
       setLoading(false);
     }
@@ -386,6 +428,21 @@ export default function Login() {
                 <Text style={styles.forgotText}>Esqueci minha senha</Text>
               </Pressable>
             </Animated.View>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ou</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Pressable
+              style={[styles.googleButton, loading && styles.submitButtonDisabled]}
+              onPress={handleGoogleLogin}
+              disabled={loading}
+            >
+              <Ionicons name="logo-google" size={18} color={colors.ink} />
+              <Text style={styles.googleButtonText}>Continuar com o Google</Text>
+            </Pressable>
           </View>
 
           <View style={styles.footer}>

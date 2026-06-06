@@ -142,6 +142,38 @@ export const makeStyles = (colors: Colors, fontScale = 1, typography = scaleTypo
     color: colors.brandInk,
     fontWeight: '600',
   },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.line,
+  },
+  dividerText: {
+    fontSize: 12,
+    color: colors.ink3,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: colors.bgElev,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingVertical: 13,
+  },
+  googleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ink,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',

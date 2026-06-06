@@ -27,6 +27,12 @@ public class AuthController {
         return ResponseEntity.ok(resposta);
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> loginComGoogle(@RequestBody GoogleLoginRequest request) {
+        AuthResponse resposta = authService.loginComGoogle(request);
+        return ResponseEntity.ok(resposta);
+    }
+
     @PostMapping("/mfa/verify")
     public ResponseEntity<AuthResponse> verificarMfa(@RequestBody MfaVerifyRequest request) {
         AuthResponse resposta = authService.verificarMfa(request);

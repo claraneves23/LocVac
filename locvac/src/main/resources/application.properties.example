@@ -8,3 +8,6 @@ mfa.issuer=LocVac
 brevo.api-key=
 mail.from=
 mail.from-name=LocVac
+
+# Google OAuth — Web client ID do Google Cloud Console (login com Google)
+google.oauth.web-client-id=

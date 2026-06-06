@@ -40,6 +40,7 @@ public class SecurityConfig {
                 // Rotas públicas — não precisam de token
                 .requestMatchers(
                     "/auth/login",
+                    "/auth/google",
                     "/auth/refresh",
                     "/auth/mfa/verify",
                     "/usuarios/cadastro/iniciar",

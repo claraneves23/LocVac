@@ -50,6 +50,10 @@ public class Usuario {
     @Column(name = "bloqueado_ate")
     private LocalDateTime bloqueadoAte;
 
+    // Provedor de autenticação: null/"LOCAL" para email+senha, "GOOGLE" para login com Google.
+    @Column(name = "auth_provider", length = 20)
+    private String authProvider;
+
     @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
     private List<UsuarioPessoa> usuarioPessoas;
 
@@ -138,6 +142,9 @@ public class Usuario {
 
     public LocalDateTime getBloqueadoAte() { return bloqueadoAte; }
     public void setBloqueadoAte(LocalDateTime bloqueadoAte) { this.bloqueadoAte = bloqueadoAte; }
+
+    public String getAuthProvider() { return authProvider; }
+    public void setAuthProvider(String authProvider) { this.authProvider = authProvider; }
 
     @PrePersist
     protected void onCreate() {

@@ -7,14 +7,20 @@ import com.locvac.repository.UsuarioPessoaRepository;
 import com.locvac.service.AuthService;
 import com.locvac.service.JwtService;
 import com.locvac.service.RefreshTokenService;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import dev.samstevens.totp.code.CodeVerifier;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.UUID;
 
 @Service
@@ -27,6 +33,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final CodeVerifier codeVerifier;
+    private final String googleWebClientId;
+    private GoogleIdTokenVerifier googleVerifier;
 
     public AuthServiceImpl(
             UsuarioRepository usuarioRepository,
@@ -34,7 +42,8 @@ public class AuthServiceImpl implements AuthService {
             RefreshTokenService refreshTokenService,
             JwtService jwtService,
             PasswordEncoder passwordEncoder,
-            CodeVerifier codeVerifier
+            CodeVerifier codeVerifier,
+            @Value("${google.oauth.web-client-id}") String googleWebClientId
     ) {
         this.usuarioRepository = usuarioRepository;
         this.usuarioPessoaRepository = usuarioPessoaRepository;
@@ -42,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.codeVerifier = codeVerifier;
+        this.googleWebClientId = googleWebClientId;
     }
 
     @Override
@@ -131,6 +141,74 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse autenticarUsuario(Usuario usuario) {
         TokenData tokenData = new TokenData(usuario.getId(), usuario.getEmail());
         return gerarAuthResponse(usuario, tokenData);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse loginComGoogle(GoogleLoginRequest request) {
+        if (request == null || request.idToken() == null || request.idToken().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "GOOGLE_TOKEN_AUSENTE");
+        }
+
+        GoogleIdToken.Payload payload = verificarGoogleToken(request.idToken());
+
+        String email = payload.getEmail() == null ? null : payload.getEmail().trim().toLowerCase();
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "GOOGLE_EMAIL_AUSENTE");
+        }
+        Boolean emailVerificado = payload.getEmailVerified();
+        if (emailVerificado == null || !emailVerificado) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "GOOGLE_EMAIL_NAO_VERIFICADO");
+        }
+
+        String nome = (String) payload.get("name");
+
+        Usuario usuario = usuarioRepository.findByEmail(email).orElseGet(() -> {
+            Usuario novo = new Usuario();
+            novo.setNome(nome != null && !nome.isBlank() ? nome : email);
+            novo.setEmail(email);
+            // Conta Google não usa senha local — gravamos um hash aleatório inutilizável
+            // só para satisfazer o NOT NULL da coluna senha_hash.
+            novo.setSenhaHash(passwordEncoder.encode("google:" + UUID.randomUUID()));
+            novo.setAuthProvider("GOOGLE");
+            return usuarioRepository.save(novo);
+        });
+
+        LocalDateTime agora = LocalDateTime.now();
+        if (usuario.getBloqueadoAte() != null && usuario.getBloqueadoAte().isAfter(agora)) {
+            throw new ContaBloqueadaException(usuario.getBloqueadoAte());
+        }
+
+        usuario.setTentativasFalhas(0);
+        usuario.setBloqueadoAte(null);
+        usuario.setUltimoLogin(agora);
+        usuarioRepository.save(usuario);
+
+        TokenData tokenData = new TokenData(usuario.getId(), usuario.getEmail());
+        return gerarAuthResponse(usuario, tokenData);
+    }
+
+    private GoogleIdToken.Payload verificarGoogleToken(String idTokenString) {
+        try {
+            GoogleIdToken idToken = googleVerifier().verify(idTokenString);
+            if (idToken == null) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "GOOGLE_TOKEN_INVALIDO");
+            }
+            return idToken.getPayload();
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "GOOGLE_TOKEN_INVALIDO");
+        }
+    }
+
+    private GoogleIdTokenVerifier googleVerifier() {
+        if (googleVerifier == null) {
+            googleVerifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(Collections.singletonList(googleWebClientId))
+                    .build();
+        }
+        return googleVerifier;
     }
 
         private AuthResponse gerarAuthResponse(Usuario usuario, TokenData tokenData) {
