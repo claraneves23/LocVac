@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -79,6 +80,7 @@ export default function Index() {
   const { colors, isDark } = useTheme();
   const { fontScale } = useAccessibility();
   const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
+  const router = useRouter();
   const { mainUser, dependents } = useAppContext();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -505,6 +507,15 @@ export default function Index() {
                   : 'Titular'} · {formatId(selectedProfile.id)}
               </Text>
             </View>
+            <Pressable
+              style={styles.passportDocBtn}
+              onPress={() => router.push({ pathname: '/carteira', params: { profileId: selectedProfile.id } })}
+              accessibilityRole="button"
+              accessibilityLabel="Ver carteira de vacinação"
+              hitSlop={8}
+            >
+              <Ionicons name="document-text-outline" size={20} color="#fff" />
+            </Pressable>
           </View>
 
           <View style={styles.passportDivider} />

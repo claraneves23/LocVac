@@ -29,6 +29,7 @@ const HIDE_BOTTOM_BAR_ROUTES = [
   '/esqueci-senha',
   '/redefinir-senha',
   '/configuracoes',
+  '/carteira',
 ];
 const PUBLIC_ROUTES = ['/login', '/verificar-email', '/esqueci-senha', '/redefinir-senha'];
 
