@@ -30,6 +30,7 @@ const HIDE_BOTTOM_BAR_ROUTES = [
   '/redefinir-senha',
   '/configuracoes',
   '/carteira',
+  '/importar',
 ];
 const PUBLIC_ROUTES = ['/login', '/verificar-email', '/esqueci-senha', '/redefinir-senha'];
 
@@ -149,7 +150,8 @@ function LayoutContent() {
     return () => sub.remove();
   }, []);
 
-  const hideBottomBar = HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
+  const hideBottomBar =
+    HIDE_BOTTOM_BAR_ROUTES.includes(pathname) || pathname.startsWith('/compartilhar');
 
   if (showLoading) {
     return (

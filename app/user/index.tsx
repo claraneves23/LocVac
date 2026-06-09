@@ -533,7 +533,7 @@ export default function User() {
   const handleRemove = (dependent: FamilyMember) => {
     Alert.alert(
       'Remover dependente',
-      `Deseja remover ${dependent.name}? Esta ação não pode ser desfeita.`,
+      `Deseja remover ${dependent.name} da sua conta? Se houver outro responsável, o acesso dele será mantido.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -652,10 +652,21 @@ export default function User() {
               <Text style={styles.sectionTitle}>Dependentes</Text>
               <Text style={styles.sectionSub}>{dependents.length} {dependents.length === 1 ? 'pessoa' : 'pessoas'} vinculadas</Text>
             </View>
-            <TouchableOpacity style={styles.addButton} onPress={openCreate} activeOpacity={0.85}>
-              <Ionicons name="add" size={16} color={colors.white} />
-              <Text style={styles.addButtonText}>Adicionar</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Pressable
+                style={styles.iconButton}
+                onPress={() => router.push('/importar')}
+                accessibilityRole="button"
+                accessibilityLabel="Importar dependente compartilhado"
+                hitSlop={6}
+              >
+                <Ionicons name="qr-code-outline" size={18} color={colors.brandInk} />
+              </Pressable>
+              <TouchableOpacity style={styles.addButton} onPress={openCreate} activeOpacity={0.85}>
+                <Ionicons name="add" size={16} color={colors.white} />
+                <Text style={styles.addButtonText}>Adicionar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {dependents.length === 0 ? (
@@ -682,6 +693,14 @@ export default function User() {
                       </View>
                     </Pressable>
                     <View style={styles.dependentActions}>
+                      <Pressable
+                        style={styles.iconButton}
+                        onPress={() => router.push(`/compartilhar/${dependent.id}`)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Compartilhar ${dependent.name}`}
+                      >
+                        <Ionicons name="share-social-outline" size={18} color={colors.brandInk} />
+                      </Pressable>
                       <Pressable style={styles.iconButton} onPress={() => openEdit(dependent)}>
                         <Ionicons name="create-outline" size={18} color={colors.brandInk} />
                       </Pressable>

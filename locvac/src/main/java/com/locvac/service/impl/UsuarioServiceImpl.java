@@ -19,6 +19,7 @@ import com.locvac.repository.NotificacaoRepository;
 import com.locvac.repository.ParticipacaoCampanhaRepository;
 import com.locvac.repository.PessoaRepository;
 import com.locvac.repository.RecuperacaoSenhaRepository;
+import com.locvac.repository.ConviteCompartilhamentoRepository;
 import com.locvac.repository.RefreshTokenRepository;
 import com.locvac.repository.UsuarioPessoaRepository;
 import com.locvac.repository.UsuarioRepository;
@@ -53,6 +54,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final NotificacaoRepository notificacaoRepository;
     private final ExpoPushTokenRepository expoPushTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final ConviteCompartilhamentoRepository conviteCompartilhamentoRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AuthService authService;
@@ -71,6 +73,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             NotificacaoRepository notificacaoRepository,
             ExpoPushTokenRepository expoPushTokenRepository,
             RefreshTokenRepository refreshTokenRepository,
+            ConviteCompartilhamentoRepository conviteCompartilhamentoRepository,
             PasswordEncoder passwordEncoder,
             EmailService emailService,
             AuthService authService,
@@ -88,6 +91,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         this.notificacaoRepository = notificacaoRepository;
         this.expoPushTokenRepository = expoPushTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.conviteCompartilhamentoRepository = conviteCompartilhamentoRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.authService = authService;
@@ -291,6 +295,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         notificacaoRepository.deleteAllByUsuarioId(usuarioId);
         expoPushTokenRepository.deleteAllByUsuario(usuario);
         refreshTokenRepository.deleteAllByUsuario(usuario);
+        // deleteAll (e não bulk delete) para que a @ElementCollection convite_pessoa caia em cascata.
+        conviteCompartilhamentoRepository.deleteAll(
+                conviteCompartilhamentoRepository.findByUsuarioOrigemIdOrUsuarioDestinoId(usuarioId, usuarioId));
         usuarioPessoaRepository.deleteAllByUsuarioId(usuarioId);
 
         for (Long pessoaId : pessoaIds) {

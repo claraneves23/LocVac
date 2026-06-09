@@ -115,7 +115,9 @@ export async function updateDependent(id: string, dependent: Omit<FamilyMember, 
 }
 
 export async function deleteDependent(id: string): Promise<void> {
-  await axios.delete(`${API_URL}/pessoas/${id}`);
+  // Vínculo-aware: se outro responsável compartilha este dependente, apenas
+  // desvincula a conta atual; só exclui a pessoa quando é o último responsável.
+  await axios.delete(`${API_URL}/compartilhamento/pessoa/${id}/meu-acesso`);
 }
 
 export async function getUsuarioTitularIdByPessoaId(pessoaId: number): Promise<string | null> {
