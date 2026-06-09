@@ -10,6 +10,8 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useState } from 'react';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -30,8 +32,7 @@ import {
   OtherVaccine,
   ParticipatingCampaign,
 } from '../../src/types/vaccination';
-import { type Colors, radii, shadows, scaleTypography } from '../../src/theme/tokens';
-import { ScreenTitle } from '../../components/redesign';
+import { type Colors, radii, shadows, spacing, scaleTypography } from '../../src/theme/tokens';
 import {
   formatDateToBR,
   formatSex,
@@ -66,6 +67,7 @@ export default function Carteira() {
   const router = useRouter();
   const { colors } = useTheme();
   const { fontScale } = useAccessibility();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const { mainUser, dependents } = useAppContext();
 
@@ -173,7 +175,7 @@ export default function Carteira() {
   if (!profile) {
     return (
       <View style={styles.container}>
-        <ScreenTitle title="Carteira de Vacinação" back={() => router.back()} />
+        <Header onBack={() => router.back()} styles={styles} ink={colors.ink} />
         <View style={styles.center}>
           <Text style={styles.emptyText}>Perfil não encontrado.</Text>
         </View>
@@ -188,7 +190,7 @@ export default function Carteira() {
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <ScreenTitle title="Carteira de Vacinação" back={() => router.back()} />
+      <Header onBack={() => router.back()} styles={styles} ink={colors.ink} />
 
       {loading ? (
         <View style={styles.center}>
@@ -319,22 +321,20 @@ export default function Carteira() {
         </ScrollView>
       )}
 
-      {/* Botão de download */}
-      <View style={styles.footer}>
-        <Pressable
-          style={[styles.downloadBtn, downloading && styles.downloadBtnDisabled]}
-          onPress={handleDownload}
-          disabled={downloading || loading}
-          accessibilityRole="button"
-          accessibilityLabel="Baixar carteira em PDF"
-        >
-          {downloading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.downloadText}>Baixar PDF</Text>
-          )}
-        </Pressable>
-      </View>
+      {/* Botão flutuante de download */}
+      <Pressable
+        style={[styles.fab, { bottom: insets.bottom + 4 }, (downloading || loading) && styles.fabDisabled]}
+        onPress={handleDownload}
+        disabled={downloading || loading}
+        accessibilityRole="button"
+        accessibilityLabel="Baixar carteira em PDF"
+      >
+        {downloading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Ionicons name="download-outline" size={20} color="#fff" />
+        )}
+      </Pressable>
     </View>
   );
 }
@@ -356,6 +356,30 @@ function IdItem({
       <Text style={styles.idValue} numberOfLines={2}>
         {value || '—'}
       </Text>
+    </View>
+  );
+}
+
+function Header({
+  onBack,
+  styles,
+  ink,
+}: {
+  onBack: () => void;
+  styles: ReturnType<typeof makeStyles>;
+  ink: string;
+}) {
+  return (
+    <View style={styles.header}>
+      <Pressable
+        style={styles.backBtn}
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        hitSlop={8}
+      >
+        <Ionicons name="chevron-back" size={20} color={ink} />
+      </Pressable>
     </View>
   );
 }
@@ -430,11 +454,11 @@ function buildCarteiraHtml(
   return `<!DOCTYPE html><html><head><meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(docTitle)}</title><style>
-    /* margin: 0 no @page remove o cabeçalho/rodapé do navegador (URL, data) na impressão web */
-    @page { size: A4; margin: 0; }
+    /* margem na @page se aplica a TODAS as páginas (não só a primeira), garantindo o espaçamento no topo das páginas seguintes */
+    @page { size: A4; margin: 16mm 14mm; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
-    body { font-family: -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1A2422; font-size: 12px; line-height: 1.4; padding: 18mm 14mm; }
+    body { font-family: -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1A2422; font-size: 12px; line-height: 1.4; }
     .header { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 3px solid #03394A; padding-bottom: 12px; }
     .title { font-size: 22px; font-weight: 700; color: #03394A; margin: 0; }
     .subtitle { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #7C8786; margin-top: 2px; }
@@ -479,6 +503,22 @@ const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontS
     container: {
       flex: 1,
       backgroundColor: c.bgMuted,
+      paddingTop: '5%' as any,
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.sm,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: c.bgElev,
+      borderWidth: 1,
+      borderColor: c.line,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     center: {
       flex: 1,
@@ -487,7 +527,7 @@ const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontS
     },
     scroll: {
       padding: 16,
-      paddingBottom: 32,
+      paddingBottom: 96,
     },
     doc: {
       backgroundColor: c.bgElev,
@@ -620,30 +660,19 @@ const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontS
       fontSize: 13,
       color: c.ink3,
     },
-    footer: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 24,
-      borderTopWidth: 1,
-      borderTopColor: c.line,
-      backgroundColor: c.bgElev,
-    },
-    downloadBtn: {
-      flexDirection: 'row',
+    fab: {
+      position: 'absolute',
+      right: 4,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
-      height: 52,
-      borderRadius: radii.lg,
       backgroundColor: c.brand,
-      ...shadows.sm,
+      opacity: 0.82,
+      ...shadows.md,
     },
-    downloadBtnDisabled: {
+    fabDisabled: {
       opacity: 0.6,
-    },
-    downloadText: {
-      color: '#fff',
-      fontSize: 15,
-      fontWeight: '700',
     },
   });
