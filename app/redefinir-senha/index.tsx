@@ -18,6 +18,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { redefinirSenha, reenviarCodigoRecuperacaoSenha } from '../../src/service/authService';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAccessibility } from '../../src/context/AccessibilityContext';
+import { validarSenha } from '../../src/utils/passwordValidator';
+import { PasswordRequirements } from '../../components/redesign';
 import { makeStyles } from './styles';
 
 const RESEND_COOLDOWN = 60;
@@ -64,23 +66,22 @@ export default function RedefinirSenha() {
     }
 
     const novoErros: Partial<Record<RedefinirFieldKey, string>> = {};
-    if (!novaSenha.trim()) novoErros.novaSenha = 'Campo obrigatório!';
-    if (!confirmarSenha.trim()) novoErros.confirmarSenha = 'Campo obrigatório!';
+    if (!novaSenha.trim()) {
+      novoErros.novaSenha = 'Campo obrigatório!';
+    } else {
+      const senhaErro = validarSenha(novaSenha);
+      if (senhaErro) novoErros.novaSenha = senhaErro;
+    }
+    if (!confirmarSenha.trim()) {
+      novoErros.confirmarSenha = 'Campo obrigatório!';
+    } else if (novaSenha !== confirmarSenha) {
+      novoErros.confirmarSenha = 'As senhas não coincidem.';
+    }
     if (Object.keys(novoErros).length > 0) {
       setErrors(novoErros);
       return;
     }
     setErrors({});
-
-    if (novaSenha.length < 6) {
-      Alert.alert('Senha fraca', 'A senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-
-    if (novaSenha !== confirmarSenha) {
-      Alert.alert('Senhas diferentes', 'As senhas não coincidem.');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -204,7 +205,7 @@ export default function RedefinirSenha() {
                   style={styles.input}
                   value={novaSenha}
                   onChangeText={(v) => { setNovaSenha(v); clearError('novaSenha'); }}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Crie uma nova senha"
                   placeholderTextColor={colors.ink3}
                   maxLength={72}
                   secureTextEntry={!showPassword}
@@ -222,6 +223,7 @@ export default function RedefinirSenha() {
                 </Pressable>
               </View>
               {errors.novaSenha && <Text style={styles.errorText}>{errors.novaSenha}</Text>}
+              <PasswordRequirements senha={novaSenha} />
             </View>
 
             <View style={styles.fieldGroup}>
