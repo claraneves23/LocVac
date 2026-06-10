@@ -428,21 +428,6 @@ export default function Login() {
                 <Text style={styles.forgotText}>Esqueci minha senha</Text>
               </Pressable>
             </Animated.View>
-
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>ou</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <Pressable
-              style={[styles.googleButton, loading && styles.submitButtonDisabled]}
-              onPress={handleGoogleLogin}
-              disabled={loading}
-            >
-              <Ionicons name="logo-google" size={18} color={colors.ink} />
-              <Text style={styles.googleButtonText}>Continuar com o Google</Text>
-            </Pressable>
           </View>
 
           <View style={styles.footer}>
