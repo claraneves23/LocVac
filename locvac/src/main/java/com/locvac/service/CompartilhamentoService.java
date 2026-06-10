@@ -1,5 +1,6 @@
 package com.locvac.service;
 
+import com.locvac.dto.compartilhamento.AceitarConviteRequestDTO;
 import com.locvac.dto.compartilhamento.AcessoResponseDTO;
 import com.locvac.dto.compartilhamento.ConvitePreviewDTO;
 import com.locvac.dto.compartilhamento.ConviteResponseDTO;
@@ -13,7 +14,7 @@ public interface CompartilhamentoService {
 
     ConvitePreviewDTO previewConvite(String tokenOuCodigo);
 
-    void aceitarConvite(String tokenOuCodigo);
+    void aceitarConvite(String tokenOuCodigo, AceitarConviteRequestDTO dto);
 
     void cancelarConvite(String tokenOuCodigo);
 

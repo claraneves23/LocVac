@@ -32,6 +32,7 @@ export type Acesso = {
   podeEditar: boolean;
   dataVinculo: string | null;
   ehVoce: boolean;
+  ehDono: boolean;
 };
 
 /** Gera um único convite cobrindo um ou mais dependentes do usuário. */
@@ -52,10 +53,18 @@ export async function previewConvite(tokenOuCodigo: string): Promise<ConvitePrev
   return data;
 }
 
-/** Aceita o convite: vincula o dependente à conta autenticada. */
-export async function aceitarConvite(tokenOuCodigo: string): Promise<void> {
+/**
+ * Aceita o convite: vincula o dependente à conta autenticada.
+ * `parentescos` mapeia o id da pessoa ao parentesco escolhido por quem aceita
+ * (cada responsável define o próprio parentesco).
+ */
+export async function aceitarConvite(
+  tokenOuCodigo: string,
+  parentescos?: Record<number, string>
+): Promise<void> {
   await axios.post(
-    `${API_URL}/compartilhamento/convites/${encodeURIComponent(tokenOuCodigo.trim())}/aceitar`
+    `${API_URL}/compartilhamento/convites/${encodeURIComponent(tokenOuCodigo.trim())}/aceitar`,
+    parentescos ? { parentescos } : undefined
   );
 }
 

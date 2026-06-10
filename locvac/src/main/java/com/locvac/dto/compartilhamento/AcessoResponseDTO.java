@@ -9,5 +9,6 @@ public record AcessoResponseDTO(
         String tipoVinculo,
         boolean podeEditar,
         LocalDate dataVinculo,
-        boolean ehVoce
+        boolean ehVoce,
+        boolean ehDono
 ) {}

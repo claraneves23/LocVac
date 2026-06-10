@@ -688,7 +688,7 @@ export default function User() {
                       <View style={styles.dependentInfo}>
                         <Text style={styles.dependentName}>{dependent.name}</Text>
                         <Text style={styles.dependentMeta} numberOfLines={1}>
-                          {dependent.relationship || dependent.kind} · {formatDateToBR(dependent.birthDate)} · {dependent.sex}
+                          {dependent.relationship || 'Dependente'} · {formatDateToBR(dependent.birthDate)} · {dependent.sex}
                         </Text>
                       </View>
                     </Pressable>

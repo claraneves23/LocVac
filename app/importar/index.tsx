@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -28,6 +28,8 @@ import {
 } from '../../src/service/sharingService';
 
 type Mode = 'scan' | 'codigo';
+
+const RELATIONSHIP_OPTIONS = ['Filho', 'Filha', 'Neto', 'Neta', 'Sobrinho', 'Sobrinha', 'Irmão', 'Irmã', 'Outro'];
 
 const mensagemErro = (e: any): string => {
   const status = e?.response?.status;
@@ -49,18 +51,66 @@ export default function Importar() {
   const { refreshDependents } = useAppContext();
 
   const [permission, requestPermission] = useCameraPermissions();
-  const [mode, setMode] = useState<Mode>('scan');
+  const [mode, setMode] = useState<Mode>('codigo');
   const [codigo, setCodigo] = useState('');
   const [tokenAtual, setTokenAtual] = useState<string | null>(null);
   const [preview, setPreview] = useState<ConvitePreview | null>(null);
   const [processando, setProcessando] = useState(false);
   const [aceitando, setAceitando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [focado, setFocado] = useState(false);
+  const [coberto, setCoberto] = useState(true);
+  const [camKey, setCamKey] = useState(0);
+  const [parentescos, setParentescos] = useState<Record<number, string>>({});
+  const [pickerAberto, setPickerAberto] = useState<number | null>(null);
   const scannedRef = useRef(false);
+
+  const cameraAtiva = mode === 'scan' && !!permission?.granted && focado && !preview;
+
+  // Pede a permissão de câmera automaticamente na primeira vez.
+  useEffect(() => {
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
+
+  // Workaround do bug conhecido do expo-camera na nova arquitetura (expo/expo#31597):
+  // a 1ª montagem nativa da CameraView vem "congelada" porque a flag nativa
+  // `cameraShouldInit` não é resetada. Trocar o `facing` (prop) não basta no
+  // mount frio; o que resolve é uma REMONTAGEM completa — é justamente o que
+  // acontece, por acaso, ao alternar as abas e voltar. Reproduzimos isso trocando
+  // a `key` logo após montar; um cover/spinner esconde esse flash.
+  useEffect(() => {
+    if (!cameraAtiva) {
+      setCoberto(true);
+      return;
+    }
+    setCoberto(true);
+    const tRemount = setTimeout(() => setCamKey((k) => k + 1), 300);
+    const tShow = setTimeout(() => setCoberto(false), 600);
+    return () => {
+      clearTimeout(tRemount);
+      clearTimeout(tShow);
+    };
+  }, [cameraAtiva]);
+
+  // Monta a câmera quando a tela está focada e a libera ao sair.
+  useFocusEffect(
+    useCallback(() => {
+      setFocado(true);
+      return () => setFocado(false);
+    }, [])
+  );
 
   const novos = useMemo(
     () => (preview ? preview.dependentes.filter((d) => !d.jaTenhoAcesso) : []),
     [preview]
+  );
+
+  // Exige escolher o parentesco de cada novo dependente antes de importar.
+  const faltaParentesco = useMemo(
+    () => novos.some((d) => !parentescos[d.idPessoa]),
+    [novos, parentescos]
   );
 
   const processar = useCallback(async (raw: string) => {
@@ -97,7 +147,7 @@ export default function Importar() {
     if (!tokenAtual || !preview) return;
     setAceitando(true);
     try {
-      await aceitarConvite(tokenAtual);
+      await aceitarConvite(tokenAtual, parentescos);
       await refreshDependents();
       const nomes = novos.map((d) => d.nome).join(', ');
       Alert.alert(
@@ -117,6 +167,8 @@ export default function Importar() {
     setTokenAtual(null);
     setErro(null);
     setCodigo('');
+    setParentescos({});
+    setPickerAberto(null);
     scannedRef.current = false;
   };
 
@@ -145,16 +197,55 @@ export default function Importar() {
 
           <View style={styles.previewCard}>
             {preview.dependentes.map((d) => (
-              <View key={d.idPessoa} style={styles.depRow}>
-                <View style={styles.previewAvatar}>
-                  <Ionicons name="person" size={18} color={colors.brandInk} />
+              <View key={d.idPessoa} style={styles.depItem}>
+                <View style={styles.depRow}>
+                  <View style={styles.previewAvatar}>
+                    <Ionicons name="person" size={18} color={colors.brandInk} />
+                  </View>
+                  <Text style={styles.depName} numberOfLines={1}>{d.nome}</Text>
+                  {d.jaTenhoAcesso ? (
+                    <Text style={styles.depJaTag}>já vinculado</Text>
+                  ) : (
+                    <Ionicons name="add-circle" size={20} color={colors.success} />
+                  )}
                 </View>
-                <Text style={styles.depName} numberOfLines={1}>{d.nome}</Text>
-                {d.jaTenhoAcesso ? (
-                  <Text style={styles.depJaTag}>já vinculado</Text>
-                ) : (
-                  <Ionicons name="add-circle" size={20} color={colors.success} />
-                )}
+
+                {!d.jaTenhoAcesso ? (
+                  <View style={styles.parentescoWrap}>
+                    <Text style={styles.parentescoLabel}>Parentesco</Text>
+                    <Pressable
+                      style={styles.dateButton}
+                      onPress={() => setPickerAberto((cur) => (cur === d.idPessoa ? null : d.idPessoa))}
+                    >
+                      <Text style={parentescos[d.idPessoa] ? styles.dateButtonTextFilled : styles.dateButtonText}>
+                        {parentescos[d.idPessoa] || 'Selecionar parentesco'}
+                      </Text>
+                      <Ionicons name="chevron-down" size={18} color={colors.brandInk} />
+                    </Pressable>
+                    {pickerAberto === d.idPessoa ? (
+                      <View style={styles.pickerDropdown}>
+                        <ScrollView style={styles.pickerScroll} nestedScrollEnabled>
+                          {RELATIONSHIP_OPTIONS.map((option) => {
+                            const ativo = parentescos[d.idPessoa] === option;
+                            return (
+                              <Pressable
+                                key={option}
+                                style={[styles.pickerOption, ativo && styles.pickerOptionActive]}
+                                onPress={() => {
+                                  setParentescos((c) => ({ ...c, [d.idPessoa]: option }));
+                                  setPickerAberto(null);
+                                }}
+                              >
+                                <Text style={[styles.pickerOptionText, ativo && styles.pickerOptionTextActive]}>{option}</Text>
+                                {ativo ? <Ionicons name="checkmark" size={18} color={colors.brandInk} /> : null}
+                              </Pressable>
+                            );
+                          })}
+                        </ScrollView>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             ))}
           </View>
@@ -174,9 +265,9 @@ export default function Importar() {
           )}
 
           <Pressable
-            style={[styles.primaryBtn, (aceitando || novos.length === 0) && styles.btnDisabled]}
+            style={[styles.primaryBtn, (aceitando || novos.length === 0 || faltaParentesco) && styles.btnDisabled]}
             onPress={aceitar}
-            disabled={aceitando || novos.length === 0}
+            disabled={aceitando || novos.length === 0 || faltaParentesco}
           >
             {aceitando ? (
               <ActivityIndicator color={colors.white} />
@@ -202,21 +293,23 @@ export default function Importar() {
       <StatusBar style="auto" />
       <ScreenTitle title="Importar dependente" back={() => router.back()} />
 
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}>
+      {/* View (não ScrollView): CameraView dentro de ScrollView na nova arquitetura
+          abre com a prévia congelada até um relayout. */}
+      <View style={[styles.scroll, { flex: 1, paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.tabs}>
-          <Pressable
-            style={[styles.tab, mode === 'scan' && styles.tabActive]}
-            onPress={() => { setMode('scan'); setErro(null); }}
-          >
-            <Ionicons name="qr-code-outline" size={16} color={mode === 'scan' ? colors.white : colors.brandInk} />
-            <Text style={[styles.tabText, mode === 'scan' && styles.tabTextActive]}>Escanear QR</Text>
-          </Pressable>
           <Pressable
             style={[styles.tab, mode === 'codigo' && styles.tabActive]}
             onPress={() => { setMode('codigo'); setErro(null); scannedRef.current = false; }}
           >
             <Ionicons name="keypad-outline" size={16} color={mode === 'codigo' ? colors.white : colors.brandInk} />
             <Text style={[styles.tabText, mode === 'codigo' && styles.tabTextActive]}>Inserir código</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tab, mode === 'scan' && styles.tabActive]}
+            onPress={() => { setMode('scan'); setErro(null); }}
+          >
+            <Ionicons name="qr-code-outline" size={16} color={mode === 'scan' ? colors.white : colors.brandInk} />
+            <Text style={[styles.tabText, mode === 'scan' && styles.tabTextActive]}>Escanear QR</Text>
           </Pressable>
         </View>
 
@@ -236,14 +329,18 @@ export default function Importar() {
               </View>
             ) : (
               <View style={styles.cameraBox}>
-                <CameraView
-                  style={StyleSheet.absoluteFill}
-                  facing="back"
-                  barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                  onBarcodeScanned={processando ? undefined : onBarcode}
-                />
+                {focado ? (
+                  <CameraView
+                    key={camKey}
+                    style={StyleSheet.absoluteFill}
+                    facing="back"
+                    active
+                    barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                    onBarcodeScanned={coberto || processando ? undefined : onBarcode}
+                  />
+                ) : null}
                 <View style={styles.scanFrame} pointerEvents="none" />
-                {processando ? (
+                {coberto || processando ? (
                   <View style={styles.scanOverlay}>
                     <ActivityIndicator color={colors.white} />
                   </View>
@@ -285,7 +382,7 @@ export default function Importar() {
             <Text style={styles.noteErrText}>{erro}</Text>
           </View>
         ) : null}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -464,10 +561,74 @@ const makeStyles = (c: Colors, fontScale = 1, typography = scaleTypography(fontS
       gap: spacing.sm,
       ...shadows.md,
     },
+    depItem: {
+      gap: spacing.sm,
+    },
     depRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
+    },
+    parentescoWrap: {
+      paddingLeft: 36 + spacing.md,
+    },
+    parentescoLabel: {
+      ...typography.caption,
+      textTransform: 'uppercase',
+      color: c.ink3,
+      fontWeight: '600',
+      marginBottom: spacing.xs,
+    },
+    dateButton: {
+      backgroundColor: c.bgMuted,
+      borderRadius: radii.sm + 3,
+      borderWidth: 1,
+      borderColor: c.line,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 11,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    dateButtonText: {
+      ...typography.body,
+      color: c.ink4,
+    },
+    dateButtonTextFilled: {
+      ...typography.body,
+      color: c.ink,
+    },
+    pickerDropdown: {
+      marginTop: 6,
+      backgroundColor: c.bgElev,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: c.line,
+      maxHeight: 200,
+      overflow: 'hidden',
+    },
+    pickerScroll: {
+      maxHeight: 200,
+    },
+    pickerOption: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: c.line,
+    },
+    pickerOptionActive: {
+      backgroundColor: c.brandSoft,
+    },
+    pickerOptionText: {
+      ...typography.body,
+      color: c.ink,
+    },
+    pickerOptionTextActive: {
+      fontWeight: '600',
+      color: c.brandInk,
     },
     previewAvatar: {
       width: 36,

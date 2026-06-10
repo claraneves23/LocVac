@@ -1,6 +1,7 @@
 package com.locvac.service.impl;
 
 import com.locvac.dto.auth.TokenData;
+import com.locvac.dto.compartilhamento.AceitarConviteRequestDTO;
 import com.locvac.dto.compartilhamento.AcessoResponseDTO;
 import com.locvac.dto.compartilhamento.ConvitePreviewDTO;
 import com.locvac.dto.compartilhamento.ConvitePreviewItemDTO;
@@ -29,8 +30,10 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -136,7 +139,7 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
     }
 
     @Override
-    public void aceitarConvite(String tokenOuCodigo) {
+    public void aceitarConvite(String tokenOuCodigo, AceitarConviteRequestDTO dto) {
         ConviteCompartilhamento convite = resolver(tokenOuCodigo);
         garantirPendenteValido(convite);
 
@@ -149,6 +152,8 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
         Usuario destino = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado."));
 
+        Map<Long, String> parentescos = dto != null && dto.parentescos() != null ? dto.parentescos() : Map.of();
+
         int vinculados = 0;
         for (Long idPessoa : convite.getPessoaIds()) {
             Pessoa pessoa = pessoaRepository.findById(idPessoa).orElse(null);
@@ -158,6 +163,7 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
             if (usuarioPessoaRepository.existsByUsuarioIdAndPessoaId(usuarioId, idPessoa)) {
                 continue; // já tem acesso a este
             }
+            String parentesco = parentescos.get(idPessoa);
             UsuarioPessoa vinculo = new UsuarioPessoa();
             vinculo.setUsuario(destino);
             vinculo.setPessoa(pessoa);
@@ -165,6 +171,7 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
             vinculo.setPodeVisualizar(true);
             vinculo.setPodeEditar(convite.isPodeEditar());
             vinculo.setDataVinculo(LocalDate.now());
+            vinculo.setDscParentesco(parentesco != null && !parentesco.isBlank() ? parentesco.trim() : null);
             usuarioPessoaRepository.save(vinculo);
             vinculados++;
         }
@@ -201,7 +208,10 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem acesso a este dependente.");
         }
 
-        return usuarioPessoaRepository.findByPessoaId(idPessoa).stream()
+        List<UsuarioPessoa> vinculos = usuarioPessoaRepository.findByPessoaId(idPessoa);
+        Long donoUpId = idDono(vinculos);
+
+        return vinculos.stream()
                 .map(vinculo -> {
                     Usuario u = vinculo.getUsuario();
                     return new AcessoResponseDTO(
@@ -211,7 +221,8 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
                             vinculo.getTipoVinculo() != null ? vinculo.getTipoVinculo().name() : null,
                             vinculo.isPodeEditar(),
                             vinculo.getDataVinculo(),
-                            u.getId().equals(usuarioId)
+                            u.getId().equals(usuarioId),
+                            vinculo.getId().equals(donoUpId)
                     );
                 })
                 .toList();
@@ -224,18 +235,38 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Acesso não encontrado."));
 
         Long idPessoa = alvo.getPessoa().getId();
+        List<UsuarioPessoa> vinculos = usuarioPessoaRepository.findByPessoaId(idPessoa);
+
         boolean ehProprio = alvo.getUsuario().getId().equals(usuarioId);
-        boolean controla = usuarioPessoaRepository.existsByUsuarioIdAndPessoaId(usuarioId, idPessoa);
-        if (!ehProprio && !controla) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não pode revogar este acesso.");
+        Long donoUpId = idDono(vinculos);
+        boolean souDono = vinculos.stream()
+                .anyMatch(v -> v.getId().equals(donoUpId) && v.getUsuario().getId().equals(usuarioId));
+
+        // Sair do compartilhamento (remover o próprio acesso) é sempre permitido;
+        // remover OUTRO responsável só é permitido a quem compartilhou (o dono).
+        if (!ehProprio && !souDono) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Apenas quem compartilhou o dependente pode remover outros responsáveis.");
+        }
+        // O responsável que compartilhou não pode ser removido por outra pessoa.
+        if (alvo.getId().equals(donoUpId) && !ehProprio) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "O responsável que compartilhou o dependente não pode ser removido.");
         }
 
-        long total = usuarioPessoaRepository.findByPessoaId(idPessoa).size();
-        if (total <= 1) {
+        if (vinculos.size() <= 1) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Este é o único responsável. Para excluir o dependente use a remoção.");
         }
         usuarioPessoaRepository.delete(alvo);
+    }
+
+    /** O dono é o responsável que primeiro vinculou a pessoa (menor id de vínculo). */
+    private Long idDono(List<UsuarioPessoa> vinculos) {
+        return vinculos.stream()
+                .map(UsuarioPessoa::getId)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
     }
 
     @Override

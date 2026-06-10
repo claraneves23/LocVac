@@ -1,5 +1,6 @@
 package com.locvac.controller;
 
+import com.locvac.dto.compartilhamento.AceitarConviteRequestDTO;
 import com.locvac.dto.compartilhamento.AcessoResponseDTO;
 import com.locvac.dto.compartilhamento.ConvitePreviewDTO;
 import com.locvac.dto.compartilhamento.ConviteResponseDTO;
@@ -33,8 +34,10 @@ public class CompartilhamentoController {
     }
 
     @PostMapping("/convites/{token}/aceitar")
-    public ResponseEntity<Void> aceitar(@PathVariable String token) {
-        service.aceitarConvite(token);
+    public ResponseEntity<Void> aceitar(
+            @PathVariable String token,
+            @RequestBody(required = false) AceitarConviteRequestDTO body) {
+        service.aceitarConvite(token, body);
         return ResponseEntity.noContent().build();
     }
 

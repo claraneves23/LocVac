@@ -241,6 +241,8 @@ export default function Compartilhar() {
             {selecionados.map((id) => {
               const lista = acessos[id] ?? [];
               if (lista.length === 0) return null;
+              // Só quem compartilhou (o dono) pode remover outros responsáveis.
+              const souDono = lista.some((a) => a.ehVoce && a.ehDono);
               return (
                 <View key={id} style={styles.accessGroup}>
                   {n > 1 ? <Text style={styles.accessGroupTitle}>{nomeFor(id)}</Text> : null}
@@ -253,10 +255,11 @@ export default function Compartilhar() {
                         <Text style={styles.pickName} numberOfLines={1}>
                           {a.usuarioNome}
                           {a.ehVoce ? <Text style={styles.youTag}>  · Você</Text> : null}
+                          {a.ehDono ? <Text style={styles.youTag}>  · Compartilhou</Text> : null}
                         </Text>
                         <Text style={styles.pickMeta} numberOfLines={1}>{a.usuarioEmail}</Text>
                       </View>
-                      {!a.ehVoce ? (
+                      {souDono && !a.ehVoce && !a.ehDono ? (
                         <Pressable onPress={() => handleRevogar(id, a)} hitSlop={8} style={{ padding: 4 }}>
                           <Ionicons name="close-circle-outline" size={20} color={colors.coral} />
                         </Pressable>
