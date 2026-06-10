@@ -94,7 +94,12 @@ export default function Carteira() {
           getCampaignsByProfile(profile.id),
         ]);
         if (!active) return;
-        const rows: VaccineRow[] = vacinas.map((v: VacinaDTO) => {
+        // Mesma ordem da tela de registro (home): por idade mínima recomendada (asc).
+        // Array.sort é estável, então vacinas da mesma idade preservam a ordem da API.
+        const sortedVacinas = [...vacinas].sort(
+          (a: VacinaDTO, b: VacinaDTO) => (a.idadeMinimaMeses ?? 0) - (b.idadeMinimaMeses ?? 0)
+        );
+        const rows: VaccineRow[] = sortedVacinas.map((v: VacinaDTO) => {
           const dose = doses.find((d) => String(d.idVacina) === String(v.id));
           return {
             name: v.nome,
