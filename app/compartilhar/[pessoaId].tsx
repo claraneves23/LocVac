@@ -47,9 +47,11 @@ export default function Compartilhar() {
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
   const { dependents } = useAppContext();
+  // Só o dono/criador pode compartilhar; quem recebeu por transferência não.
+  const compartilhaveis = useMemo(() => dependents.filter((d) => d.isOwner), [dependents]);
 
   const [selecionados, setSelecionados] = useState<string[]>(() =>
-    pessoaId && dependents.some((d) => d.id === pessoaId) ? [pessoaId] : []
+    pessoaId && compartilhaveis.some((d) => d.id === pessoaId) ? [pessoaId] : []
   );
   const [convite, setConvite] = useState<ConviteResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -163,10 +165,10 @@ export default function Compartilhar() {
         {/* Seleção */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Dependentes</Text>
-          {dependents.length === 0 ? (
+          {compartilhaveis.length === 0 ? (
             <Text style={styles.empty}>Você não tem dependentes para compartilhar.</Text>
           ) : (
-            dependents.map((d) => {
+            compartilhaveis.map((d) => {
               const sel = selecionados.includes(d.id);
               return (
                 <Pressable key={d.id} style={styles.pickRow} onPress={() => toggle(d.id)}>

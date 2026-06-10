@@ -26,5 +26,6 @@ public record PessoaResponseDTO(
         String nomeResponsavel,
         boolean ativo,
         String dscParentesco,
-        List<Long> gruposRiscoIds
+        List<Long> gruposRiscoIds,
+        boolean ehDono
 ) {}

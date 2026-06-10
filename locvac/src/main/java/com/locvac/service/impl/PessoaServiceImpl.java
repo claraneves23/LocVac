@@ -29,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -78,7 +79,15 @@ public class PessoaServiceImpl implements PessoaService {
         TipoVinculo tipoDependente = TipoVinculo.getByCodigo(3);
         List<UsuarioPessoa> dependentes = usuarioPessoaRepository.findByUsuarioIdAndTipoVinculo(usuarioId, tipoDependente);
         return dependentes.stream()
-            .map(vinculo -> mapper.toResponse(vinculo.getPessoa(), vinculo.getDscParentesco()))
+            .map(vinculo -> {
+                // Dono = quem primeiro vinculou a pessoa (menor id de vínculo).
+                Long donoId = usuarioPessoaRepository.findByPessoaId(vinculo.getPessoa().getId()).stream()
+                        .map(UsuarioPessoa::getId)
+                        .min(Comparator.naturalOrder())
+                        .orElse(null);
+                boolean ehDono = vinculo.getId().equals(donoId);
+                return mapper.toResponse(vinculo.getPessoa(), vinculo.getDscParentesco(), ehDono);
+            })
             .toList();
     }
 

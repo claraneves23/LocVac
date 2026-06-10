@@ -61,6 +61,7 @@ type PessoaResponseDTO = {
   fotoUrl?: string;
   nomeResponsavel?: string;
   dscParentesco?: string;
+  ehDono?: boolean;
 };
 
 export async function getDependents(usuarioId: string): Promise<FamilyMember[]> {
@@ -89,6 +90,7 @@ export async function getDependents(usuarioId: string): Promise<FamilyMember[]> 
     phone: d.telefone,
     photoUri: d.fotoUrl || undefined,
     guardianName: d.nomeResponsavel,
+    isOwner: d.ehDono ?? false,
   }));
 }
 

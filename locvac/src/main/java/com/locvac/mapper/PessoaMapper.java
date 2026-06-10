@@ -32,7 +32,7 @@ public class PessoaMapper {
         return pessoa;
     }
 
-    public PessoaResponseDTO toResponse(Pessoa pessoa, String dscParentesco) {
+    public PessoaResponseDTO toResponse(Pessoa pessoa, String dscParentesco, boolean ehDono) {
         List<Long> gruposRiscoIds = pessoa.getGruposRisco() != null
                 ? pessoa.getGruposRisco().stream().map(g -> g.getId()).toList()
                 : List.of();
@@ -56,11 +56,16 @@ public class PessoaMapper {
                 pessoa.getNomeResponsavel(),
                 pessoa.isAtivo(),
                 dscParentesco,
-                gruposRiscoIds
+                gruposRiscoIds,
+                ehDono
         );
     }
 
+    public PessoaResponseDTO toResponse(Pessoa pessoa, String dscParentesco) {
+        return toResponse(pessoa, dscParentesco, false);
+    }
+
     public PessoaResponseDTO toResponse(Pessoa pessoa) {
-        return toResponse(pessoa, null);
+        return toResponse(pessoa, null, false);
     }
 }

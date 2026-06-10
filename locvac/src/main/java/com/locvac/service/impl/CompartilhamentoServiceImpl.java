@@ -80,8 +80,13 @@ public class CompartilhamentoServiceImpl implements CompartilhamentoService {
 
         List<String> nomes = new ArrayList<>();
         for (Long idPessoa : ids) {
-            if (!usuarioPessoaRepository.existsByUsuarioIdAndPessoaId(usuarioId, idPessoa)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem acesso a um dos dependentes selecionados.");
+            List<UsuarioPessoa> vinculos = usuarioPessoaRepository.findByPessoaId(idPessoa);
+            Long donoUpId = idDono(vinculos);
+            boolean souDono = vinculos.stream()
+                    .anyMatch(v -> v.getId().equals(donoUpId) && v.getUsuario().getId().equals(usuarioId));
+            if (!souDono) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Apenas quem cadastrou o dependente pode compartilhá-lo.");
             }
             Pessoa pessoa = pessoaRepository.findById(idPessoa)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dependente não encontrado."));

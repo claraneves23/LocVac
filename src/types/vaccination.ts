@@ -9,6 +9,8 @@ export interface FamilyMember {
   kind: 'user' | 'dependent';
   relationship?: string;
   guardianName?: string;
+  /** true quando o usuário logado é o criador/dono do dependente (quem o cadastrou). */
+  isOwner?: boolean;
   photoUri?: string;
   cpf?: string;
   cns?: string;

@@ -113,6 +113,9 @@ export default function User() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDependent, setSelectedDependent] = useState<FamilyMember | null>(null);
   const [showRelationshipPicker, setShowRelationshipPicker] = useState(false);
+  // Só o dono/criador do dependente pode redefinir o responsável; quem recebeu
+  // por transferência mantém o responsável original.
+  const [draftIsOwner, setDraftIsOwner] = useState(true);
   const [savingDependent, setSavingDependent] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
   const [showBirthStatePicker, setShowBirthStatePicker] = useState(false);
@@ -341,6 +344,7 @@ export default function User() {
 
   const openCreate = () => {
     resetDraft();
+    setDraftIsOwner(true);
     setDraft((c) => ({ ...c, ...titularAddressFields() }));
     setSameAddressAsTitular(true);
     originalDependentPhoto.current = undefined;
@@ -350,7 +354,11 @@ export default function User() {
 
   const openEdit = (dependent: FamilyMember) => {
     const { rua: depRua, numero: depNumero } = splitAddress(dependent.address);
-    const isTitularGuardian = dependent.relationship === 'Filho' || dependent.relationship === 'Filha';
+    const ehDono = dependent.isOwner ?? false;
+    setDraftIsOwner(ehDono);
+    // Auto-preenche o responsável com o titular apenas para o dono; quem recebeu
+    // por transferência preserva o responsável já cadastrado.
+    const isTitularGuardian = ehDono && (dependent.relationship === 'Filho' || dependent.relationship === 'Filha');
     const tit = titularAddressFields();
     const matchesTitular = mainUser
       ? (dependent.zipCode || '') === (mainUser.zipCode || '')
@@ -693,14 +701,16 @@ export default function User() {
                       </View>
                     </Pressable>
                     <View style={styles.dependentActions}>
-                      <Pressable
-                        style={styles.iconButton}
-                        onPress={() => router.push(`/compartilhar/${dependent.id}`)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Compartilhar ${dependent.name}`}
-                      >
-                        <Ionicons name="share-social-outline" size={18} color={colors.brandInk} />
-                      </Pressable>
+                      {dependent.isOwner ? (
+                        <Pressable
+                          style={styles.iconButton}
+                          onPress={() => router.push(`/compartilhar/${dependent.id}`)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Compartilhar ${dependent.name}`}
+                        >
+                          <Ionicons name="share-social-outline" size={18} color={colors.brandInk} />
+                        </Pressable>
+                      ) : null}
                       <Pressable style={styles.iconButton} onPress={() => openEdit(dependent)}>
                         <Ionicons name="create-outline" size={18} color={colors.brandInk} />
                       </Pressable>
@@ -1124,10 +1134,13 @@ export default function User() {
                             setDraft((c) => {
                               const wasParentRel = c.relationship === 'Filho' || c.relationship === 'Filha';
                               let nextGuardian = c.guardianName;
-                              if (isParentRel) {
-                                nextGuardian = mainUser?.name || '';
-                              } else if (wasParentRel) {
-                                nextGuardian = '';
+                              // Só o dono pode auto-redefinir o responsável ao trocar o parentesco.
+                              if (draftIsOwner) {
+                                if (isParentRel) {
+                                  nextGuardian = mainUser?.name || '';
+                                } else if (wasParentRel) {
+                                  nextGuardian = '';
+                                }
                               }
                               return { ...c, relationship: option, guardianName: nextGuardian };
                             });
@@ -1297,18 +1310,20 @@ export default function User() {
               </View>
 
               {(() => {
-                const isTitularGuardian = draft.relationship === 'Filho' || draft.relationship === 'Filha';
+                const isTitularGuardian = draftIsOwner && (draft.relationship === 'Filho' || draft.relationship === 'Filha');
+                // Quem recebeu por transferência não edita o responsável (preserva o original).
+                const bloqueado = isTitularGuardian || !draftIsOwner;
                 return (
                   <View style={styles.fieldGroup}>
                     <Text style={styles.label}>Nome da mãe ou responsável</Text>
                     <TextInput
-                      style={[styles.input, isTitularGuardian && styles.inputReadonly]}
+                      style={[styles.input, bloqueado && styles.inputReadonly]}
                       value={draft.guardianName}
                       onChangeText={(v) => setDraft((c) => ({ ...c, guardianName: sanitizeName(v) }))}
                       placeholder="Nome do responsável"
                       placeholderTextColor={colors.ink4}
                       maxLength={100}
-                      editable={!isTitularGuardian}
+                      editable={!bloqueado}
                     />
                   </View>
                 );
