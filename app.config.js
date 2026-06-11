@@ -4,7 +4,8 @@ module.exports = {
   expo: {
     name: IS_DEV ? "LocVac (Dev)" : "LocVac",
     slug: "LocVac",
-    version: "1.1.2",
+    scheme: "locvac",
+    version: "1.1.3",
     orientation: "portrait",
     icon: "./assets/images/iconLocVac.png",
     userInterfaceStyle: "light",
@@ -60,9 +61,16 @@ module.exports = {
           cameraPermission: "Permitir acesso à câmera para adicionar imagem do dependente.",
         },
       ],
+      [
+        "expo-camera",
+        {
+          cameraPermission: "Permitir acesso à câmera para escanear o QR code de compartilhamento.",
+        },
+      ],
       "./plugins/withTransparentNavBar",
       "./plugins/withAdiRegistration",
       "@react-native-google-signin/google-signin",
+      "expo-sharing",
     ],
     extra: {
       router: {},
